@@ -530,3 +530,13 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 		});
 	}
 });
+chrome.storage.onChanged.addListener(function (changes, areaName) {
+	// 检查是否是 searchEngines 发生了变化
+	if (changes.searchEngines && areaName === 'sync') {
+		chrome.tabs.query({ url: ["*://*/*"] }, function (tabs) {
+			for (let i = 0; i < tabs.length; i++) {
+				chrome.tabs.sendMessage(tabs[i].id, { action: 'updateMenuItems', menuItems: changes.menuItems.newValue });
+			}
+		});
+	}
+});

@@ -38,7 +38,25 @@ document.addEventListener('copy', function (event) {
     }
 });
 function showSearchLinks(selectedText, x, y, currentEngine) {
-
+    chrome.storage.sync.get(["customSearchEngineName", "customSearchEngineUrlBase"], function (items) {
+        // 检查是否成功获取到自定义搜索引擎信息
+        if (items.customSearchEngineName && items.customSearchEngineUrlBase) {
+            // 创建自定义搜索引擎的搜索链接
+            var customSearchLink = createActionLink(items.customSearchEngineName, function () {
+                // 发送搜索请求
+                chrome.runtime.sendMessage({
+                    action: 'setpage',
+                    query: items.customSearchEngineUrlBase + encodeURIComponent(selectedText),
+                    openSidebar: false
+                });
+                // 可以在这里添加搜索结果的回调处理
+            }, items.customSearchEngineUrlBase); // 传递基础 URL 到 createActionLink 函数（如果需要）
+            searchLinksContainer.appendChild(customSearchLink);
+        } else {
+            // 处理未找到自定义搜索引擎的情况
+            console.error("Custom search engine information is not set.");
+        }
+    });
     if (currentPopup) {
         document.body.removeChild(currentPopup);
     }
@@ -121,6 +139,18 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     });
     searchLinksContainer.appendChild(searchLinkweibo);
 
+    var searchLinkweixin = createActionLink('微信', function () {
+
+        chrome.runtime.sendMessage({
+            action: 'setpage',
+            query: 'https://weixin.sogou.com/weixin?ie=utf8&s_from=input&_sug_=y&_sug_type_=&type=2&query=' + encodeURIComponent(selectedText),
+            openSidebar: false  // 将这里的值修改为 false
+        });
+        document.body.removeChild(popup);
+        currentPopup = null;
+    });
+    searchLinksContainer.appendChild(searchLinkweixin);
+
     var searchLinkv2ex = createActionLink('v2ex', function () {
 
         chrome.runtime.sendMessage({
@@ -133,17 +163,22 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     });
     searchLinksContainer.appendChild(searchLinkv2ex);
 
-    var searchLinksmzdm = createActionLink('smzdm', function () {
+
+
+    var searchLinkbook = createActionLink('找书', function () {
 
         chrome.runtime.sendMessage({
             action: 'setpage',
-            query: 'https://search.smzdm.com/?c=home&s=' + encodeURIComponent(selectedText),
+            query: 'https://zh.annas-archive.org/search?q=' + encodeURIComponent(selectedText),
             openSidebar: false  // 将这里的值修改为 false
         });
         document.body.removeChild(popup);
         currentPopup = null;
     });
-    searchLinksContainer.appendChild(searchLinksmzdm);
+    searchLinksContainer.appendChild(searchLinkbook);
+
+
+
 
     var searchLinkcopy = createActionLink('复制', function () {
         // 执行复制文本到剪贴板的操作
@@ -167,22 +202,13 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     });
 
     searchLinksContainer.appendChild(searchLinkcopy);
-    var searchLinkPaste = createActionLink('粘贴', function () {
-        // 执行粘贴操作
-        navigator.clipboard.readText().then(function (pastedText) {
-            // 在这里处理粘贴的文本
-            console.log('粘贴的文本:', pastedText);
-
-            // 关闭菜单
-            document.body.removeChild(popup);
-            currentPopup = null;
-        }).catch(function (error) {
-            // 处理粘贴操作的错误
-            console.error('粘贴操作出错:', error);
-        });
+    var searchLinkClose = createActionLink('关闭', function () {
+        // 关闭菜单
+        document.body.removeChild(popup);
+        currentPopup = null;
     });
 
-    searchLinksContainer.appendChild(searchLinkPaste);
+    searchLinksContainer.appendChild(searchLinkClose);
 
 
     popup.appendChild(searchLinksContainer);
@@ -272,7 +298,33 @@ function getEnginesByType(type) {
             ];
     }
 }
+// 获取保存在扩展程序选项中的搜索选项数组
+chrome.storage.sync.get("searchOptions", function (result) {
+    var searchOptions = result.searchOptions;
 
+    // 如果存在搜索选项，则创建对应的菜单项，并绑定点击事件处理逻辑
+    if (searchOptions && Array.isArray(searchOptions) && searchOptions.length > 0) {
+        var menuItems = [];
+
+        for (var i = 0; i < searchOptions.length; i++) {
+            var searchOption = searchOptions[i];
+
+            // 创建菜单项
+            var menuItem = {
+                id: 'menuItem' + i,
+                title: searchOption.name,
+                onclick: createActionLink(searchOption.urlBase)
+            };
+
+            menuItems.push(menuItem);
+        }
+
+        // 注册菜单项
+        for (var j = 0; j < menuItems.length; j++) {
+            chrome.contextMenus.create(menuItems[j]);
+        }
+    }
+});
 // 监听鼠标弹起事件，以捕获用户选择的文本
 
 document.addEventListener('mouseup', function (e) {
@@ -293,5 +345,56 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         if (iframe) {
             iframe.src = request.query;
         }
+    }
+});
+chrome.runtime.onMessage.addListener(function (request) {
+    if (request.action === 'updateMenuItems') {
+        updateContextMenu(request.menuItems);
+    }
+});
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.action === 'updateMenu') {
+        // 使用新数据更新菜单
+        updateContextMenu(request.menuItems);
+    }
+});
+
+function updateContextMenu(menuItems) {
+    // 移除现有菜单项（如果需要）
+    removeExistingMenuItems();
+
+    // 创建并添加新的菜单项
+    menuItems.forEach(function (item) {
+        createMenuItem(item);
+    });
+}
+
+function removeExistingMenuItems() {
+    // 根据实际情况移除现有菜单项
+}
+
+function createMenuItem(item) {
+    // 根据实际情况创建新的菜单项
+    // 可能需要调用某些API来创建并显示菜单项
+} function createMenuItem(item) {
+    var link = document.createElement('a');
+    link.textContent = item.name;
+    link.href = item.url;
+    link.style.color = 'white';
+    link.style.padding = '5px 10px';
+    link.style.cursor = 'pointer';
+    link.style.backgroundColor = 'black';
+    link.style.transition = 'background-color 0.3s';
+    // 添加更多样式和事件监听器
+
+    // 将链接添加到当前的搜索链接容器中
+    var searchLinksContainer = document.getElementById('searchLinksContainer');
+    searchLinksContainer.appendChild(link);
+}
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.action === 'updateCustomSearchEngine') {
+        // 更新内存中的自定义搜索引擎设置
+        customSearchEngineName = request.customSearchEngineName;
+        customSearchEngineUrlBase = request.customSearchEngineUrlBase;
     }
 });

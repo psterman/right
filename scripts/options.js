@@ -1,5 +1,3 @@
-
-
 function $(id) { return document.getElementById(id); }
 var youtubeembed = "https://www.youtube.com/embed/?listType=playlist&list=PLfXHh3TKRb4Z-C2w3SLAY_InRNET-DgI1&rel=0";
 var darkmode = false;
@@ -50,10 +48,39 @@ function defaultgetsettings() {
 
 // Option to save current value
 function save_options() {
+    // 使用用户输入的值
+    var customSearchEngineName = $('customSearchEngineName').value;
+    var customSearchEngineUrlBase = $('customSearchEngineUrlBase').value;
+
+    // 保存自定义搜索引擎的值到chrome.storage
+    chrome.storage.sync.set({
+        "customSearchEngineName": customSearchEngineName,
+        "customSearchEngineUrlBase": customSearchEngineUrlBase
+    }, function() {
+        console.log("Custom search engine settings saved.");
+        alert("保存成功");
+        // 刷新显示的搜索引擎列表
+        displayEnginesList();
+	});
+
+	// 如果用户填写了自定义搜索引擎，保存它们
+	if (customSearchEngineName && customSearchEngineUrlBase) {
+		saveCustomSearchEngine(customSearchEngineName, customSearchEngineUrlBase);
+	}
+
+	// ... 现有代码 ...
 	chrome.storage.sync.set({ "icon": $("btnpreview").src, "optionskipremember": $("optionskipremember").checked, "contextmenus": $("contextmenus").checked, "searchgoogle": $("searchgoogle").checked, "searchbing": $("searchbing").checked, "searchduckduckgo": $("searchduckduckgo").checked, "searchbaidu": $("searchbaidu").checked, "searchyandex": $("searchyandex").checked, "navtop": $("navtop").checked, "navbottom": $("navbottom").checked, "navhidden": $("navhidden").checked, "typepanelzone": $("typepanelzone").checked, "typepanelcustom": $("typepanelcustom").checked, "typepanellasttime": $("typepanellasttime").checked, "websitezoomname": $("websitezoomname").value, "opentab": $("opentab").checked, "opencopy": $("opencopy").checked, "opennonebookmarks": $("opennonebookmarks").checked, "openbrowserbookmarks": $("openbrowserbookmarks").checked, "openquickbookmarks": $("openquickbookmarks").checked, "websitename1": $("websitename1").value, "websiteurl1": $("websiteurl1").value, "websitename2": $("websitename2").value, "websiteurl2": $("websiteurl2").value, "websitename3": $("websitename3").value, "websiteurl3": $("websiteurl3").value, "websitename4": $("websitename4").value, "websiteurl4": $("websiteurl4").value, "websitename5": $("websitename5").value, "websiteurl5": $("websiteurl5").value, "websitename6": $("websitename6").value, "websiteurl6": $("websiteurl6").value, "websitename7": $("websitename7").value, "websiteurl7": $("websiteurl7").value, "websitename8": $("websitename8").value, "websiteurl8": $("websiteurl8").value, "websitename9": $("websitename9").value, "websiteurl9": $("websiteurl9").value, "websitename10": $("websitename10").value, "websiteurl10": $("websiteurl10").value, "googlesidepanel": $("googlesidepanel").checked, "zoom": $("zoom").checked, "defaultzoom": $("defaultzoom").value, "step": $("step").value });
 }
 
 function read_options() {
+	chrome.storage.sync.get(["customSearchEngineName", "customSearchEngineUrlBase"], function (items) {
+		if (items["customSearchEngineName"]) {
+			$('customSearchEngineName').value = items["customSearchEngineName"];
+		}
+		if (items["customSearchEngineUrlBase"]) {
+			$('customSearchEngineUrlBase').value = items["customSearchEngineUrlBase"];
+		}
+	});
 	// youtube
 	$("materialModalYouTubeButtonOK").addEventListener("click", function (e) {
 		closeMaterialYouTubeAlert(e);
@@ -910,4 +937,150 @@ function domcontentloaded() {
 		document.getElementById("appsearch").placeholder = chrome.i18n.getMessage("searchplaceholder");
 	}
 
+} document.addEventListener('DOMContentLoaded', function () {
+    const menuItemsContainer = document.getElementById('menuItemsContainer');
+    const addEngineButton = document.getElementById('addEngineButton');
+    const removeEngineButton = document.getElementById('removeEngineButton');
+    var enginesListContainer = document.getElementById('existingEnginesList');
+
+ 
+// 绑定增加搜索引擎按钮的点击事件
+document.getElementById('addEngineButton').addEventListener('click', function () {
+    // 使用prompt获取用户输入
+    var newEngineName = prompt('请输入新的搜索引擎名称：');
+    var newEngineUrlBase = prompt('请输入新的搜索引擎URL基础：');
+
+    // 调用saveCustomSearchEngine函数尝试保存新的搜索引擎
+    saveCustomSearchEngine(newEngineName, newEngineUrlBase, function (success) {
+        if (success) {
+            alert('搜索引擎保存成功！');
+        } else {
+            alert('保存搜索引擎失败，请重试。');
+        }
+    });
+});
+	// 删除搜索引擎按钮事件监听器
+	removeEngineButton.addEventListener('click', function () {
+		var index = parseInt(prompt('请输入要删除的搜索引擎的索引：'), 10); // 使用parseInt确保索引为数字
+
+		if (!isNaN(index)) {
+			// 从存储中删除搜索引擎
+			removeCustomSearchEngine(index, function (success) {
+				if (success) {
+					// 删除成功后更新界面
+					displayEnginesList();
+				} else {
+					alert('删除搜索引擎失败，请重试。');
+				}
+			});
+		} else {
+			alert('请输入有效的索引数字。');
+		}
+	});
+
+	// 显示搜索引擎列表函数
+function displayEnginesList() {
+    chrome.storage.sync.get('customSearchEngines', function (items) {
+        let engines = items.customSearchEngines || [];
+        let enginesListContainer = document.getElementById('existingEnginesList');
+        enginesListContainer.innerHTML = ''; // 清空现有列表
+        engines.forEach(function (engine, index) {
+            let engineItem = document.createElement('div');
+            engineItem.textContent = `${index}: ${engine.name} (${engine.urlBase})`;
+            // 创建删除按钮
+            let removeButton = document.createElement('button');
+            removeButton.textContent = '删除';
+            removeButton.onclick = function () {
+                removeCustomSearchEngine(index); // 调用删除函数
+            };
+            engineItem.appendChild(removeButton);
+            enginesListContainer.appendChild(engineItem);
+        });
+    });
 }
+// 改进后的保存自定义搜索引擎函数
+function saveCustomSearchEngine(name, urlBase, callback) {
+    // 检查输入是否为空
+    if (!name || !urlBase) {
+        alert('搜索引擎名称和URL基础不能为空。');
+        return;
+    }
+    // 获取当前存储的搜索引擎列表
+    chrome.storage.sync.get('customSearchEngines', function (items) {
+        let engines = items.customSearchEngines || [];
+        // 检查搜索引擎是否已存在
+        let found = engines.some(function (engine) {
+            return engine.name === name && engine.urlBase === urlBase;
+        });
+        if (!found) {
+            // 添加新的搜索引擎
+            engines.push({ name: name, urlBase: urlBase });
+            // 保存更新后的列表
+            chrome.storage.sync.set({ customSearchEngines: engines }, function () {
+                if (chrome.runtime.lastError) {
+                    // 处理可能的错误
+                    console.error(chrome.runtime.lastError);
+                    if (callback) callback(false);
+                } else {
+                    if (callback) callback(true);
+                    console.log('Custom search engine saved.');
+                    // 保存成功后，自动更新页面显示
+                    displayEnginesList();
+                }
+            });
+        } else {
+            console.log('Custom search engine already exists.');
+            alert('搜索引擎已存在。');
+            if (callback) callback(false);
+        }
+    });
+}
+	// 删除自定义搜索引擎的函数
+	function removeCustomSearchEngine(index, callback) {
+		chrome.storage.sync.get('customSearchEngines', function (items) {
+			let engines = items.customSearchEngines || [];
+			if (index >= 0 && index < engines.length) {
+				engines.splice(index, 1);
+				chrome.storage.sync.set({ customSearchEngines: engines }, function () {
+					callback(true);
+				});
+			} else {
+				callback(false);
+			}
+		});
+	}
+
+	// 初始化显示搜索引擎列表
+	displayEnginesList();
+});
+// 在options.js中定义saveCustomSearchEngine函数
+function saveCustomSearchEngine(name, urlBase) {
+	// 获取当前存储的搜索引擎列表
+	chrome.storage.sync.get('customSearchEngines', function (items) {
+		let engines = items.customSearchEngines || [];
+		// 添加新的搜索引擎
+		engines.push({ name: name, urlBase: urlBase });
+		// 保存更新后的列表
+		chrome.storage.sync.set({ customSearchEngines: engines }, function () {
+			console.log('Custom search engine saved.');
+			// 可以在这里添加代码来清空输入框或提供反馈给用户
+		});
+	});
+}
+// 确保在文档加载完成后初始化显示搜索引擎列表
+document.addEventListener('DOMContentLoaded', function () {
+    displayEnginesList();
+});
+chrome.storage.sync.get('customSearchEngines', function (items) {
+	let engines = items.customSearchEngines || [];
+	// 可能需要将engines数组中的每个搜索引擎显示在#existingEnginesList div中
+});
+var newEngineName = $("newEngineName").value;
+var newEngineUrlBase = $("newEngineUrlBase").value;
+
+chrome.storage.sync.set({
+  "newEngineName": newEngineName,
+  "newEngineUrlBase": newEngineUrlBase
+}, function() {
+  console.log("New engine settings saved.");
+});
