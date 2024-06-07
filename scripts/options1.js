@@ -1,31 +1,10 @@
-//================================================
-/*
-
-Page Sidebar
-Effortlessly open any website in your web browser's sidebar – streamline your workflow instantly!
-Copyright (C) 2024 Stefan vd
-www.stefanvd.net
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-
-To view a copy of this license, visit http://creativecommons.org/licenses/GPL/2.0/
-
-*/
-//================================================
-
+// 在页面加载时调用 displayEnginesList() 函数
+document.addEventListener('DOMContentLoaded', function () {
+	const menuItemsContainer = document.getElementById('menuItemsContainer');
+	const addEngineButton = document.getElementById('addEngineButton');
+	const removeEngineButton = document.getElementById('removeEngineButton');
+	var enginesListContainer = document.getElementById('existingEnginesList');
+});
 function $(id) { return document.getElementById(id); }
 var youtubeembed = "https://www.youtube.com/embed/?listType=playlist&list=PLfXHh3TKRb4Z-C2w3SLAY_InRNET-DgI1&rel=0";
 var darkmode = false;
@@ -72,31 +51,147 @@ function defaultgetsettings() {
 			read_options();
 		});
 	});
-}
-
-// Option to save current value
+}// Option to save current value
 function save_options() {
-	let websiteNames = [];
-	let websiteUrls = [];
-	for (let i = 1; i <= 10; i++) {
-		let nameInput = $("websitename" + i).value;
-		let urlInput = $("websiteurl" + i).value;
-		if (nameInput && urlInput) {
-			websiteNames.push(nameInput);
-			websiteUrls.push(urlInput);
-		}
-	}
-	chrome.storage.sync.set({
-		websiteNames: websiteNames,
-		websiteUrls: websiteUrls
-	}, function () {
-		// Notify user that options were saved.
-		console.log("Options saved.");
+	// 获取用户保存的搜索引擎列表
+	chrome.storage.sync.get(['searchEngines'], function (items) {
+		var searchEngines = items.searchEngines || [];
+
+		// 将搜索引擎列表传递给contents.js的showSearchLinks函数
+		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+			chrome.tabs.sendMessage(tabs[0].id, { action: 'updateSearchEngines', searchEngines: searchEngines });
+		});
 	});
+	var customSearchEngineName = $('customSearchEngineName').value;
+	var customSearchEngineUrlBase = $('customSearchEngineUrlBase').value;
+
+	if (customSearchEngineName && customSearchEngineUrlBase) {
+		chrome.storage.sync.get(['customSearchEngines'], function (items) {
+			var customSearchEngines = items.customSearchEngines || [];
+			customSearchEngines.push({ name: customSearchEngineName, url: customSearchEngineUrlBase });
+			chrome.storage.sync.set({ 'customSearchEngines': customSearchEngines }, function () {
+				console.log("New custom search engine saved.");
+				// 刷新显示的搜索引擎列表
+				displayCustomEnginesList();
+			});
+		});
+	}
+
+	// 使用用户输入的值 // 获取用户输入的新的搜索引擎信息
+	var newSearchEngineName = $('newSearchEngineName').value;
+	var newSearchEngineUrl = $('newSearchEngineUrl').value;
+
+	// 如果输入不为空，则保存新的搜索引擎
+	if (newSearchEngineName && newSearchEngineUrl) {
+		chrome.storage.sync.get(['searchEngines'], function (items) {
+			var searchEngines = items.searchEngines || [];
+			searchEngines.push({ name: newSearchEngineName, url: newSearchEngineUrl });
+			chrome.storage.sync.set({ 'searchEngines': searchEngines }, function () {
+				console.log("New search engine saved.");
+				// 刷新显示的搜索引擎列表
+				displayEnginesList();
+			});
+		});
+	}
+	// 显示搜索引擎列表的函数
+	function displayEnginesList() {
+		deleteButton.onclick = function () {
+			// 处理删除逻辑
+			deleteSearchEngine(index);
+		};
+		displayCustomEnginesList();
+		chrome.storage.sync.get(['searchEngines'], function (items) {
+			var enginesListContainer = document.getElementById('existingEnginesList');
+			enginesListContainer.innerHTML = ''; // 清空现有列表
+
+			var searchEngines = items.searchEngines || [];
+			searchEngines.forEach(function (engine, index) {
+				var listItem = document.createElement('li');
+				listItem.textContent = engine.name + ' - ' + engine.url;
+				// 添加删除按钮
+				var deleteButton = document.createElement('button');
+				deleteButton.textContent = 'Delete';
+				deleteButton.onclick = function () {
+					// 处理删除逻辑
+					deleteSearchEngine(index);
+				};
+				listItem.appendChild(deleteButton);
+				enginesListContainer.appendChild(listItem);
+			});
+		});
+	}
+	function displayCustomEnginesList() {
+		deleteButton.onclick = function () {
+			// 处理删除逻辑
+			deleteSearchEngine(index);
+		};
+		chrome.storage.sync.get(['customSearchEngines'], function (items) {
+			var enginesListContainer = document.getElementById('customEnginesList');
+			enginesListContainer.innerHTML = '';
+
+			var customSearchEngines = items.customSearchEngines || [];
+			customSearchEngines.forEach(function (engine, index) {
+				var listItem = document.createElement('li');
+				listItem.textContent = engine.name + ' - ' + engine.url;
+
+				// 添加删除按钮
+				var deleteButton = document.createElement('button');
+				deleteButton.textContent = 'Delete';
+				deleteButton.onclick = function () {
+					deleteSearchEngine(index);
+				};
+				listItem.appendChild(deleteButton);
+				enginesListContainer.appendChild(listItem);
+			});
+		});
+	}
+
+	// 删除搜索引擎的函数
+	function deleteSearchEngine(index) {
+		chrome.storage.sync.get(['customSearchEngines'], function (items) {
+			var customSearchEngines = items.customSearchEngines || [];
+			customSearchEngines.splice(index, 1);
+			chrome.storage.sync.set({ 'customSearchEngines': customSearchEngines }, function () {
+				console.log("Custom search engine deleted and saved.");
+				// 刷新显示的搜索引擎列表
+				displayCustomEnginesList();
+			});
+		});
+	}
+	// ... 现有代码 ...
 	chrome.storage.sync.set({ "icon": $("btnpreview").src, "optionskipremember": $("optionskipremember").checked, "contextmenus": $("contextmenus").checked, "searchgoogle": $("searchgoogle").checked, "searchbing": $("searchbing").checked, "searchduckduckgo": $("searchduckduckgo").checked, "searchbaidu": $("searchbaidu").checked, "searchyandex": $("searchyandex").checked, "navtop": $("navtop").checked, "navbottom": $("navbottom").checked, "navhidden": $("navhidden").checked, "typepanelzone": $("typepanelzone").checked, "typepanelcustom": $("typepanelcustom").checked, "typepanellasttime": $("typepanellasttime").checked, "websitezoomname": $("websitezoomname").value, "opentab": $("opentab").checked, "opencopy": $("opencopy").checked, "opennonebookmarks": $("opennonebookmarks").checked, "openbrowserbookmarks": $("openbrowserbookmarks").checked, "openquickbookmarks": $("openquickbookmarks").checked, "websitename1": $("websitename1").value, "websiteurl1": $("websiteurl1").value, "websitename2": $("websitename2").value, "websiteurl2": $("websiteurl2").value, "websitename3": $("websitename3").value, "websiteurl3": $("websiteurl3").value, "websitename4": $("websitename4").value, "websiteurl4": $("websiteurl4").value, "websitename5": $("websitename5").value, "websiteurl5": $("websiteurl5").value, "websitename6": $("websitename6").value, "websiteurl6": $("websiteurl6").value, "websitename7": $("websitename7").value, "websiteurl7": $("websiteurl7").value, "websitename8": $("websitename8").value, "websiteurl8": $("websiteurl8").value, "websitename9": $("websitename9").value, "websiteurl9": $("websiteurl9").value, "websitename10": $("websitename10").value, "websiteurl10": $("websiteurl10").value, "googlesidepanel": $("googlesidepanel").checked, "zoom": $("zoom").checked, "defaultzoom": $("defaultzoom").value, "step": $("step").value });
 }
 
 function read_options() {
+	// 查找并添加"create"按钮的点击事件处理程序
+	var createButton = document.getElementById("createButton");
+	createButton.addEventListener("click", function (event) {
+		// 获取用户输入的自定义搜索引擎名称和基础网址
+		var customSearchEngineName = $('customSearchEngineName').value;
+		var customSearchEngineUrlBase = $('customSearchEngineUrlBase').value;
+
+		// 如果输入不为空，则保存新的自定义搜索引擎
+		if (customSearchEngineName && customSearchEngineUrlBase) {
+			chrome.storage.sync.get(['customSearchEngines'], function (items) {
+				var customSearchEngines = items.customSearchEngines || [];
+				customSearchEngines.push({ name: customSearchEngineName, urlBase: customSearchEngineUrlBase });
+				chrome.storage.sync.set({ 'customSearchEngines': customSearchEngines }, function () {
+					console.log("New custom search engine saved.");
+					// 刷新显示的自定义搜索引擎列表
+					displayCustomSearchEnginesList();
+				});
+			});
+		}
+	});
+
+	chrome.storage.sync.get(["customSearchEngineName", "customSearchEngineUrlBase"], function (items) {
+		if (items["customSearchEngineName"]) {
+			$('customSearchEngineName').value = items["customSearchEngineName"];
+		}
+		if (items["customSearchEngineUrlBase"]) {
+			$('customSearchEngineUrlBase').value = items["customSearchEngineUrlBase"];
+		}
+	});
 	// youtube
 	$("materialModalYouTubeButtonOK").addEventListener("click", function (e) {
 		closeMaterialYouTubeAlert(e);
@@ -954,74 +1049,3 @@ function domcontentloaded() {
 	}
 
 }
-// 保存网址和名称的数组
-var websiteList = [];
-
-// 从存储中读取网址和名称
-function loadWebsiteList() {
-	chrome.storage.sync.get("websiteList", function (result) {
-		if (result.websiteList) {
-			websiteList = result.websiteList;
-			displayWebsiteList(); // 显示已有的网站列表
-		}
-	});
-}
-
-// 保存网址和名称到存储
-function saveWebsiteList() {
-	chrome.storage.sync.set({ "websiteList": websiteList });
-}
-
-// 添加网址和名称
-function addWebsite() {
-	var websiteName = document.getElementById("websiteNameInput").value;
-	var websiteUrl = document.getElementById("websiteUrlInput").value;
-
-	if (websiteName && websiteUrl) {
-		websiteList.push({ name: websiteName, url: websiteUrl });
-		saveWebsiteList();
-		displayWebsiteList(); // 显示网站列表
-		clearInputs(); // 清空输入框
-	}
-}
-
-// 删除网址和名称
-function deleteWebsite(index) {
-	websiteList.splice(index, 1);
-	saveWebsiteList();
-	displayWebsiteList();
-}
-
-// 清除输入框
-function clearInputs() {
-	document.getElementById("websiteNameInput").value = "";
-	document.getElementById("websiteUrlInput").value = "";
-}
-
-// 显示网址和名称列表
-function displayWebsiteList() {
-	var websiteListContainer = document.getElementById("websiteListContainer");
-	websiteListContainer.innerHTML = "";
-
-	websiteList.forEach(function (website, index) {
-		var listItem = document.createElement("li");
-		listItem.innerHTML = `<span>${website.name}</span> <span>${website.url}</span> <button data-index="${index}">Delete</button>`;
-		listItem.addEventListener("click", function () {
-			// 可以在这里添加点击事件处理，例如打开网站
-		});
-		websiteListContainer.appendChild(listItem);
-	});
-}
-
-// 页面加载时调用
-document.addEventListener("DOMContentLoaded", function () {
-	loadWebsiteList();
-
-	document.getElementById("addWebsiteButton").addEventListener("click", addWebsite);
-	websiteListContainer.addEventListener("click", function (event) {
-		if (event.target.tagName === "BUTTON") {
-			var index = parseInt(event.target.getAttribute("data-index"));
-			deleteWebsite(index);
-		}
-	});
-});

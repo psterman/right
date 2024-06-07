@@ -1,6 +1,14 @@
 //contents.js
 
 let currentPopup = null;
+let searchEngines = []; // 存储搜索引擎列表的变量
+
+// 接收来自options.js的搜索引擎列表
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    if (message.action === 'updateSearchEngines') {
+        searchEngines = message.searchEngines;
+    }
+});
 
 // 发送选中文本到后台脚本
 function sendMessageToBackground(selectedText) {
@@ -374,9 +382,6 @@ function removeExistingMenuItems() {
 }
 
 function createMenuItem(item) {
-    // 根据实际情况创建新的菜单项
-    // 可能需要调用某些API来创建并显示菜单项
-} function createMenuItem(item) {
     var link = document.createElement('a');
     link.textContent = item.name;
     link.href = item.url;

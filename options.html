@@ -506,36 +506,13 @@
 				<div id="tab5" class="page hidden">
 					<h2 data-i18n="about"></h2>
 					<section>
-						<div>
-							<h4>右拐</h4>
-							<span data-i18n="version"></span> <span id="version_number"></span>
-							<br>
-							<span data-i18n="description"></span>
-							<br>
-							<br>
-							<title>Search Menu Config</title>
-							<link rel="stylesheet" type="text/css" href="options.css">
+						<h2>Add Website</h2>
+						<input type="text" id="websiteNameInput" placeholder="Website Name">
+						<input type="text" id="websiteUrlInput" placeholder="Website URL">
+						<button id="addWebsiteButton">Add</button>
 
-							<div id="searchMenuConfig">
-								<h2>Customize Search Menu</h2>
-								<div id="existingEnginesList"></div>
-
-								<!-- 用户输入新搜索引擎信息的表单 -->
-								<div id="newMenuItemForm">
-									<input type="text" id="customSearchEngineName"
-										placeholder="Name of the search engine" />
-									<input type="url" id="customSearchEngineUrlBase"
-										placeholder="Base URL of the search engine" />
-									<button id="sm">Save</button>
-									<button id="removeEngineButton">删除</button>
-									<button id="addEngineButton">增加</button>
-									<input type="text" id="newEngineName" placeholder="New Engine Name">
-<input type="text" id="newEngineUrlBase" placeholder="New Engine URL Base">
-								
-								</div>
-							</div>
-
-						</div>
+						<h2>Website List</h2>
+						<ul id="websiteListContainer"></ul>
 						<br><br><br><br><br>
 						<div class="grey-text">
 							右拐<br>
