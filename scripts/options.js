@@ -942,19 +942,28 @@ var websiteList = [];
 
 // 从存储中读取网址和名称
 function loadWebsiteList() {
-	chrome.storage.sync.get("websiteList", function (result) {
+	var websiteListContainer = document.getElementById('websiteListContainer');
+	websiteListContainer.innerHTML = ''; // 清空现有列表
+
+	chrome.storage.sync.get('websiteList', function (result) {
 		if (result.websiteList) {
 			websiteList = result.websiteList;
-			displayWebsiteList(); // 显示已有的网站列表
+			displayWebsiteList();
+		} else {
+			websiteList = [];
 		}
 	});
 }
-
 // 保存网址和名称到存储
 function saveWebsiteList() {
-	chrome.storage.sync.set({ "websiteList": websiteList });
+	chrome.storage.sync.set({ "websiteList": websiteList }, function () {
+		if (chrome.runtime.lastError) {
+			console.error(chrome.runtime.lastError.message);
+		} else {
+			// 确保在此处执行任何依赖于更新数组的操作
+		}
+	});
 }
-
 // 添加网址和名称
 function addWebsite() {
 	var websiteName = document.getElementById("websiteNameInput").value;
@@ -972,39 +981,170 @@ function addWebsite() {
 function deleteWebsite(index) {
 	websiteList.splice(index, 1);
 	saveWebsiteList();
-	displayWebsiteList();
+	displayWebsiteList(); // 刷新页面显示
 }
-
-// 清除输入框
 function clearInputs() {
 	document.getElementById("websiteNameInput").value = "";
 	document.getElementById("websiteUrlInput").value = "";
-}
-
-// 显示网址和名称列表
-function displayWebsiteList() {
-	var websiteListContainer = document.getElementById("websiteListContainer");
-	websiteListContainer.innerHTML = "";
+} function displayWebsiteList() {
+	var websiteListContainer = document.getElementById('websiteListContainer');
+	websiteListContainer.innerHTML = ''; // 清空现有列表
 
 	websiteList.forEach(function (website, index) {
-		var listItem = document.createElement("li");
-		listItem.innerHTML = `<span>${website.name}</span> <span>${website.url}</span> <button data-index="${index}">Delete</button>`;
-		listItem.addEventListener("click", function () {
-			// 可以在这里添加点击事件处理，例如打开网站
+		var listItem = document.createElement('li');
+		var nameSpan = document.createElement('span');
+		var editButton = document.createElement('button');
+		var deleteButton = document.createElement('button');
+
+		nameSpan.textContent = website.name;
+		editButton.textContent = '编辑';
+		deleteButton.textContent = '删除';
+
+		// 将元素添加到列表项
+		listItem.appendChild(nameSpan);
+		listItem.appendChild(editButton);
+		listItem.appendChild(deleteButton);
+
+		// 为删除按钮添加点击事件
+		deleteButton.addEventListener('click', function () {
+			deleteWebsite(index);
+			displayWebsiteList(); // 更新列表
 		});
-		websiteListContainer.appendChild(listItem);
+
+		// 为编辑按钮添加点击事件
+		editButton.addEventListener('click', function () {
+			editWebsite(index); // 执行编辑操作
+		});
+
+		// 添加拖放事件处理程序
+		listItem.draggable = true;
+		listItem.addEventListener('dragstart', handleDragStart);
+		listItem.addEventListener('dragover', handleDragOver);
+		listItem.addEventListener('dragenter', handleDragEnter);
+		listItem.addEventListener('dragleave', handleDragLeave);
+		listItem.addEventListener('drop', handleDrop);
+		listItem.addEventListener('dragend', handleDragEnd);
+
+		websiteListContainer.appendChild(listItem); // 添加到列表容器
 	});
+
+	function handleDragStart(event) {
+		event.dataTransfer.setData('text/plain', event.target.dataset.index);
+		event.target.classList.add('dragging');
+	}
+
+	function handleDragOver(event) {
+		event.preventDefault();
+	}
+
+	function handleDragEnter(event) {
+		event.target.classList.add('dragover');
+	}
+
+	function handleDragLeave(event) {
+		event.target.classList.remove('dragover');
+	}
+
+	function handleDrop(event) {
+		event.preventDefault();
+		var fromIndex = event.dataTransfer.getData('text/plain');
+		var toIndex = event.target.dataset.index;
+		moveWebsite(fromIndex, toIndex);
+	}
+
+	function handleDragEnd(event) {
+		event.target.classList.remove('dragging');
+		var dragoverItems = websiteListContainer.querySelectorAll('.dragover');
+		dragoverItems.forEach(function (item) {
+			item.classList.remove('dragover');
+		});
+	}
+}
+// 还需要添加 editWebsite 函数的实现
+function editWebsite(index) {
+	var newName = prompt('Enter new name for ' + websiteList[index].name + ':', websiteList[index].name);
+	var newUrl = prompt('Enter new URL for ' + websiteList[index].url + ':', websiteList[index].url);
+
+	if (newName && newUrl) { // 确保两个值都不为 null 且不为空字符串
+		websiteList[index].name = newName;
+		websiteList[index].url = newUrl;
+		saveWebsiteList(); // 保存更改到浏览器存储
+		displayWebsiteList(); // 刷新页面显示
+	}
 }
 
 // 页面加载时调用
-document.addEventListener("DOMContentLoaded", function () {
-	loadWebsiteList();
+document.addEventListener('DOMContentLoaded', function () {
+	loadWebsiteList(); // 使用修正后的 loadWebsiteList 函数加载已保存的网站列表
+	let addWebsiteButton = document.getElementById('addWebsiteButton');
+	let websiteNameInput = document.getElementById('websiteNameInput');
+	let websiteUrlInput = document.getElementById('websiteUrlInput');
+	let websiteListContainer = document.getElementById('websiteListContainer');
 
-	document.getElementById("addWebsiteButton").addEventListener("click", addWebsite);
-	websiteListContainer.addEventListener("click", function (event) {
-		if (event.target.tagName === "BUTTON") {
-			var index = parseInt(event.target.getAttribute("data-index"));
-			deleteWebsite(index);
+	// 添加新网站并保存addWe
+	addWebsiteButton.addEventListener('click', function () {
+		let websiteName = websiteNameInput.value.trim();
+		let websiteUrl = websiteUrlInput.value.trim();
+
+		if (websiteName && websiteUrl) {
+			// 从存储中读取最新数据
+			chrome.storage.sync.get('websiteList', function (result) {
+				let websites = result.websiteList || [];
+				websites.push({ name: websiteName, url: websiteUrl });
+				chrome.storage.sync.set({ websiteList: websites }, function () {
+					if (chrome.runtime.lastError) {
+						console.error(chrome.runtime.lastError.message);
+					} else {
+						loadWebsiteList(); // 使用最新数据重新加载网站列表
+						websiteNameInput.value = '';
+						websiteUrlInput.value = '';
+					}
+				});
+			});
+		} else {
+			alert('Please enter both a name and a URL.');
 		}
 	});
-});
+	function addWebsiteToList(name, url, index) {
+		var listItem = document.createElement('li');
+		var nameSpan = document.createElement('span');
+		var urlSpan = document.createElement('span');
+		var editButton = document.createElement('button');
+		var deleteButton = document.createElement('button');
+
+		nameSpan.textContent = name;
+		urlSpan.textContent = url;
+		editButton.textContent = '编辑';
+		deleteButton.textContent = '删除';
+
+		// 将元素添加到列表项
+		listItem.appendChild(nameSpan);
+		listItem.appendChild(urlSpan);
+		listItem.appendChild(editButton);
+		listItem.appendChild(deleteButton);
+
+		// 为删除按钮添加点击事件
+		deleteButton.addEventListener('click', function () {
+			deleteWebsite(index);
+			displayWebsiteList(); // 更新列表
+		});
+
+		// 为编辑按钮添加点击事件
+		editButton.addEventListener('click', function () {
+			editWebsite(index); // 执行编辑操作
+		});
+
+		websiteListContainer.appendChild(listItem); // 添加到列表容器
+	}
+	function editWebsite(index) {
+		var newName = prompt('Enter new name for ' + websiteList[index].name + ':', websiteList[index].name);
+		var newUrl = prompt('Enter new URL for ' + websiteList[index].url + ':', websiteList[index].url);
+
+		if (newName && newUrl) { // 确保两个值都不为 null 且不为空字符串
+			websiteList[index].name = newName;
+			websiteList[index].url = newUrl;
+			saveWebsiteList(); // 保存更改到浏览器存储
+			displayWebsiteList(); // 刷新页面显示
+		}
+	}
+})

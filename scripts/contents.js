@@ -44,27 +44,7 @@ document.addEventListener('copy', function (event) {
     if (selectedText.length > 0) {
         showSearchLinks(selectedText, x, y, currentEngine);
     }
-});
-function showSearchLinks(selectedText, x, y, currentEngine) {
-    chrome.storage.sync.get(["customSearchEngineName", "customSearchEngineUrlBase"], function (items) {
-        // 检查是否成功获取到自定义搜索引擎信息
-        if (items.customSearchEngineName && items.customSearchEngineUrlBase) {
-            // 创建自定义搜索引擎的搜索链接
-            var customSearchLink = createActionLink(items.customSearchEngineName, function () {
-                // 发送搜索请求
-                chrome.runtime.sendMessage({
-                    action: 'setpage',
-                    query: items.customSearchEngineUrlBase + encodeURIComponent(selectedText),
-                    openSidebar: false
-                });
-                // 可以在这里添加搜索结果的回调处理
-            }, items.customSearchEngineUrlBase); // 传递基础 URL 到 createActionLink 函数（如果需要）
-            searchLinksContainer.appendChild(customSearchLink);
-        } else {
-            // 处理未找到自定义搜索引擎的情况
-            console.error("Custom search engine information is not set.");
-        }
-    });
+}); function showSearchLinks(selectedText, x, y, currentEngine) {
     if (currentPopup) {
         document.body.removeChild(currentPopup);
     }
@@ -104,6 +84,27 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     var searchLinksContainer = document.createElement('div');
     searchLinksContainer.style.display = 'flex';
 
+    // 读取自定义搜索引擎信息
+    chrome.storage.sync.get('websites', function (data) {
+        if (data.websites) {
+            data.websites.forEach(website => {
+                var customSearchLink = createActionLink(website.name, function () {
+                    chrome.runtime.sendMessage({
+                        action: 'setpage',
+                        query: website.url + encodeURIComponent(selectedText),
+                        openSidebar: false
+                    });
+                    document.body.removeChild(popup);
+                    currentPopup = null;
+                });
+                searchLinksContainer.appendChild(customSearchLink);
+            });
+        } else {
+            console.error("No custom search engines found.");
+        }
+    });
+
+    // 默认搜索引擎链接
     var engines = getEnginesByType(currentEngine);
 
     engines.forEach(engine => {
@@ -111,113 +112,27 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         searchLinksContainer.appendChild(searchLink);
     });
 
-    var searchLinkBaidu = createActionLink('百度', function () {
+    var searchLinkCopy = createActionLink('复制', function () {
+        var textToCopy = selectedText;
 
-        chrome.runtime.sendMessage({
-            action: 'setpage',
-            query: 'https://www.baidu.com/s?wd=' + encodeURIComponent(selectedText),
-            openSidebar: false  // 将这里的值修改为 false
-        });
-        document.body.removeChild(popup);
-        currentPopup = null;
-    });
-    searchLinksContainer.appendChild(searchLinkBaidu);
-
-    var searchLinkgoogle = createActionLink('谷歌', function () {
-
-        chrome.runtime.sendMessage({
-            action: 'setpage',
-            query: 'https://www.google.com/search?q=' + encodeURIComponent(selectedText),
-            openSidebar: false  // 将这里的值修改为 false
-        });
-        document.body.removeChild(popup);
-        currentPopup = null;
-    });
-    searchLinksContainer.appendChild(searchLinkgoogle);
-
-    var searchLinkweibo = createActionLink('微博', function () {
-
-        chrome.runtime.sendMessage({
-            action: 'setpage',
-            query: 'https://s.weibo.com/weibo/' + encodeURIComponent(selectedText),
-            openSidebar: false  // 将这里的值修改为 false
-        });
-        document.body.removeChild(popup);
-        currentPopup = null;
-    });
-    searchLinksContainer.appendChild(searchLinkweibo);
-
-    var searchLinkweixin = createActionLink('微信', function () {
-
-        chrome.runtime.sendMessage({
-            action: 'setpage',
-            query: 'https://weixin.sogou.com/weixin?ie=utf8&s_from=input&_sug_=y&_sug_type_=&type=2&query=' + encodeURIComponent(selectedText),
-            openSidebar: false  // 将这里的值修改为 false
-        });
-        document.body.removeChild(popup);
-        currentPopup = null;
-    });
-    searchLinksContainer.appendChild(searchLinkweixin);
-
-    var searchLinkv2ex = createActionLink('v2ex', function () {
-
-        chrome.runtime.sendMessage({
-            action: 'setpage',
-            query: 'https://www.sov2ex.com/?q=' + encodeURIComponent(selectedText),
-            openSidebar: false  // 将这里的值修改为 false
-        });
-        document.body.removeChild(popup);
-        currentPopup = null;
-    });
-    searchLinksContainer.appendChild(searchLinkv2ex);
-
-
-
-    var searchLinkbook = createActionLink('找书', function () {
-
-        chrome.runtime.sendMessage({
-            action: 'setpage',
-            query: 'https://zh.annas-archive.org/search?q=' + encodeURIComponent(selectedText),
-            openSidebar: false  // 将这里的值修改为 false
-        });
-        document.body.removeChild(popup);
-        currentPopup = null;
-    });
-    searchLinksContainer.appendChild(searchLinkbook);
-
-
-
-
-    var searchLinkcopy = createActionLink('复制', function () {
-        // 执行复制文本到剪贴板的操作
-        var textToCopy = selectedText;  // 将要复制的文本
-
-        // 创建一个临时的textarea元素
         var tempTextArea = document.createElement('textarea');
         tempTextArea.value = textToCopy;
         document.body.appendChild(tempTextArea);
 
-        // 选中并复制文本
         tempTextArea.select();
         document.execCommand('copy');
-
-        // 移除临时textarea元素
         document.body.removeChild(tempTextArea);
 
-        // 关闭菜单
         document.body.removeChild(popup);
         currentPopup = null;
     });
+    searchLinksContainer.appendChild(searchLinkCopy);
 
-    searchLinksContainer.appendChild(searchLinkcopy);
     var searchLinkClose = createActionLink('关闭', function () {
-        // 关闭菜单
         document.body.removeChild(popup);
         currentPopup = null;
     });
-
     searchLinksContainer.appendChild(searchLinkClose);
-
 
     popup.appendChild(searchLinksContainer);
     document.body.appendChild(popup);
@@ -266,6 +181,28 @@ function createSearchLink(name, urlBase, searchText) {
     return link;
 }
 
+
+function createSearchLink(name, urlBase, searchText) {
+    var link = document.createElement('a');
+    link.href = urlBase + encodeURIComponent(searchText);
+    link.textContent = name;
+    link.style.color = 'white';
+    link.style.padding = '5px 10px';
+    link.style.cursor = 'pointer';
+    link.style.backgroundColor = 'black';
+    link.style.transition = 'background-color 0.3s';
+    link.style.whiteSpace = 'nowrap';
+    link.target = '_blank';
+
+    link.addEventListener('mouseover', function () {
+        this.style.backgroundColor = 'rgb(37, 138, 252)';
+    });
+    link.addEventListener('mouseout', function () {
+        this.style.backgroundColor = 'black';
+    });
+
+    return link;
+}
 function getEnginesByType(type) {
     switch (type) {
         case 'googleImage':
