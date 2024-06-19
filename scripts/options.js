@@ -986,7 +986,8 @@ function deleteWebsite(index) {
 function clearInputs() {
 	document.getElementById("websiteNameInput").value = "";
 	document.getElementById("websiteUrlInput").value = "";
-} function displayWebsiteList() {
+}
+function displayWebsiteList() {
 	var websiteListContainer = document.getElementById('websiteListContainer');
 	websiteListContainer.innerHTML = ''; // 清空现有列表
 

@@ -85,9 +85,9 @@ document.addEventListener('copy', function (event) {
     searchLinksContainer.style.display = 'flex';
 
     // 读取自定义搜索引擎信息
-    chrome.storage.sync.get('websites', function (data) {
-        if (data.websites) {
-            data.websites.forEach(website => {
+    chrome.storage.sync.get('websiteList', function (data) {
+        if (data.websiteList) {
+            data.websiteList.forEach(website => {
                 var customSearchLink = createActionLink(website.name, function () {
                     chrome.runtime.sendMessage({
                         action: 'setpage',
