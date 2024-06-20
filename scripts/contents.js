@@ -36,15 +36,38 @@ document.addEventListener('mousedown', function (e) {
 });
  */
 // 在整个文档上绑定事件监听器
-document.addEventListener('copy', function (event) {
-    var selectedText = window.getSelection().toString().trim();
-    var x = event.clientX;
-    var y = event.clientY;
+// 监听鼠标弹起事件，以捕获用户选择的文本
+document.addEventListener('mousedown', function (e) {
+    handleTextSelection(e);
+});
 
-    if (selectedText.length > 0) {
-        showSearchLinks(selectedText, x, y, currentEngine);
+// 监听 input 和 textarea 的 select 事件
+document.querySelectorAll('input, textarea').forEach(element => {
+    element.addEventListener('select', function (e) {
+        handleTextSelection(e);
+    });
+});
+
+function handleTextSelection(e) {
+    var selection = window.getSelection();
+    var target = e.target;
+    var selectedText = '';
+    var x = e.clientX;
+    var y = e.clientY;
+
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        selectedText = target.value.substring(target.selectionStart, target.selectionEnd).trim();
+    } else if (!selection.isCollapsed) {
+        selectedText = selection.toString().trim();
     }
-}); function showSearchLinks(selectedText, x, y, currentEngine) {
+
+    if (selectedText) {
+        showSearchLinks(selectedText, x, y, 'baidu');
+    } else {
+        hideSearchLinks();
+    }
+}
+function showSearchLinks(selectedText, x, y, currentEngine) {
     if (currentPopup) {
         document.body.removeChild(currentPopup);
     }
