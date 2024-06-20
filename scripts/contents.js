@@ -35,9 +35,8 @@ document.addEventListener('mousedown', function (e) {
     }
 });
  */
-// 在整个文档上绑定事件监听器
 // 监听鼠标弹起事件，以捕获用户选择的文本
-document.addEventListener('mousedown', function (e) {
+document.addEventListener('mouseup', function (e) {
     handleTextSelection(e);
 });
 
@@ -301,18 +300,6 @@ chrome.storage.sync.get("searchOptions", function (result) {
         for (var j = 0; j < menuItems.length; j++) {
             chrome.contextMenus.create(menuItems[j]);
         }
-    }
-});
-// 监听鼠标弹起事件，以捕获用户选择的文本
-
-document.addEventListener('mouseup', function (e) {
-    var selection = window.getSelection();
-    var target = e.target;
-    if (!selection.isCollapsed) {
-        var selectedText = selection.toString().trim();
-        var x = e.clientX;
-        var y = e.clientY;
-        showSearchLinks(selectedText, x, y, 'baidu'); // 调用菜单弹出函数，并传入选中的文本和坐标信息
     }
 });
 
