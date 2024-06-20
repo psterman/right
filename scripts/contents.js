@@ -111,6 +111,16 @@ document.addEventListener('copy', function (event) {
         var searchLink = createSearchLink(engine.name, engine.urlBase, selectedText);
         searchLinksContainer.appendChild(searchLink);
     });
+    var openLinkInSidebar = createActionLink('跳转', function () {
+        chrome.runtime.sendMessage({
+            action: 'setpage',
+            query: selectedText,
+            openSidebar: true
+        });
+        document.body.removeChild(popup);
+        currentPopup = null;
+    });
+    searchLinksContainer.appendChild(openLinkInSidebar);
 
     var searchLinkCopy = createActionLink('复制', function () {
         var textToCopy = selectedText;
