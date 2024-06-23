@@ -1,12 +1,15 @@
 //contents.js
-
+let selectedEngines = [];
 let currentPopup = null;
 let searchEngines = []; // 存储搜索引擎列表的变量
 
 // 接收来自options.js的搜索引擎列表
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (message.action === 'updateSearchEngines') {
-        searchEngines = message.searchEngines;
+        selectedEngines = message.searchEngines.filter(engine => engine.selected);
+        chrome.storage.sync.set({ searchEngines: selectedEngines }, function () {
+            console.log('Selected engines saved.');
+        });
     }
 });
 
@@ -128,21 +131,13 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
 
     // 默认搜索引擎链接
     var engines = getEnginesByType(currentEngine);
-
+    // 过滤只显示用户勾选的搜索引擎
+    engines = engines.filter(engine => selectedEngines.some(selected => selected.name === engine.name));
     engines.forEach(engine => {
         var searchLink = createSearchLink(engine.name, engine.urlBase, selectedText);
         searchLinksContainer.appendChild(searchLink);
     });
-    var openLinkInSidebar = createActionLink('跳转', function () {
-        chrome.runtime.sendMessage({
-            action: 'setpage',
-            query: selectedText,
-            openSidebar: true
-        });
-        document.body.removeChild(popup);
-        currentPopup = null;
-    });
-    searchLinksContainer.appendChild(openLinkInSidebar);
+   
 
     var searchLinkCopy = createActionLink('复制', function () {
         var textToCopy = selectedText;
@@ -159,7 +154,16 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         currentPopup = null;
     });
     searchLinksContainer.appendChild(searchLinkCopy);
-
+    var openLinkInSidebar = createActionLink('跳转', function () {
+        chrome.runtime.sendMessage({
+            action: 'setpage',
+            query: selectedText,
+            openSidebar: true
+        });
+        document.body.removeChild(popup);
+        currentPopup = null;
+    });
+    searchLinksContainer.appendChild(openLinkInSidebar);
     var searchLinkClose = createActionLink('关闭', function () {
         document.body.removeChild(popup);
         currentPopup = null;
@@ -348,7 +352,8 @@ function createMenuItem(item) {
     link.style.backgroundColor = 'black';
     link.style.transition = 'background-color 0.3s';
     // 添加更多样式和事件监听器
-
+    // 设置数据属性
+    link.setAttribute('data-website', item.name);
     // 将链接添加到当前的搜索链接容器中
     var searchLinksContainer = document.getElementById('searchLinksContainer');
     searchLinksContainer.appendChild(link);
@@ -358,5 +363,89 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         // 更新内存中的自定义搜索引擎设置
         customSearchEngineName = request.customSearchEngineName;
         customSearchEngineUrlBase = request.customSearchEngineUrlBase;
+    }
+});
+// 接收来自后台脚本的筛选项
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    if (message.action === 'updateFilters') {
+        var selectedFilters = message.filters;
+        // 根据选中的筛选项决定是否显示对应的选项
+        // 更新复选框的状态
+        document.querySelectorAll('.filter-checkbox').forEach(function (checkbox) {
+            if (selectedFilters.includes(checkbox.value)) {
+                checkbox.checked = true;
+            } else {
+                checkbox.checked = false;
+            }
+        });
+        // 更新搜索链接的显示状态
+        updateFilters();
+
+        // 将选中的筛选项保存到本地存储
+        chrome.storage.local.set({ selectedFilters: selectedFilters });
+        var popup = document.querySelector('.search-popup');
+        var searchLinksContainer = popup.querySelector('.search-links-container');
+        var searchLinks = searchLinksContainer.querySelectorAll('.search-link');
+
+        searchLinks.forEach(function (searchLink) {
+            var websiteName = searchLink.getAttribute('data-website');
+            if (selectedFilters.includes(websiteName)) {
+                searchLink.style.display = 'block';
+            } else {
+                searchLink.style.display = 'none';
+            }
+        });
+    }
+});
+function displayWebsiteList() {
+    // ...
+    // 在更新复选框状态后，将选中的筛选项保存到本地存储
+    var selectedFilters = [];
+    document.querySelectorAll('.filter-checkbox:checked').forEach(function (checkbox) {
+        selectedFilters.push(checkbox.value);
+    });
+
+    chrome.storage.local.set({ selectedFilters: selectedFilters });
+}
+
+function updateFilters() {
+    // ...
+    // 在更新搜索链接显示状态后，将选中的筛选项保存到本地存储
+    var selectedFilters = [];
+    document.querySelectorAll('.filter-checkbox:checked').forEach(function (checkbox) {
+        selectedFilters.push(checkbox.value);
+    });
+
+    chrome.storage.local.set({ selectedFilters: selectedFilters });
+}
+
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    if (message.action === 'updateFilters') {
+        var selectedFilters = message.filters;
+        // 更新复选框的状态
+        document.querySelectorAll('.filter-checkbox').forEach(function (checkbox) {
+            if (selectedFilters.includes(checkbox.value)) {
+                checkbox.checked = true;
+            } else {
+                checkbox.checked = false;
+            }
+        });
+        // 更新搜索链接的显示状态
+        updateFilters();
+
+        // 将选中的筛选项保存到本地存储
+        chrome.storage.local.set({ selectedFilters: selectedFilters });
+    }
+});
+
+// 在弹出菜单打开时，从本地存储中恢复选中的筛选项
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.action === 'getSelectedFilters') {
+        chrome.storage.local.get('selectedFilters', function (result) {
+            var selectedFilters = result.selectedFilters || [];
+            // 向弹出菜单发送消息，传递选中的筛选项
+            sendResponse({ selectedFilters: selectedFilters });
+        });
+        return true; // 需要返回 true 以保持消息通道打开
     }
 });

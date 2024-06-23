@@ -986,80 +986,153 @@ function deleteWebsite(index) {
 function clearInputs() {
 	document.getElementById("websiteNameInput").value = "";
 	document.getElementById("websiteUrlInput").value = "";
-}
-function displayWebsiteList() {
+} function displayWebsiteList() {
+	// 首先从chrome.storage.local获取保存的过滤器状态
+	chrome.storage.local.get('selectedFilters', function (items) {
+		if (items.selectedFilters && items.selectedFilters.length > 0) {
+			// 恢复复选框的选中状态
+			items.selectedFilters.forEach(function (filterValue) {
+				var checkbox = document.querySelector('.filter-checkbox[value="' + filterValue + '"]');
+				if (checkbox) {
+					checkbox.checked = true;
+				}
+			});
+		}
+	});
+
 	var websiteListContainer = document.getElementById('websiteListContainer');
-	websiteListContainer.innerHTML = ''; // 清空现有列表
+	websiteListContainer.innerHTML = '';
 
 	websiteList.forEach(function (website, index) {
 		var listItem = document.createElement('li');
 		var nameSpan = document.createElement('span');
 		var editButton = document.createElement('button');
 		var deleteButton = document.createElement('button');
-
+		var checkbox = document.createElement('input');
 		nameSpan.textContent = website.name;
 		editButton.textContent = '编辑';
 		deleteButton.textContent = '删除';
 
-		// 将元素添加到列表项
+		checkbox.type = 'checkbox';
+		checkbox.value = website.name;
+		checkbox.addEventListener('change', function () {
+			updateContents();
+		});
+
+		listItem.appendChild(checkbox);
 		listItem.appendChild(nameSpan);
 		listItem.appendChild(editButton);
 		listItem.appendChild(deleteButton);
 
+		// 添加到列表容器
+		websiteListContainer.appendChild(listItem);
+
 		// 为删除按钮添加点击事件
 		deleteButton.addEventListener('click', function () {
 			deleteWebsite(index);
-			displayWebsiteList(); // 更新列表
+			displayWebsiteList();
 		});
 
 		// 为编辑按钮添加点击事件
 		editButton.addEventListener('click', function () {
-			editWebsite(index); // 执行编辑操作
+			editWebsite(index);
 		});
-
-		// 添加拖放事件处理程序
-		listItem.draggable = true;
-		listItem.addEventListener('dragstart', handleDragStart);
-		listItem.addEventListener('dragover', handleDragOver);
-		listItem.addEventListener('dragenter', handleDragEnter);
-		listItem.addEventListener('dragleave', handleDragLeave);
-		listItem.addEventListener('drop', handleDrop);
-		listItem.addEventListener('dragend', handleDragEnd);
-
-		websiteListContainer.appendChild(listItem); // 添加到列表容器
 	});
 
-	function handleDragStart(event) {
-		event.dataTransfer.setData('text/plain', event.target.dataset.index);
-		event.target.classList.add('dragging');
-	}
+	// 获取website列表容器
+	var websiteListContainer = document.getElementById('websiteListContainer');
 
-	function handleDragOver(event) {
-		event.preventDefault();
-	}
+	// 获取所有website项
+	var websiteItems = websiteListContainer.getElementsByTagName('li');
 
-	function handleDragEnter(event) {
-		event.target.classList.add('dragover');
-	}
+	// 记录拖动的元素和放置的位置
+	var draggedItem = null;
+	var dropIndex = null;
 
-	function handleDragLeave(event) {
-		event.target.classList.remove('dragover');
-	}
+	// 遍历website项，为每个项添加拖动事件处理程序
+	for (var i = 0; i < websiteItems.length; i++) {
+		websiteItems[i].draggable = true; // 启用拖动
 
-	function handleDrop(event) {
-		event.preventDefault();
-		var fromIndex = event.dataTransfer.getData('text/plain');
-		var toIndex = event.target.dataset.index;
-		moveWebsite(fromIndex, toIndex);
-	}
+		// 监听拖动开始事件
+		websiteItems[i].addEventListener('dragstart', function (event) {
+			draggedItem = this; // 记录拖动的元素
+			event.dataTransfer.effectAllowed = 'move';
+			event.dataTransfer.setData('text/html', this.innerHTML);
+		});
 
-	function handleDragEnd(event) {
-		event.target.classList.remove('dragging');
-		var dragoverItems = websiteListContainer.querySelectorAll('.dragover');
-		dragoverItems.forEach(function (item) {
-			item.classList.remove('dragover');
+		// 监听拖动结束事件
+		websiteItems[i].addEventListener('dragend', function (event) {
+			// 重置拖动的元素和放置的位置
+			draggedItem = null;
+			dropIndex = null;
+		});
+
+		// 监听放置事件
+		websiteItems[i].addEventListener('dragover', function (event) {
+			event.preventDefault();
+			this.classList.add('drag-over'); // 添加拖放时的样式
+		});
+
+		// 监听离开放置区域事件
+		websiteItems[i].addEventListener('dragleave', function (event) {
+			this.classList.remove('drag-over'); // 移除拖放时的样式
+		});
+
+		// 监听放置事件
+		websiteItems[i].addEventListener('drop', function (event) {
+			event.preventDefault();
+			this.classList.remove('drag-over'); // 移除拖放时的样式
+
+			// 获取放置的位置
+			dropIndex = Array.from(websiteItems).indexOf(this);
+
+			// 重新排序website项
+			if (draggedItem && dropIndex !== null) {
+				websiteListContainer.removeChild(draggedItem);
+				websiteListContainer.insertBefore(draggedItem, websiteItems[dropIndex]);
+			}
 		});
 	}
+
+	// 更新内容的显示状态
+	updateContents();
+}// 更新筛选器
+function updateFilters() {
+	var selectedFilters = [];
+	document.querySelectorAll('.filter-checkbox:checked').forEach(function (checkbox) {
+		selectedFilters.push(checkbox.value);
+	});
+
+	chrome.storage.local.set({ selectedFilters: selectedFilters });
+	var popup = document.querySelector('.search-popup');
+	var searchLinksContainer = popup.querySelector('.search-links-container');
+	var searchLinks = searchLinksContainer.querySelectorAll('.search-link');
+
+	searchLinks.forEach(function (searchLink) {
+		var websiteName = searchLink.getAttribute('data-website');
+		if (selectedFilters.length === 0 || selectedFilters.includes(websiteName)) {
+			searchLink.style.display = 'block';
+		} else {
+			searchLink.style.display = 'none';
+		}
+	});
+}
+// 更新搜索引擎
+function updateSearchEngines() {
+	// 获取用户勾选的搜索引擎
+	// 获取用户勾选的搜索引擎
+	var selectedEngines = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+		.map(function (checkbox) {
+			return {
+				name: checkbox.value,
+				selected: true
+			};
+		});
+
+	// 保存搜索引擎到本地存储
+	chrome.storage.local.set({ searchEngines: selectedEngines }, function () {
+		console.log('Search engines updated.');
+	});
 }
 // 还需要添加 editWebsite 函数的实现
 function editWebsite(index) {
@@ -1076,11 +1149,35 @@ function editWebsite(index) {
 
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
+	
+	// 从本地存储中获取保存的搜索引擎
+	chrome.storage.local.get(['searchEngines'], function (result) {
+		var searchEngines = result.searchEngines || [];
+
+		// 根据保存的搜索引擎更新选项页面的勾选状态
+		searchEngines.forEach(function (engine) {
+			var checkbox = document.querySelector('input[type="checkbox"][value="' + engine.name + '"]');
+			if (checkbox) {
+				checkbox.checked = engine.selected;
+			}
+		});
+
+		// 通知contents.js更新搜索引擎
+		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+			var activeTab = tabs[0];
+			chrome.tabs.sendMessage(activeTab.id, { action: 'updateSearchEngines', searchEngines: searchEngines });
+		});
+	});
 	loadWebsiteList(); // 使用修正后的 loadWebsiteList 函数加载已保存的网站列表
 	let addWebsiteButton = document.getElementById('addWebsiteButton');
 	let websiteNameInput = document.getElementById('websiteNameInput');
 	let websiteUrlInput = document.getElementById('websiteUrlInput');
 	let websiteListContainer = document.getElementById('websiteListContainer');
+	document.querySelectorAll('.filter-checkbox').forEach(function (checkbox) {
+		checkbox.addEventListener('change', function () {
+			updateFilters();
+		});
+	});
 
 	// 添加新网站并保存addWe
 	addWebsiteButton.addEventListener('click', function () {
