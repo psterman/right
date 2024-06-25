@@ -968,9 +968,11 @@ function saveWebsiteList() {
 function addWebsite() {
 	var websiteName = document.getElementById("websiteNameInput").value;
 	var websiteUrl = document.getElementById("websiteUrlInput").value;
-
+	var isChecked = document.getElementById('checkbox-' + websiteName).checked; // 假设每个网站旁边有一个复选框
 	if (websiteName && websiteUrl) {
-		websiteList.push({ name: websiteName, url: websiteUrl });
+		// 保存复选框状态
+		var newWebsite = { name: websiteName, url: websiteUrl, checked: isChecked };
+		websiteList.push(newWebsite);
 		saveWebsiteList();
 		displayWebsiteList(); // 显示网站列表
 		clearInputs(); // 清空输入框
@@ -986,7 +988,8 @@ function deleteWebsite(index) {
 function clearInputs() {
 	document.getElementById("websiteNameInput").value = "";
 	document.getElementById("websiteUrlInput").value = "";
-} function displayWebsiteList() {
+}
+function displayWebsiteList() {
 	// 首先从chrome.storage.local获取保存的过滤器状态
 	chrome.storage.local.get('selectedFilters', function (items) {
 		if (items.selectedFilters && items.selectedFilters.length > 0) {
@@ -1009,6 +1012,9 @@ function clearInputs() {
 		var editButton = document.createElement('button');
 		var deleteButton = document.createElement('button');
 		var checkbox = document.createElement('input');
+		checkbox.type = 'checkbox';
+        checkbox.id = 'checkbox-' + website.name; // 设置ID以便后续引用
+        checkbox.checked = website.checked; // 根据存储的状态设置复选框
 		nameSpan.textContent = website.name;
 		editButton.textContent = '编辑';
 		deleteButton.textContent = '删除';
@@ -1139,17 +1145,41 @@ function editWebsite(index) {
 	var newName = prompt('Enter new name for ' + websiteList[index].name + ':', websiteList[index].name);
 	var newUrl = prompt('Enter new URL for ' + websiteList[index].url + ':', websiteList[index].url);
 
-	if (newName && newUrl) { // 确保两个值都不为 null 且不为空字符串
+	if (newName && newUrl) {
+		// 更新网站名称和URL
 		websiteList[index].name = newName;
 		websiteList[index].url = newUrl;
-		saveWebsiteList(); // 保存更改到浏览器存储
-		displayWebsiteList(); // 刷新页面显示
+
+		// 获取当前复选框的状态
+		var checkbox = document.getElementById('checkbox-' + websiteList[index].name);
+		websiteList[index].checked = checkbox ? checkbox.checked : false; // 如果复选框存在，则更新其状态
+
+		// 保存更改到浏览器存储
+		saveWebsiteList();
+
+		// 刷新页面显示，以反映更改
+		displayWebsiteList();
+
+		// 清除输入框
+		clearInputs();
 	}
 }
 
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
-	
+	// 从存储中读取复选框状态
+	chrome.storage.sync.get('websiteList', function (result) {
+		if (result.websiteList) {
+			websiteList = result.websiteList;
+			websiteList.forEach(function (website) {
+				var checkbox = document.getElementById('checkbox-' + website.name);
+				if (checkbox) {
+					checkbox.checked = website.checked;
+				}
+			});
+		}
+		// ... 省略其他代码 ...
+	});
 	// 从本地存储中获取保存的搜索引擎
 	chrome.storage.local.get(['searchEngines'], function (result) {
 		var searchEngines = result.searchEngines || [];
@@ -1175,9 +1205,33 @@ document.addEventListener('DOMContentLoaded', function () {
 	let websiteListContainer = document.getElementById('websiteListContainer');
 	document.querySelectorAll('.filter-checkbox').forEach(function (checkbox) {
 		checkbox.addEventListener('change', function () {
-			updateFilters();
+			var websiteName = this.value; // 获取复选框的值，对应网站名称
+			var index = websiteList.findIndex(function (website) {
+				return website.name === websiteName;
+			});
+
+			if (index !== -1) {
+				// 更新websiteList中对应网站的isChecked状态
+				websiteList[index].isChecked = this.checked;
+				// 保存更新后的websiteList到Chrome存储
+				saveWebsiteList();
+				restoreCheckboxStates(); // 页面加载时恢复复选框状态
+			}
 		});
 	});
+// 页面加载或复选框列表更新后，从Chrome存储中恢复复选框状态
+function restoreCheckboxStates() {
+    chrome.storage.sync.get('websiteList', function (result) {
+        if (result.websiteList) {
+            result.websiteList.forEach(function (website) {
+                var checkbox = document.querySelector('.filter-checkbox[value="' + website.name + '"]');
+                if (checkbox) {
+                    checkbox.checked = website.isChecked;
+                }
+            });
+        }
+    });
+}
 
 	// 添加新网站并保存addWe
 	addWebsiteButton.addEventListener('click', function () {

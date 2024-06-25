@@ -137,7 +137,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         var searchLink = createSearchLink(engine.name, engine.urlBase, selectedText);
         searchLinksContainer.appendChild(searchLink);
     });
-   
+
 
     var searchLinkCopy = createActionLink('复制', function () {
         var textToCopy = selectedText;
