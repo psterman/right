@@ -1146,40 +1146,31 @@ function editWebsite(index) {
 	var newUrl = prompt('Enter new URL for ' + websiteList[index].url + ':', websiteList[index].url);
 
 	if (newName && newUrl) {
-		// 更新网站名称和URL
 		websiteList[index].name = newName;
 		websiteList[index].url = newUrl;
-
-		// 获取当前复选框的状态
-		var checkbox = document.getElementById('checkbox-' + websiteList[index].name);
-		websiteList[index].checked = checkbox ? checkbox.checked : false; // 如果复选框存在，则更新其状态
-
-		// 保存更改到浏览器存储
+		// 更新复选框状态
+		var isChecked = document.getElementById('checkbox-' + newName).checked;
+		websiteList[index].checked = isChecked;
 		saveWebsiteList();
-
-		// 刷新页面显示，以反映更改
 		displayWebsiteList();
-
-		// 清除输入框
-		clearInputs();
 	}
 }
 
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
-	// 从存储中读取复选框状态
-	chrome.storage.sync.get('websiteList', function (result) {
-		if (result.websiteList) {
-			websiteList = result.websiteList;
-			websiteList.forEach(function (website) {
-				var checkbox = document.getElementById('checkbox-' + website.name);
-				if (checkbox) {
-					checkbox.checked = website.checked;
-				}
-			});
-		}
-		// ... 省略其他代码 ...
-	});
+// 从存储中读取复选框状态
+chrome.storage.sync.get('websiteList', function (result) {
+    if (result.websiteList) {
+        websiteList = result.websiteList;
+        websiteList.forEach(function (website) {
+            var checkbox = document.getElementById('checkbox-' + website.name);
+            if (checkbox) {
+                checkbox.checked = website.checked;
+            }
+        });
+    }
+    // ... 省略其他代码 ...
+});
 	// 从本地存储中获取保存的搜索引擎
 	chrome.storage.local.get(['searchEngines'], function (result) {
 		var searchEngines = result.searchEngines || [];
@@ -1205,33 +1196,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	let websiteListContainer = document.getElementById('websiteListContainer');
 	document.querySelectorAll('.filter-checkbox').forEach(function (checkbox) {
 		checkbox.addEventListener('change', function () {
-			var websiteName = this.value; // 获取复选框的值，对应网站名称
-			var index = websiteList.findIndex(function (website) {
-				return website.name === websiteName;
-			});
-
-			if (index !== -1) {
-				// 更新websiteList中对应网站的isChecked状态
-				websiteList[index].isChecked = this.checked;
-				// 保存更新后的websiteList到Chrome存储
-				saveWebsiteList();
-				restoreCheckboxStates(); // 页面加载时恢复复选框状态
-			}
+			updateFilters();
 		});
 	});
-// 页面加载或复选框列表更新后，从Chrome存储中恢复复选框状态
-function restoreCheckboxStates() {
-    chrome.storage.sync.get('websiteList', function (result) {
-        if (result.websiteList) {
-            result.websiteList.forEach(function (website) {
-                var checkbox = document.querySelector('.filter-checkbox[value="' + website.name + '"]');
-                if (checkbox) {
-                    checkbox.checked = website.isChecked;
-                }
-            });
-        }
-    });
-}
 
 	// 添加新网站并保存addWe
 	addWebsiteButton.addEventListener('click', function () {
