@@ -1013,7 +1013,7 @@ function displayWebsiteList() {
 		var deleteButton = document.createElement('button');
 		var checkbox = document.createElement('input');
 		checkbox.type = 'checkbox';
-        checkbox.id = 'checkbox-' + website.name; // 设置ID以便后续引用
+		checkbox.id = 'checkbox-' + index; // 设置唯一ID以便后续引用
         checkbox.checked = website.checked; // 根据存储的状态设置复选框
 		nameSpan.textContent = website.name;
 		editButton.textContent = '编辑';
@@ -1022,7 +1022,7 @@ function displayWebsiteList() {
 		checkbox.type = 'checkbox';
 		checkbox.value = website.name;
 		checkbox.addEventListener('change', function () {
-			updateContents();
+			updateWebsiteCheckedStatus(website.name, this.checked);
 		});
 
 		listItem.appendChild(checkbox);
@@ -1267,3 +1267,21 @@ chrome.storage.sync.get('websiteList', function (result) {
 		}
 	}
 })
+function updateWebsiteCheckedStatus(name, isChecked) {
+	// 查找网站列表中对应的网站并更新勾选状态
+	for (var i = 0; i < websiteList.length; i++) {
+		if (websiteList[i].name === name) {
+			websiteList[i].checked = isChecked;
+			break;
+		}
+	}
+
+	// 保存更新后的列表到Chrome存储
+	chrome.storage.sync.set({ "websiteList": websiteList }, function () {
+		if (chrome.runtime.lastError) {
+			console.error(chrome.runtime.lastError.message);
+		} else {
+			console.log("Website list updated successfully.");
+		}
+	});
+}
