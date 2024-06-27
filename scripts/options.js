@@ -1153,14 +1153,12 @@ function editWebsite(index) {
 	var newName = prompt('Enter new name for ' + websiteList[index].name + ':', websiteList[index].name);
 	var newUrl = prompt('Enter new URL for ' + websiteList[index].url + ':', websiteList[index].url);
 
-	if (newName && newUrl) {
+	if (newName && newUrl) { // 确保两个值都不为 null 且不为空字符串
 		websiteList[index].name = newName;
 		websiteList[index].url = newUrl;
-		// 更新复选框状态
-		var isChecked = document.getElementById('checkbox-' + newName).checked;
-		websiteList[index].checked = isChecked;
-		saveWebsiteList();
-		displayWebsiteList();
+		// 确保调用saveWebsiteList函数保存更改
+		saveWebsiteList(); // 保存更改到浏览器存储
+		displayWebsiteList(); // 刷新页面显示
 	}
 }
 
@@ -1284,17 +1282,8 @@ function saveWebsiteList() {
 
 		websiteListContainer.appendChild(listItem); // 添加到列表容器
 	}
-	function editWebsite(index) {
-		var newName = prompt('Enter new name for ' + websiteList[index].name + ':', websiteList[index].name);
-		var newUrl = prompt('Enter new URL for ' + websiteList[index].url + ':', websiteList[index].url);
+	// 还需要添加 editWebsite 函数的实现
 
-		if (newName && newUrl) { // 确保两个值都不为 null 且不为空字符串
-			websiteList[index].name = newName;
-			websiteList[index].url = newUrl;
-			saveWebsiteList(); // 保存更改到浏览器存储
-			displayWebsiteList(); // 刷新页面显示
-		}
-	}
 })
 function updateWebsiteCheckedStatus(name, isChecked) {
 	// 查找网站列表中对应的网站并更新勾选状态

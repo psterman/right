@@ -75,6 +75,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         document.body.removeChild(currentPopup);
     }
 
+  
     // 读取用户勾选的复选框状态
     chrome.storage.sync.get('websiteList', function (data) {
         if (data.websiteList) {
@@ -82,7 +83,13 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                 // 仅添加用户勾选的网站到搜索链接容器
                 if (website.checked) {
                     var customSearchLink = createActionLink(website.name, function () {
-                        // ... 省略其他代码 ...
+                        chrome.runtime.sendMessage({
+                            action: 'setpage',
+                            query: website.url + encodeURIComponent(selectedText),
+                            openSidebar: false
+                        });
+                        document.body.removeChild(popup);
+                        currentPopup = null;
                     });
                     searchLinksContainer.appendChild(customSearchLink);
                 }
@@ -215,28 +222,6 @@ function createSearchLink(name, urlBase, searchText) {
     return link;
 }
 
-
-function createSearchLink(name, urlBase, searchText) {
-    var link = document.createElement('a');
-    link.href = urlBase + encodeURIComponent(searchText);
-    link.textContent = name;
-    link.style.color = 'white';
-    link.style.padding = '5px 10px';
-    link.style.cursor = 'pointer';
-    link.style.backgroundColor = 'black';
-    link.style.transition = 'background-color 0.3s';
-    link.style.whiteSpace = 'nowrap';
-    link.target = '_blank';
-
-    link.addEventListener('mouseover', function () {
-        this.style.backgroundColor = 'rgb(37, 138, 252)';
-    });
-    link.addEventListener('mouseout', function () {
-        this.style.backgroundColor = 'black';
-    });
-
-    return link;
-}
 function getEnginesByType(type) {
     switch (type) {
         case 'googleImage':
