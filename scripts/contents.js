@@ -70,10 +70,27 @@ function handleTextSelection(e) {
     }
 }
 function showSearchLinks(selectedText, x, y, currentEngine) {
+
     if (currentPopup) {
         document.body.removeChild(currentPopup);
     }
 
+    // 读取用户勾选的复选框状态
+    chrome.storage.sync.get('websiteList', function (data) {
+        if (data.websiteList) {
+            data.websiteList.forEach(function (website) {
+                // 仅添加用户勾选的网站到搜索链接容器
+                if (website.checked) {
+                    var customSearchLink = createActionLink(website.name, function () {
+                        // ... 省略其他代码 ...
+                    });
+                    searchLinksContainer.appendChild(customSearchLink);
+                }
+            });
+        } else {
+            console.error("No custom search engines found.");
+        }
+    });
     var popup = document.createElement('div');
     popup.style.position = 'fixed';
     popup.style.zIndex = '9999';
@@ -109,25 +126,6 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     var searchLinksContainer = document.createElement('div');
     searchLinksContainer.style.display = 'flex';
 
-    // 读取自定义搜索引擎信息
-    chrome.storage.sync.get('websiteList', function (data) {
-        if (data.websiteList) {
-            data.websiteList.forEach(website => {
-                var customSearchLink = createActionLink(website.name, function () {
-                    chrome.runtime.sendMessage({
-                        action: 'setpage',
-                        query: website.url + encodeURIComponent(selectedText),
-                        openSidebar: false
-                    });
-                    document.body.removeChild(popup);
-                    currentPopup = null;
-                });
-                searchLinksContainer.appendChild(customSearchLink);
-            });
-        } else {
-            console.error("No custom search engines found.");
-        }
-    });
 
     // 默认搜索引擎链接
     var engines = getEnginesByType(currentEngine);
@@ -137,7 +135,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         var searchLink = createSearchLink(engine.name, engine.urlBase, selectedText);
         searchLinksContainer.appendChild(searchLink);
     });
-
+   
 
     var searchLinkCopy = createActionLink('复制', function () {
         var textToCopy = selectedText;

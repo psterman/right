@@ -953,6 +953,13 @@ function loadWebsiteList() {
 			websiteList = [];
 		}
 	});
+	// 加载后更新页面上的复选框状态
+	websiteList.forEach(function (website, index) {
+		var checkbox = document.getElementById('checkbox-' + index);
+		if (checkbox) {
+			checkbox.checked = website.checked;
+		}
+	});
 }
 // 保存网址和名称到存储
 function saveWebsiteList() {
@@ -962,6 +969,7 @@ function saveWebsiteList() {
 		} else {
 			// 确保在此处执行任何依赖于更新数组的操作
 		}
+		loadWebsiteList();
 	});
 }
 // 添加网址和名称
@@ -1158,6 +1166,13 @@ function editWebsite(index) {
 
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
+	// 在contents.js中，适当位置初始化selectedSearchEngines
+    // 加载用户勾选的搜索引擎
+    chrome.storage.sync.get('selectedSearchEngines', function(result) {
+        selectedSearchEngines = result.selectedSearchEngines || [];
+        // 确保selectedSearchEngines被正确加载后，再进行其他操作
+    });
+
 // 从存储中读取复选框状态
 chrome.storage.sync.get('websiteList', function (result) {
     if (result.websiteList) {
@@ -1194,11 +1209,25 @@ chrome.storage.sync.get('websiteList', function (result) {
 	let websiteNameInput = document.getElementById('websiteNameInput');
 	let websiteUrlInput = document.getElementById('websiteUrlInput');
 	let websiteListContainer = document.getElementById('websiteListContainer');
-	document.querySelectorAll('.filter-checkbox').forEach(function (checkbox) {
-		checkbox.addEventListener('change', function () {
-			updateFilters();
-		});
-	});
+	document.querySelectorAll('.filter-checkbox').forEach((checkbox, index) => {
+    checkbox.addEventListener('change', function() {
+        let isChecked = this.checked;
+        websiteList[index].checked = isChecked; // 更新勾选状态
+        saveWebsiteList(); // 保存更新后的列表到Chrome存储
+    });
+});
+
+// 保存websiteList到Chrome存储的函数
+function saveWebsiteList() {
+    chrome.storage.sync.set({ "websiteList": websiteList }, function() {
+        if (chrome.runtime.lastError) {
+            console.error(chrome.runtime.lastError.message);
+        } else {
+            console.log("Website list updated successfully.");
+        }
+    });
+}
+
 
 	// 添加新网站并保存addWe
 	addWebsiteButton.addEventListener('click', function () {
