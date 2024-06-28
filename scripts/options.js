@@ -1164,6 +1164,30 @@ function editWebsite(index) {
 
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
+	// 读取复选框状态并设置到页面上的复选框
+	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox'], function (items) {
+		if (items.copyCheckbox !== undefined) {
+			document.getElementById('copyCheckbox').checked = items.copyCheckbox;
+		}
+		if (items.jumpCheckbox !== undefined) {
+			document.getElementById('jumpCheckbox').checked = items.jumpCheckbox;
+		}
+		if (items.closeCheckbox !== undefined) {
+			document.getElementById('closeCheckbox').checked = items.closeCheckbox;
+		}
+	});
+	// 为复选框添加change事件监听器，以保存状态
+	document.getElementById('copyCheckbox').addEventListener('change', function () {
+		chrome.storage.sync.set({ 'copyCheckbox': this.checked });
+	});
+
+	document.getElementById('jumpCheckbox').addEventListener('change', function () {
+		chrome.storage.sync.set({ 'jumpCheckbox': this.checked });
+	});
+
+	document.getElementById('closeCheckbox').addEventListener('change', function () {
+		chrome.storage.sync.set({ 'closeCheckbox': this.checked });
+	});
 	// 在contents.js中，适当位置初始化selectedSearchEngines
     // 加载用户勾选的搜索引擎
     chrome.storage.sync.get('selectedSearchEngines', function(result) {
