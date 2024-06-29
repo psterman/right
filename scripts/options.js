@@ -504,6 +504,24 @@ function eventsubmitFunc(selector, callback) {
 
 // Listen for messages
 chrome.runtime.onMessage.addListener(function (msg) {
+	if (message.action === 'updateSearchEngines') {
+		selectedEngines = message.searchEngines.filter(engine => engine.selected);
+		chrome.storage.sync.set({ searchEngines: selectedEngines }, function () {
+			console.log('Selected engines saved.');
+		});
+
+		// 传递选项的显示状态给 contents.js
+		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+			chrome.tabs.sendMessage(tabs[0].id, {
+				action: 'updateDisplayOptions',
+				displayOptions: {
+					copy: selectedEngines.length > 0, // 显示复制选项
+					jump: selectedEngines.length > 0, // 显示跳转选项
+					close: true // 显示关闭选项
+				}
+			});
+		});
+	}
 	// If the received message has the expected format...
 	if (msg.text === "receiveallpermissions") {
 		// empty ul first
@@ -1161,7 +1179,6 @@ function editWebsite(index) {
 		displayWebsiteList(); // 刷新页面显示
 	}
 }
-
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
 	// 读取复选框状态并设置到页面上的复选框
@@ -1327,3 +1344,17 @@ function updateWebsiteCheckedStatus(name, isChecked) {
 		}
 	});
 }
+
+// 获取复选框的状态
+var copyCheckbox = document.getElementById('copyCheckbox');
+var jumpCheckbox = document.getElementById('jumpCheckbox');
+var closeCheckbox = document.getElementById('closeCheckbox');
+
+// 更新搜索引擎选项
+chrome.runtime.sendMessage({
+	action: 'updateSearchEngines',
+	searchEngines: searchEngines,
+	copyOption: copyCheckbox.checked,
+	jumpOption: jumpCheckbox.checked,
+	closeOption: closeCheckbox.checked
+});
