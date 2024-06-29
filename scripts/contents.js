@@ -397,7 +397,6 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     }
 });
 function displayWebsiteList() {
-    // ...
     // 在更新复选框状态后，将选中的筛选项保存到本地存储
     var selectedFilters = [];
     document.querySelectorAll('.filter-checkbox:checked').forEach(function (checkbox) {
@@ -408,7 +407,6 @@ function displayWebsiteList() {
 }
 
 function updateFilters() {
-    // ...
     // 在更新搜索链接显示状态后，将选中的筛选项保存到本地存储
     var selectedFilters = [];
     document.querySelectorAll('.filter-checkbox:checked').forEach(function (checkbox) {
