@@ -1,0 +1,76 @@
+{
+   "action": {
+      "default_title": "__MSG_name__"
+   },
+   "background": {
+      "service_worker": "scripts/background.js"
+   },
+   "commands": {
+      "_execute_action": {
+         "suggested_key": {
+            "default": "Ctrl+Shift+P",
+            "mac": "MacCtrl+Shift+P"
+         }
+      },
+      "toggle-feature-openweb": {
+         "description": "__MSG_titelcurrenttab__",
+         "suggested_key": {
+            "default": "Ctrl+Shift+N",
+            "mac": "MacCtrl+Shift+N"
+         }
+      }
+   },
+   "content_scripts": [
+      {
+         "all_frames": true,
+         "js": [
+            "/scripts/contents.js",
+            "/scripts/communicate.js"
+         ],
+         "match_about_blank": true,
+         "matches": [
+            "<all_urls>"
+         ],
+         "run_at": "document_start"
+      }
+   ],
+   "default_locale": "en",
+   "description": "__MSG_description__",
+   "host_permissions": [
+      "\u003Call_urls>"
+   ],
+   "icons": {
+      "128": "images/icon128.png",
+      "16": "images/icon16.png",
+      "24": "images/icon24.png",
+      "32": "images/icon32.png",
+      "48": "images/icon48.png",
+      "96": "images/icon96.png"
+   },
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz8GIQb21Y26O7CwwI9HzMuOsaYJ0vYKrvMTC60kwzOC0WTaFB618S6NDy4zM0PPYlSFXxaefvkuFlQ/yHP9g6txdHjQuqueg0KqP7dltpwhZ+Nnzh4aLtLIokj9p0d04lXFmb1j2EYdjPv7Uvip8IDgW4+pnA7xKBVe3KsWgpfy7nt1kbyGkg2EwaePq9/spoOqDrzA3HbFVzJV50sTDbKiPexNZ5CW5M3NVIw0wQTssyhm6KHiDiooQCcrm3GgKU7fzDqfyrUNMVZSQQv6I3l74mpvVFgiekAYOLggI4pmIdZWGP3XF/DgokMqHxRrW7phUWO8O/uuUXpVpTVhQzQIDAQAB",
+   "manifest_version": 3,
+   "minimum_chrome_version": "114",
+   "name": "__MSG_namefull__",
+   "offline_enabled": true,
+   "optional_permissions": [
+      "bookmarks"
+   ],
+   "options_ui": {
+      "open_in_tab": true,
+      "page": "options.html"
+   },
+   "permissions": [
+      "tabs",
+      "contextMenus",
+      "storage",
+      "sidePanel",
+      "declarativeNetRequestWithHostAccess",
+      "activeTab"
+   ],
+   "short_name": "__MSG_name__",
+   "side_panel": {
+      "default_path": "panel.html"
+   },
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "version": "0.9"
+}

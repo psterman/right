@@ -1,0 +1,437 @@
+{
+   "about": {
+      "message": "About"
+   },
+   "advancedoptions": {
+      "message": "Advanced Options"
+   },
+   "areyouhappy": {
+      "message": "Are you happy about Page Sidebar?"
+   },
+   "basicsettings": {
+      "message": "Basics"
+   },
+   "changelog": {
+      "message": "Changelog"
+   },
+   "desbrowserextension": {
+      "message": "browser extension"
+   },
+   "descolor": {
+      "message": "Change the background color of the toolbar"
+   },
+   "desconfirmpassword": {
+      "message": "Confirm password"
+   },
+   "descontextmenu": {
+      "message": "Show the context menu to open the current web page in the sidebar"
+   },
+   "description": {
+      "message": "Effortlessly open any website in your web browser's sidebar – streamline your workflow instantly!"
+   },
+   "descustompanel": {
+      "message": "Custom home page"
+   },
+   "desdragdrop": {
+      "message": "Drag and drop your link or text here"
+   },
+   "desdragdroppanel": {
+      "message": "Drag and drop zone"
+   },
+   "desdropshadow": {
+      "message": "Get a shadow effect below the toolbar"
+   },
+   "deshoverbackground": {
+      "message": "Change the background color when you mouse is over a link"
+   },
+   "deshovertextcolor": {
+      "message": "Change the font color when you mouse is over a link"
+   },
+   "designhome": {
+      "message": "Start page"
+   },
+   "designmarquee": {
+      "message": "Design"
+   },
+   "designnavigation": {
+      "message": "Navigation bar"
+   },
+   "desnavbottom": {
+      "message": "Bottom"
+   },
+   "desnavhidden": {
+      "message": "Hidden"
+   },
+   "desnavtop": {
+      "message": "Top"
+   },
+   "despassword": {
+      "message": "Lock your notes with a pasword"
+   },
+   "desproject": {
+      "message": "project"
+   },
+   "desratebad": {
+      "message": "Sorry you have had this bad experience. Please let us know on how we can improve our extension for you."
+   },
+   "desratebadaction": {
+      "message": "Yes, I will give feedback"
+   },
+   "desratebadtitle": {
+      "message": "How can we make it better?"
+   },
+   "desrategood": {
+      "message": "Happy to hear that you love Page Sidebar! Will you take a moment to rate us in the browser extension store? Your browser extension store reviews make a difference!"
+   },
+   "desrategoodaction": {
+      "message": "Write a Review"
+   },
+   "desrategoodtitle": {
+      "message": "Thank you!"
+   },
+   "desratenothanks": {
+      "message": "No, thanks"
+   },
+   "desratenotnowthanks": {
+      "message": "Not now thanks"
+   },
+   "desratetitle": {
+      "message": "Do you love this browser extension?"
+   },
+   "desrememberpage": {
+      "message": "If this option is enabled, it will not show you the reminder page"
+   },
+   "desremrate": {
+      "message": "If you like Page Sidebar™, please do not hesitate to rate this extension to five stars now. This gives us courage to continue to maintain and improve this product for you. Writing a review is recommended, but not mandatory. If you do not have the time to write a review, you can rate it anonymously. It is important to give it ★★★★★. Thank you!"
+   },
+   "desremyoutube": {
+      "message": "Subscribe on YouTube"
+   },
+   "destapstar": {
+      "message": "Tap a star to rate it on the browser extension store."
+   },
+   "destrythiswebsite": {
+      "message": "Try this web page"
+   },
+   "desyoutube": {
+      "message": "Discover and learn more about Stefan's browser extension. Watch it now on YouTube."
+   },
+   "donatecalltoaction": {
+      "message": "Donate Now!"
+   },
+   "donatepromotext": {
+      "message": "If you can make a donation of any amount, I'd appreciate it immensely!"
+   },
+   "donatetext": {
+      "message": "Due to the very small number of donations the project may be closed. Please support further development with a Donation."
+   },
+   "downloadtheapp": {
+      "message": "Download the app now"
+   },
+   "enjoyshare": {
+      "message": "Enjoy this extension and share it with others who you think will appreciate it."
+   },
+   "friendlyremember": {
+      "message": "Friendly Reminder…"
+   },
+   "guide": {
+      "message": "Page Sidebar Guide"
+   },
+   "head2": {
+      "message": "Choose your favorite Page Sidebar icon:"
+   },
+   "help": {
+      "message": "Help"
+   },
+   "helptranslate": {
+      "message": "Help Translate"
+   },
+   "linktitle": {
+      "message": "Open link in sidebar"
+   },
+   "longdonatetext": {
+      "message": "I'd truly appreciate if you can donate me to keep this browser extension alive for other new users. Whether it's $$1 or $$100, your support is immensely appreciated!"
+   },
+   "name": {
+      "message": "Page Sidebar"
+   },
+   "namechrome": {
+      "message": "Page Sidebar for Google Chrome"
+   },
+   "nameedge": {
+      "message": "Page Sidebar for Microsoft Edge"
+   },
+   "namefirefox": {
+      "message": "Page Sidebar for Firefox"
+   },
+   "namefull": {
+      "message": "右手的右拐"
+   },
+   "nameopera": {
+      "message": "Page Sidebar for Opera"
+   },
+   "navgo": {
+      "message": "Go"
+   },
+   "nothanks": {
+      "message": "No thanks"
+   },
+   "optionpagetitle": {
+      "message": "Page Sidebar - Options"
+   },
+   "optionpasswordsaved": {
+      "message": "Password is saved successfully!"
+   },
+   "pagehelp": {
+      "message": "help"
+   },
+   "pagesearchtitle": {
+      "message": "Search in sidebar"
+   },
+   "pagestillloading": {
+      "message": "The page is still loading?"
+   },
+   "pagetitle": {
+      "message": "Open current web page in sidebar"
+   },
+   "permissionactivetab": {
+      "message": "This will only manage the Page Sidebar of the web page on the currently open tab page."
+   },
+   "permissioncontextmenu": {
+      "message": "This to add all the Page Sidebar item in the web browser context menu."
+   },
+   "permissionrequired": {
+      "message": "Current Active Permissions"
+   },
+   "permissionscripting": {
+      "message": "This is to inject JavaScript and CSS code into websites."
+   },
+   "permissionstorage": {
+      "message": "This to save the settings on your local computer, and to sync it to your web browser account."
+   },
+   "permissiontabs": {
+      "message": "This is needed for the following features: to show you the welcome and guide page, manage the Page Sidebar on all the open tabs, and to open the Options page."
+   },
+   "popupdonate": {
+      "message": "Support my development"
+   },
+   "productshare": {
+      "message": "Share"
+   },
+   "promocalltoaction": {
+      "message": "Download it Now!"
+   },
+   "promotext": {
+      "message": "Want to use something new and amazing for your web browser? Try the $product$ Browser extension.",
+      "placeholders": {
+         "product": {
+            "content": "$1",
+            "example": "Turn Off the Lights"
+         }
+      }
+   },
+   "promotitle": {
+      "message": "Tip of the day"
+   },
+   "ratedes": {
+      "message": "And let everyone know about this great extension!"
+   },
+   "rateitema": {
+      "message": "Rate 5 stars"
+   },
+   "ratetitle": {
+      "message": "Please rate & review my extension"
+   },
+   "rememberrate": {
+      "message": "Rate"
+   },
+   "reportbug": {
+      "message": "Report an Issue"
+   },
+   "resetbrowserextension": {
+      "message": "Reset the Page Sidebar settings"
+   },
+   "seelist": {
+      "message": "(see list)"
+   },
+   "settings": {
+      "message": "Settings"
+   },
+   "sharemenudonatetitle": {
+      "message": "Make a donation"
+   },
+   "sharemenupostonfacebook": {
+      "message": "Post on Facebook"
+   },
+   "sharemenupostonqq": {
+      "message": "Post on QQ"
+   },
+   "sharemenupostonvkontakte": {
+      "message": "Post on Vkontakte"
+   },
+   "sharemenupostonweibo": {
+      "message": "Post on Weibo"
+   },
+   "sharemenupostonwhatsapp": {
+      "message": "Post on WhatsApp"
+   },
+   "sharemenupostonx": {
+      "message": "Post on X"
+   },
+   "sharemenuratetitle": {
+      "message": "Rate this extension"
+   },
+   "sharemenusharetitle": {
+      "message": "Share this"
+   },
+   "sharemenutellafriend": {
+      "message": "Tell a Friend"
+   },
+   "sharemenuwelcomeguidetitle": {
+      "message": "Welcome Guide"
+   },
+   "sharetexta": {
+      "message": "Get this Cool Page Sidebar browser extension"
+   },
+   "sharetextb": {
+      "message": "Hey, this is amazing! I tried the Page Sidebar browser extension just today."
+   },
+   "sharetextc": {
+      "message": "The Best and Amazing Page Sidebar browser extension"
+   },
+   "sharetextd": {
+      "message": "Page Sidebar' browser extension is the Best Useful Tool. Download it and try it yourself!"
+   },
+   "showremember": {
+      "message": "Do not show this reminder page again when I open the options page"
+   },
+   "skipremember": {
+      "message": "Skip this, and open now the options page"
+   },
+   "stefanvdpromonew": {
+      "message": "New!"
+   },
+   "stefanvdpromotext": {
+      "message": "Discover all my FREE browser extensions"
+   },
+   "tellothers": {
+      "message": "Ensure that your opinion counts"
+   },
+   "textfoot": {
+      "message": "This software is licensed under the CC-GNU GPL. To view a copy of this license, visit"
+   },
+   "titelcolor": {
+      "message": "Color"
+   },
+   "titelcontextmenu": {
+      "message": "Context Menu"
+   },
+   "titeldeveloper": {
+      "message": "Developer"
+   },
+   "titeldownloadupgrade": {
+      "message": "The entire page will be fading to dark, so you can watch the video as if you were in the cinema."
+   },
+   "titeldropshadow": {
+      "message": "Drop shadow"
+   },
+   "titelhoverbackground": {
+      "message": "Background color on mouse hover"
+   },
+   "titelhovertextcolor": {
+      "message": "Text color on mouse hover"
+   },
+   "titelpassword": {
+      "message": "Password"
+   },
+   "titelpopupoptions": {
+      "message": "Options"
+   },
+   "titelpopupratestars": {
+      "message": "Rate 5 stars"
+   },
+   "titelpopupsupport": {
+      "message": "Support"
+   },
+   "titelpopupvideo": {
+      "message": "YouTube"
+   },
+   "titelpopupwelcomeguide": {
+      "message": "Welcome Guide"
+   },
+   "titelrememberpage": {
+      "message": "Reminder page"
+   },
+   "titelreset": {
+      "message": "Reset settings"
+   },
+   "titelrightsreserved": {
+      "message": "Some rights reserved."
+   },
+   "titelsearchengine": {
+      "message": "Search engine"
+   },
+   "titelsharethis": {
+      "message": "Share this:"
+   },
+   "titelsync": {
+      "message": "Sync"
+   },
+   "titelsyncbrowser": {
+      "message": "Sync the extension settings with your other browser."
+   },
+   "titelwebsite": {
+      "message": "Website"
+   },
+   "titelwelcome": {
+      "message": "Welcome and Hello"
+   },
+   "titlecancel": {
+      "message": "Cancel"
+   },
+   "titledarkmodeauto": {
+      "message": "Use device appearance"
+   },
+   "titledarkmodeoff": {
+      "message": "Dark Mode OFF"
+   },
+   "titledarkmodeon": {
+      "message": "Dark Mode ON"
+   },
+   "titledonatebutton": {
+      "message": "Donate"
+   },
+   "titleicon": {
+      "message": "Icon"
+   },
+   "titlelater": {
+      "message": "Later"
+   },
+   "titlelratenow": {
+      "message": "Rate Now!"
+   },
+   "titleok": {
+      "message": "OK"
+   },
+   "titleratelater": {
+      "message": "Later"
+   },
+   "titlesub": {
+      "message": "Subscribe Now!"
+   },
+   "titleyoutube": {
+      "message": "Join Stefan's Channel."
+   },
+   "translateme": {
+      "message": "Help Translate"
+   },
+   "version": {
+      "message": "Version"
+   },
+   "welcomebasictext": {
+      "message": "Welcome on the Page Sidebar browser extension. Here a brief video about how to use the Page Sidebar extension in your web browser."
+   },
+   "writeareview": {
+      "message": "Write a review"
+   }
+}
