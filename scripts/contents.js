@@ -171,7 +171,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                     }
                     instructionsText.innerText = instructionMessage;
                     instructionsText.style.position = 'fixed';
-                    instructionsText.style.top = '50%';
+                    instructionsText.style.top = '48%';
                     instructionsText.style.left = '50%';
                     instructionsText.style.transform = 'translate(-50%, -50%)';
                     instructionsText.style.color = '#fff';
@@ -184,8 +184,9 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                     var closeButton = document.createElement('button');
                     closeButton.innerText = '关闭';
                     closeButton.style.position = 'fixed';
-                    closeButton.style.top = '20px';
-                    closeButton.style.right = '20px';
+                    closeButton.style.top = '50%';
+                    closeButton.style.left = '50%';
+                    closeButton.style.transform = 'translate(-50%, -50%)';
                     closeButton.style.zIndex = '10001'; // 高于覆盖层
                     closeButton.onclick = function () {
                         document.body.removeChild(overlay);
