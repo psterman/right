@@ -1182,7 +1182,7 @@ function editWebsite(index) {
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
 	// 读取复选框状态并设置到页面上的复选框
-	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox'], function (items) {
+	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox','screenshotCheckbox'], function (items) {
 		if (items.copyCheckbox !== undefined) {
 			document.getElementById('copyCheckbox').checked = items.copyCheckbox;
 		}
@@ -1191,6 +1191,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 		if (items.closeCheckbox !== undefined) {
 			document.getElementById('closeCheckbox').checked = items.closeCheckbox;
+		}
+		if (items.screenshotCheckbox !== undefined) {
+			document.getElementById('screenshotCheckbox').checked = items.screenshotCheckbox;
 		}
 	});
 	// 为复选框添加change事件监听器，以保存状态
@@ -1204,6 +1207,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	document.getElementById('closeCheckbox').addEventListener('change', function () {
 		chrome.storage.sync.set({ 'closeCheckbox': this.checked });
+	});
+	document.getElementById('screenshotCheckbox').addEventListener('change', function () {
+		chrome.storage.sync.set({ 'screenshotCheckbox': this.checked });
 	});
 	// 在contents.js中，适当位置初始化selectedSearchEngines
     // 加载用户勾选的搜索引擎
@@ -1349,12 +1355,13 @@ function updateWebsiteCheckedStatus(name, isChecked) {
 var copyCheckbox = document.getElementById('copyCheckbox');
 var jumpCheckbox = document.getElementById('jumpCheckbox');
 var closeCheckbox = document.getElementById('closeCheckbox');
-
+var screenshotCheckbox = document.getElementById('screenshotCheckbox');
 // 更新搜索引擎选项
 chrome.runtime.sendMessage({
 	action: 'updateSearchEngines',
 	searchEngines: searchEngines,
 	copyOption: copyCheckbox.checked,
 	jumpOption: jumpCheckbox.checked,
-	closeOption: closeCheckbox.checked
+	closeOption: closeCheckbox.checked,
+	screenshotOption: screenshotCheckbox.checked 
 });

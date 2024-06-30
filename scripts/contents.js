@@ -95,10 +95,11 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             });
 
             // 读取复选框的状态
-            chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox'], function (checkboxes) {
+            chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox','screenshotCheckbox'], function (checkboxes) {
                 var showCopy = checkboxes.copyCheckbox;
                 var showJump = checkboxes.jumpCheckbox;
                 var showClose = checkboxes.closeCheckbox;
+                var showscreen = checkboxes.screenshotCheckbox;
 
                 // 添加复制、跳转和关闭选项到搜索链接容器
                 if (showCopy) {
@@ -139,6 +140,65 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                     });
                     searchLinksContainer.appendChild(searchLinkClose);
                 }
+
+                if (showscreen) {
+                    var screenshotLink = createActionLink('截图', function () {
+                        // 显示一个覆盖层或对话框来指导用户
+                        showScreenshotInstructions();
+                    });
+                    searchLinksContainer.appendChild(screenshotLink);
+                }
+
+                function showScreenshotInstructions() {
+                    // 创建一个覆盖层
+                    var overlay = document.createElement('div');
+                    overlay.id = 'screenshot-instructions-overlay';
+                    overlay.style.position = 'fixed';
+                    overlay.style.top = '0';
+                    overlay.style.left = '0';
+                    overlay.style.width = '100%';
+                    overlay.style.height = '100%';
+                    overlay.style.zIndex = '10000';
+                    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'; // 半透明背景
+
+                    // 创建截图指令的文本
+                    var instructionsText = document.createElement('p');
+                    var instructionMessage = '';
+                    if (navigator.platform.toUpperCase().indexOf('MAC') >= 0) {
+                        instructionMessage = '请按下 Command + Shift + 3 或 Command + Shift + 4 来截图。';
+                    } else {
+                        instructionMessage = '请按下 Print Screen 键来截图。';
+                    }
+                    instructionsText.innerText = instructionMessage;
+                    instructionsText.style.position = 'fixed';
+                    instructionsText.style.top = '50%';
+                    instructionsText.style.left = '50%';
+                    instructionsText.style.transform = 'translate(-50%, -50%)';
+                    instructionsText.style.color = '#fff';
+                    instructionsText.style.fontSize = '20px';
+
+                    // 将指令文本添加到覆盖层
+                    overlay.appendChild(instructionsText);
+
+                    // 添加关闭按钮
+                    var closeButton = document.createElement('button');
+                    closeButton.innerText = '关闭';
+                    closeButton.style.position = 'fixed';
+                    closeButton.style.top = '20px';
+                    closeButton.style.right = '20px';
+                    closeButton.style.zIndex = '10001'; // 高于覆盖层
+                    closeButton.onclick = function () {
+                        document.body.removeChild(overlay);
+                        currentPopup = null;
+                    };
+
+                    // 将关闭按钮添加到覆盖层
+                    overlay.appendChild(closeButton);
+
+                    // 将覆盖层添加到文档体
+                    document.body.appendChild(overlay);
+                }
+
             });
         } else {
             console.error("No custom search engines found.");
