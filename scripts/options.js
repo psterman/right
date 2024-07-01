@@ -1040,7 +1040,7 @@ function displayWebsiteList() {
 		var checkbox = document.createElement('input');
 		checkbox.type = 'checkbox';
 		checkbox.id = 'checkbox-' + index; // 设置唯一ID以便后续引用
-        checkbox.checked = website.checked; // 根据存储的状态设置复选框
+		checkbox.checked = website.checked; // 根据存储的状态设置复选框
 		nameSpan.textContent = website.name;
 		editButton.textContent = '编辑';
 		deleteButton.textContent = '删除';
@@ -1149,23 +1149,6 @@ function updateFilters() {
 		}
 	});
 }
-// 更新搜索引擎
-function updateSearchEngines() {
-	// 获取用户勾选的搜索引擎
-	// 获取用户勾选的搜索引擎
-	var selectedEngines = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-		.map(function (checkbox) {
-			return {
-				name: checkbox.value,
-				selected: true
-			};
-		});
-
-	// 保存搜索引擎到本地存储
-	chrome.storage.local.set({ searchEngines: selectedEngines }, function () {
-		console.log('Search engines updated.');
-	});
-}
 // 还需要添加 editWebsite 函数的实现
 function editWebsite(index) {
 	var newName = prompt('Enter new name for ' + websiteList[index].name + ':', websiteList[index].name);
@@ -1181,8 +1164,58 @@ function editWebsite(index) {
 }
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
+	// 保存复选框状态
+	function saveCheckboxStatus() {
+		var checkboxes = document.getElementsByClassName("search-engine-checkbox");
+		var checkboxStatus = {};
+
+		for (var i = 0; i < checkboxes.length; i++) {
+			var checkbox = checkboxes[i];
+			checkboxStatus[checkbox.value] = checkbox.checked;
+		}
+
+		chrome.storage.sync.set({ searchEngines: checkboxStatus });
+	}
+
+	// 恢复复选框状态
+	function restoreCheckboxStatus() {
+		chrome.storage.sync.get("searchEngines", function (result) {
+			var checkboxStatus = result.searchEngines || {};
+
+			var checkboxes = document.getElementsByClassName("search-engine-checkbox");
+			for (var i = 0; i < checkboxes.length; i++) {
+				var checkbox = checkboxes[i];
+				checkbox.checked = checkboxStatus[checkbox.value] || false;
+			}
+		});
+	}
+
+	// 添加网站按钮点击事件
+	document.getElementById("addWebsiteButton").addEventListener("click", function () {
+		var websiteNameInput = document.getElementById("websiteNameInput");
+		var websiteUrlInput = document.getElementById("websiteUrlInput");
+		var websiteName = websiteNameInput.value.trim();
+		var websiteUrl = websiteUrlInput.value.trim();
+
+		if (websiteName !== "" && websiteUrl !== "") {
+			// 添加网站到列表中
+			var websiteItem = document.createElement("li");
+			websiteItem.textContent = websiteName + ": " + websiteUrl;
+			document.getElementById("websiteListContainer").appendChild(websiteItem);
+
+			// 清空输入框
+			websiteNameInput.value = "";
+			websiteUrlInput.value = "";
+		}
+	});
+
+	// 保存复选框状态
+	document.getElementById("searchEngineList").addEventListener("change", saveCheckboxStatus);
+
+	// 页面加载时恢复复选框状态
+	restoreCheckboxStatus();
 	// 读取复选框状态并设置到页面上的复选框
-	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox','screenshotCheckbox'], function (items) {
+	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'screenshotCheckbox'], function (items) {
 		if (items.copyCheckbox !== undefined) {
 			document.getElementById('copyCheckbox').checked = items.copyCheckbox;
 		}
@@ -1212,25 +1245,25 @@ document.addEventListener('DOMContentLoaded', function () {
 		chrome.storage.sync.set({ 'screenshotCheckbox': this.checked });
 	});
 	// 在contents.js中，适当位置初始化selectedSearchEngines
-    // 加载用户勾选的搜索引擎
-    chrome.storage.sync.get('selectedSearchEngines', function(result) {
-        selectedSearchEngines = result.selectedSearchEngines || [];
-        // 确保selectedSearchEngines被正确加载后，再进行其他操作
-    });
+	// 加载用户勾选的搜索引擎
+	chrome.storage.sync.get('selectedSearchEngines', function (result) {
+		selectedSearchEngines = result.selectedSearchEngines || [];
+		// 确保selectedSearchEngines被正确加载后，再进行其他操作
+	});
 
-// 从存储中读取复选框状态
-chrome.storage.sync.get('websiteList', function (result) {
-    if (result.websiteList) {
-        websiteList = result.websiteList;
-        websiteList.forEach(function (website) {
-            var checkbox = document.getElementById('checkbox-' + website.name);
-            if (checkbox) {
-                checkbox.checked = website.checked;
-            }
-        });
-    }
-    // ... 省略其他代码 ...
-});
+	// 从存储中读取复选框状态
+	chrome.storage.sync.get('websiteList', function (result) {
+		if (result.websiteList) {
+			websiteList = result.websiteList;
+			websiteList.forEach(function (website) {
+				var checkbox = document.getElementById('checkbox-' + website.name);
+				if (checkbox) {
+					checkbox.checked = website.checked;
+				}
+			});
+		}
+		// ... 省略其他代码 ...
+	});
 	// 从本地存储中获取保存的搜索引擎
 	chrome.storage.local.get(['searchEngines'], function (result) {
 		var searchEngines = result.searchEngines || [];
@@ -1255,23 +1288,23 @@ chrome.storage.sync.get('websiteList', function (result) {
 	let websiteUrlInput = document.getElementById('websiteUrlInput');
 	let websiteListContainer = document.getElementById('websiteListContainer');
 	document.querySelectorAll('.filter-checkbox').forEach((checkbox, index) => {
-    checkbox.addEventListener('change', function() {
-        let isChecked = this.checked;
-        websiteList[index].checked = isChecked; // 更新勾选状态
-        saveWebsiteList(); // 保存更新后的列表到Chrome存储
-    });
-});
+		checkbox.addEventListener('change', function () {
+			let isChecked = this.checked;
+			websiteList[index].checked = isChecked; // 更新勾选状态
+			saveWebsiteList(); // 保存更新后的列表到Chrome存储
+		});
+	});
 
-// 保存websiteList到Chrome存储的函数
-function saveWebsiteList() {
-    chrome.storage.sync.set({ "websiteList": websiteList }, function() {
-        if (chrome.runtime.lastError) {
-            console.error(chrome.runtime.lastError.message);
-        } else {
-            console.log("Website list updated successfully.");
-        }
-    });
-}
+	// 保存websiteList到Chrome存储的函数
+	function saveWebsiteList() {
+		chrome.storage.sync.set({ "websiteList": websiteList }, function () {
+			if (chrome.runtime.lastError) {
+				console.error(chrome.runtime.lastError.message);
+			} else {
+				console.log("Website list updated successfully.");
+			}
+		});
+	}
 
 
 	// 添加新网站并保存addWe
@@ -1363,5 +1396,6 @@ chrome.runtime.sendMessage({
 	copyOption: copyCheckbox.checked,
 	jumpOption: jumpCheckbox.checked,
 	closeOption: closeCheckbox.checked,
-	screenshotOption: screenshotCheckbox.checked 
+	screenshotOption: screenshotCheckbox.checked
 });
+

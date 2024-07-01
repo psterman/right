@@ -95,7 +95,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             });
 
             // 读取复选框的状态
-            chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox','screenshotCheckbox'], function (checkboxes) {
+            chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'screenshotCheckbox'], function (checkboxes) {
                 var showCopy = checkboxes.copyCheckbox;
                 var showJump = checkboxes.jumpCheckbox;
                 var showClose = checkboxes.closeCheckbox;
@@ -249,7 +249,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         var searchLink = createSearchLink(engine.name, engine.urlBase, selectedText);
         searchLinksContainer.appendChild(searchLink);
     });
-   
+
 
 
     popup.appendChild(searchLinksContainer);
