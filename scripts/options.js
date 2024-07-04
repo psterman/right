@@ -1149,6 +1149,24 @@ function updateFilters() {
 		}
 	});
 }
+// 更新搜索引擎
+function updateSearchEngines() {
+	// 获取用户勾选的搜索引擎
+	// 获取用户勾选的搜索引擎
+	var selectedEngines = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+		.map(function (checkbox) {
+			return {
+				name: checkbox.value,
+				selected: true
+			};
+		});
+
+	// 保存搜索引擎到本地存储
+	chrome.storage.local.set({ searchEngines: selectedEngines }, function () {
+		console.log('Search engines updated.');
+	});
+}
+
 // 还需要添加 editWebsite 函数的实现
 function editWebsite(index) {
 	var newName = prompt('Enter new name for ' + websiteList[index].name + ':', websiteList[index].name);
@@ -1164,6 +1182,7 @@ function editWebsite(index) {
 }
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
+	
 	// 保存复选框状态
 	function saveCheckboxStatus() {
 		var checkboxes = document.getElementsByClassName("search-engine-checkbox");
@@ -1189,26 +1208,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		});
 	}
-
-	// 添加网站按钮点击事件
-	document.getElementById("addWebsiteButton").addEventListener("click", function () {
-		var websiteNameInput = document.getElementById("websiteNameInput");
-		var websiteUrlInput = document.getElementById("websiteUrlInput");
-		var websiteName = websiteNameInput.value.trim();
-		var websiteUrl = websiteUrlInput.value.trim();
-
-		if (websiteName !== "" && websiteUrl !== "") {
-			// 添加网站到列表中
-			var websiteItem = document.createElement("li");
-			websiteItem.textContent = websiteName + ": " + websiteUrl;
-			document.getElementById("websiteListContainer").appendChild(websiteItem);
-
-			// 清空输入框
-			websiteNameInput.value = "";
-			websiteUrlInput.value = "";
-		}
-	});
-
 	// 保存复选框状态
 	document.getElementById("searchEngineList").addEventListener("change", saveCheckboxStatus);
 
@@ -1397,28 +1396,4 @@ chrome.runtime.sendMessage({
 	jumpOption: jumpCheckbox.checked,
 	closeOption: closeCheckbox.checked,
 	screenshotOption: screenshotCheckbox.checked
-});
-
-// 为复选框添加change事件监听器，以保存状态并通知后台脚本更新搜索引擎列表
-var checkboxes = document.querySelectorAll('.search-engine-checkbox');
-checkboxes.forEach(function (checkbox) {
-    checkbox.addEventListener('change', function () {
-        // 保存当前状态到 Chrome 存储
-        chrome.storage.sync.set({ [this.value]: { selected: this.checked } }, function () {
-            if (chrome.runtime.lastError) {
-                console.error(chrome.runtime.lastError.message);
-            } else {
-                // 创建只包含当前变化复选框状态的对象
-                let updatedEngine = {
-                    name: this.value,
-                    selected: this.checked
-                };
-                // 发送更新到后台脚本
-                chrome.runtime.sendMessage({
-                    action: 'updateSearchEngines',
-                    searchEngines: [updatedEngine]  // 只发送变化的复选框
-                });
-            }
-        });
-    });
 });
