@@ -39,7 +39,7 @@ document.addEventListener('mousedown', function (e) {
 });
  */
 // 监听鼠标弹起事件，以捕获用户选择的文本
-document.addEventListener('mouseup', function (e) {
+document.addEventListener('mouseup', function (e) { 
     handleTextSelection(e);
 });
 

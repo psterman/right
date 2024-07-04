@@ -1399,3 +1399,26 @@ chrome.runtime.sendMessage({
 	screenshotOption: screenshotCheckbox.checked
 });
 
+// 为复选框添加change事件监听器，以保存状态并通知后台脚本更新搜索引擎列表
+var checkboxes = document.querySelectorAll('.search-engine-checkbox');
+checkboxes.forEach(function (checkbox) {
+    checkbox.addEventListener('change', function () {
+        // 保存当前状态到 Chrome 存储
+        chrome.storage.sync.set({ [this.value]: { selected: this.checked } }, function () {
+            if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError.message);
+            } else {
+                // 创建只包含当前变化复选框状态的对象
+                let updatedEngine = {
+                    name: this.value,
+                    selected: this.checked
+                };
+                // 发送更新到后台脚本
+                chrome.runtime.sendMessage({
+                    action: 'updateSearchEngines',
+                    searchEngines: [updatedEngine]  // 只发送变化的复选框
+                });
+            }
+        });
+    });
+});
