@@ -10,6 +10,14 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         chrome.storage.sync.set({ searchEngines: selectedEngines }, function () {
             console.log('Selected engines saved.');
         });
+
+        // 将搜索引擎的名称和URL保存到变量searchEngines中
+        searchEngines = message.searchEngines.map(engine => {
+            return {
+                name: engine.name,
+                urlBase: engine.urlBase
+            };
+        });
     }
 });
 

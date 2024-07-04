@@ -1182,7 +1182,39 @@ function editWebsite(index) {
 }
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
-	
+	var searchEngineCheckboxes = document.querySelectorAll('.search-engine-checkbox');
+
+	searchEngineCheckboxes.forEach(function (checkbox) {
+		checkbox.addEventListener('change', function () {
+			if (checkbox.checked) {
+				chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+					var selectedEngine = getSelectedEngine(checkbox.value);
+					if (selectedEngine) {
+						var searchLink = selectedEngine.url + encodeURIComponent(tabs[0].title);
+						chrome.tabs.create({ url: searchLink });
+					}
+				});
+			}
+		});
+	});
+
+	function getSelectedEngine(engineName) {
+		// 根据搜索引擎名称返回对应的搜索引擎对象
+		switch (engineName) {
+			case 'Google':
+				return { name: 'Google', url: 'https://www.google.com/search?q=' };
+			case 'Bing':
+				return { name: 'Bing', url: 'https://www.bing.com/search?q=' };
+			case 'DuckDuckGo':
+				return { name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' };
+			case 'Baidu':
+				return { name: 'Baidu', url: 'https://www.baidu.com/s?wd=' };
+			case 'Yandex':
+				return { name: 'Yandex', url: 'https://www.yandex.com/search/?text=' };
+			default:
+				return null;
+		}
+	}
 	// 保存复选框状态
 	function saveCheckboxStatus() {
 		var checkboxes = document.getElementsByClassName("search-engine-checkbox");
@@ -1397,3 +1429,32 @@ chrome.runtime.sendMessage({
 	closeOption: closeCheckbox.checked,
 	screenshotOption: screenshotCheckbox.checked
 });
+// 为复选框添加change事件监听器，以保存状态并通知后台脚本更新搜索引擎列表
+var checkboxes = document.querySelectorAll('.search-engine-checkbox');
+checkboxes.forEach(function (checkbox) {
+    checkbox.addEventListener('change', function () {
+        // 保存当前状态到 Chrome 存储
+        chrome.storage.sync.set({ [this.value]: { selected: this.checked } }, function () {
+            if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError.message);
+            } else {
+                // 创建只包含当前变化复选框状态的对象
+                let updatedEngine = {
+                    name: this.value,
+                    selected: this.checked
+                };
+                // 发送更新到后台脚本
+				chrome.runtime.sendMessage({
+					action: 'updateSearchEngines',
+					searchEngines: selectedEngines.map(engine => {
+						return {
+							name: engine.name,
+							selected: engine.selected,
+							urlBase: engine.urlBase
+						};
+					})
+				});
+            }
+        });
+    });
+})
