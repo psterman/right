@@ -32,6 +32,16 @@ var darkmode = false;
 
 var firstdefaultvalues = {};
 function defaultgetsettings() {
+	// Initialize search engines data
+	var searchEngineData = [
+		{ name: "Google", urlbase: "https://www.google.com/search?q=" },
+		{ name: "Bing", urlbase: "https://www.bing.com/search?q=" },
+		{ name: "DuckDuckGo", urlbase: "https://duckduckgo.com/?q=" },
+		{ name: "Baidu", urlbase: "https://www.baidu.com/s?wd=" },
+		{ name: "Yandex", urlbase: "https://yandex.com/search/?text=" }
+	];
+	// Save search engines data to Chrome storage
+	chrome.storage.sync.set({ "searchengines": searchEngineData });
 	// Option default value to read if there is no current value from chrome.storage AND init default value
 	chrome.storage.sync.get(["icon", "contextmenus", "searchgoogle", "searchbing", "searchduckduckgo", "searchbaidu", "searchyandex", "navtop", "navbottom", "navhidden", "typepanelzone", "typepanelcustom", "typepanellasttime", "websitezoomname", "websitename1", "websiteurl1", "websitename2", "websiteurl2", "websitename3", "websiteurl3", "opennonebookmarks", "openbrowserbookmarks", "openquickbookmarks", "googlesidepanel", "defaultzoom", "step"], function (items) {
 		// find no localstore
@@ -76,6 +86,26 @@ function defaultgetsettings() {
 
 // Option to save current value
 function save_options() {
+	var selectedEngines = []; // 存储选中的搜索引擎数据的数组
+
+	// 遍历searchEngineData数组，检查每个搜索引擎的复选框是否选中
+	for (var i = 0; i < searchEngineData.length; i++) {
+		var engine = searchEngineData[i];
+		var checkbox = $(engine.name.toLowerCase()); // 假设复选框的id与搜索引擎名称相同
+
+		if (checkbox.checked) {
+			selectedEngines.push({
+				name: engine.name,
+				urlbase: engine.urlbase
+			});
+		}
+	}
+
+	// 将selectedEngines保存到Chrome存储中
+	chrome.storage.sync.set({ "selectedEngines": selectedEngines }, function () {
+		// 保存成功后的回调函数
+		console.log("Selected engines saved");
+	});
 	chrome.storage.sync.set({ "icon": $("btnpreview").src, "optionskipremember": $("optionskipremember").checked, "contextmenus": $("contextmenus").checked, "searchgoogle": $("searchgoogle").checked, "searchbing": $("searchbing").checked, "searchduckduckgo": $("searchduckduckgo").checked, "searchbaidu": $("searchbaidu").checked, "searchyandex": $("searchyandex").checked, "navtop": $("navtop").checked, "navbottom": $("navbottom").checked, "navhidden": $("navhidden").checked, "typepanelzone": $("typepanelzone").checked, "typepanelcustom": $("typepanelcustom").checked, "typepanellasttime": $("typepanellasttime").checked, "websitezoomname": $("websitezoomname").value, "opentab": $("opentab").checked, "opencopy": $("opencopy").checked, "opennonebookmarks": $("opennonebookmarks").checked, "openbrowserbookmarks": $("openbrowserbookmarks").checked, "openquickbookmarks": $("openquickbookmarks").checked, "websitename1": $("websitename1").value, "websiteurl1": $("websiteurl1").value, "websitename2": $("websitename2").value, "websiteurl2": $("websiteurl2").value, "websitename3": $("websitename3").value, "websiteurl3": $("websiteurl3").value, "websitename4": $("websitename4").value, "websiteurl4": $("websiteurl4").value, "websitename5": $("websitename5").value, "websiteurl5": $("websiteurl5").value, "websitename6": $("websitename6").value, "websiteurl6": $("websiteurl6").value, "websitename7": $("websitename7").value, "websiteurl7": $("websiteurl7").value, "websitename8": $("websitename8").value, "websiteurl8": $("websiteurl8").value, "websitename9": $("websitename9").value, "websiteurl9": $("websiteurl9").value, "websitename10": $("websitename10").value, "websiteurl10": $("websiteurl10").value, "googlesidepanel": $("googlesidepanel").checked, "zoom": $("zoom").checked, "defaultzoom": $("defaultzoom").value, "step": $("step").value });
 }
 
@@ -1182,39 +1212,6 @@ function editWebsite(index) {
 }
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
-	var searchEngineCheckboxes = document.querySelectorAll('.search-engine-checkbox');
-
-	searchEngineCheckboxes.forEach(function (checkbox) {
-		checkbox.addEventListener('change', function () {
-			if (checkbox.checked) {
-				chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-					var selectedEngine = getSelectedEngine(checkbox.value);
-					if (selectedEngine) {
-						var searchLink = selectedEngine.url + encodeURIComponent(tabs[0].title);
-						chrome.tabs.create({ url: searchLink });
-					}
-				});
-			}
-		});
-	});
-
-	function getSelectedEngine(engineName) {
-		// 根据搜索引擎名称返回对应的搜索引擎对象
-		switch (engineName) {
-			case 'Google':
-				return { name: 'Google', url: 'https://www.google.com/search?q=' };
-			case 'Bing':
-				return { name: 'Bing', url: 'https://www.bing.com/search?q=' };
-			case 'DuckDuckGo':
-				return { name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' };
-			case 'Baidu':
-				return { name: 'Baidu', url: 'https://www.baidu.com/s?wd=' };
-			case 'Yandex':
-				return { name: 'Yandex', url: 'https://www.yandex.com/search/?text=' };
-			default:
-				return null;
-		}
-	}
 	// 保存复选框状态
 	function saveCheckboxStatus() {
 		var checkboxes = document.getElementsByClassName("search-engine-checkbox");
@@ -1432,18 +1429,18 @@ chrome.runtime.sendMessage({
 // 为复选框添加change事件监听器，以保存状态并通知后台脚本更新搜索引擎列表
 var checkboxes = document.querySelectorAll('.search-engine-checkbox');
 checkboxes.forEach(function (checkbox) {
-    checkbox.addEventListener('change', function () {
-        // 保存当前状态到 Chrome 存储
-        chrome.storage.sync.set({ [this.value]: { selected: this.checked } }, function () {
-            if (chrome.runtime.lastError) {
-                console.error(chrome.runtime.lastError.message);
-            } else {
-                // 创建只包含当前变化复选框状态的对象
-                let updatedEngine = {
-                    name: this.value,
-                    selected: this.checked
-                };
-                // 发送更新到后台脚本
+	checkbox.addEventListener('change', function () {
+		// 保存当前状态到 Chrome 存储
+		chrome.storage.sync.set({ [this.value]: { selected: this.checked } }, function () {
+			if (chrome.runtime.lastError) {
+				console.error(chrome.runtime.lastError.message);
+			} else {
+				// 创建只包含当前变化复选框状态的对象
+				let updatedEngine = {
+					name: this.value,
+					selected: this.checked
+				};
+				// 发送更新到后台脚本
 				chrome.runtime.sendMessage({
 					action: 'updateSearchEngines',
 					searchEngines: selectedEngines.map(engine => {
@@ -1454,7 +1451,7 @@ checkboxes.forEach(function (checkbox) {
 						};
 					})
 				});
-            }
-        });
-    });
+			}
+		});
+	});
 })

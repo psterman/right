@@ -3,24 +3,23 @@ let selectedEngines = [];
 let currentPopup = null;
 let searchEngines = []; // 存储搜索引擎列表的变量
 
-// 接收来自options.js的搜索引擎列表
+// 接收来自options.js的搜索引擎列表和详细信息
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (message.action === 'updateSearchEngines') {
-        selectedEngines = message.searchEngines.filter(engine => engine.selected);
-        chrome.storage.sync.set({ searchEngines: selectedEngines }, function () {
-            console.log('Selected engines saved.');
+        // 过滤出选中的搜索引擎，并存储它们的详细信息
+        selectedEngines = message.searchEngines.filter(engine => engine.selected).map(engine => {
+            return {
+                name: engine.name,       // 搜索引擎的名称
+                urlBase: engine.urlBase   // 搜索引擎的基本URL
+            };
         });
 
-        // 将搜索引擎的名称和URL保存到变量searchEngines中
-        searchEngines = message.searchEngines.map(engine => {
-            return {
-                name: engine.name,
-                urlBase: engine.urlBase
-            };
+        // 存储选中的搜索引擎详细信息到Chrome同步存储
+        chrome.storage.sync.set({ searchEngines: selectedEngines }, function () {
+            console.log('Selected search engines details saved.');
         });
     }
 });
-
 // 发送选中文本到后台脚本
 function sendMessageToBackground(selectedText) {
     chrome.runtime.sendMessage({ msg: "setsearch", value: selectedText });
@@ -47,7 +46,7 @@ document.addEventListener('mousedown', function (e) {
 });
  */
 // 监听鼠标弹起事件，以捕获用户选择的文本
-document.addEventListener('mouseup', function (e) { 
+document.addEventListener('mouseup', function (e) {
     handleTextSelection(e);
 });
 
@@ -77,7 +76,7 @@ function handleTextSelection(e) {
         hideSearchLinks();
     }
 }
-function showSearchLinks(selectedText, x, y, currentEngine) {
+function showSearchLinks(selectedText, x, y, currentEngine, searchEngineData, websiteList) {
 
     if (currentPopup) {
         document.body.removeChild(currentPopup);
@@ -85,6 +84,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
 
     // 读取用户勾选的复选框状态
     chrome.storage.sync.get('websiteList', function (data) {
+
         if (data.websiteList) {
             data.websiteList.forEach(function (website) {
                 // 仅添加用户勾选的网站到搜索链接容器
@@ -347,171 +347,3 @@ function getEnginesByType(type) {
             ];
     }
 }
-// 获取保存在扩展程序选项中的搜索选项数组
-chrome.storage.sync.get("searchOptions", function (result) {
-    var searchOptions = result.searchOptions;
-
-    // 如果存在搜索选项，则创建对应的菜单项，并绑定点击事件处理逻辑
-    if (searchOptions && Array.isArray(searchOptions) && searchOptions.length > 0) {
-        var menuItems = [];
-
-        for (var i = 0; i < searchOptions.length; i++) {
-            var searchOption = searchOptions[i];
-
-            // 创建菜单项
-            var menuItem = {
-                id: 'menuItem' + i,
-                title: searchOption.name,
-                onclick: createActionLink(searchOption.urlBase)
-            };
-
-            menuItems.push(menuItem);
-        }
-
-        // 注册菜单项
-        for (var j = 0; j < menuItems.length; j++) {
-            chrome.contextMenus.create(menuItems[j]);
-        }
-    }
-});
-
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    if (request.msg === "performSearch") {
-        // 更新侧边栏的iframe以显示百度搜索结果
-        var iframe = document.getElementById("preview");
-        if (iframe) {
-            iframe.src = request.query;
-        }
-    }
-});
-chrome.runtime.onMessage.addListener(function (request) {
-    if (request.action === 'updateMenuItems') {
-        updateContextMenu(request.menuItems);
-    }
-});
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    if (request.action === 'updateMenu') {
-        // 使用新数据更新菜单
-        updateContextMenu(request.menuItems);
-    }
-});
-
-function updateContextMenu(menuItems) {
-    // 移除现有菜单项（如果需要）
-    removeExistingMenuItems();
-
-    // 创建并添加新的菜单项
-    menuItems.forEach(function (item) {
-        createMenuItem(item);
-    });
-}
-
-function removeExistingMenuItems() {
-    // 根据实际情况移除现有菜单项
-}
-
-function createMenuItem(item) {
-    var link = document.createElement('a');
-    link.textContent = item.name;
-    link.href = item.url;
-    link.style.color = 'white';
-    link.style.padding = '5px 10px';
-    link.style.cursor = 'pointer';
-    link.style.backgroundColor = 'black';
-    link.style.transition = 'background-color 0.3s';
-    // 添加更多样式和事件监听器
-    // 设置数据属性
-    link.setAttribute('data-website', item.name);
-    // 将链接添加到当前的搜索链接容器中
-    var searchLinksContainer = document.getElementById('searchLinksContainer');
-    searchLinksContainer.appendChild(link);
-}
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    if (request.action === 'updateCustomSearchEngine') {
-        // 更新内存中的自定义搜索引擎设置
-        customSearchEngineName = request.customSearchEngineName;
-        customSearchEngineUrlBase = request.customSearchEngineUrlBase;
-    }
-});
-// 接收来自后台脚本的筛选项
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-    if (message.action === 'updateFilters') {
-        var selectedFilters = message.filters;
-        // 根据选中的筛选项决定是否显示对应的选项
-        // 更新复选框的状态
-        document.querySelectorAll('.filter-checkbox').forEach(function (checkbox) {
-            if (selectedFilters.includes(checkbox.value)) {
-                checkbox.checked = true;
-            } else {
-                checkbox.checked = false;
-            }
-        });
-        // 更新搜索链接的显示状态
-        updateFilters();
-
-        // 将选中的筛选项保存到本地存储
-        chrome.storage.local.set({ selectedFilters: selectedFilters });
-        var popup = document.querySelector('.search-popup');
-        var searchLinksContainer = popup.querySelector('.search-links-container');
-        var searchLinks = searchLinksContainer.querySelectorAll('.search-link');
-
-        searchLinks.forEach(function (searchLink) {
-            var websiteName = searchLink.getAttribute('data-website');
-            if (selectedFilters.includes(websiteName)) {
-                searchLink.style.display = 'block';
-            } else {
-                searchLink.style.display = 'none';
-            }
-        });
-    }
-});
-function displayWebsiteList() {
-    // 在更新复选框状态后，将选中的筛选项保存到本地存储
-    var selectedFilters = [];
-    document.querySelectorAll('.filter-checkbox:checked').forEach(function (checkbox) {
-        selectedFilters.push(checkbox.value);
-    });
-
-    chrome.storage.local.set({ selectedFilters: selectedFilters });
-}
-
-function updateFilters() {
-    // 在更新搜索链接显示状态后，将选中的筛选项保存到本地存储
-    var selectedFilters = [];
-    document.querySelectorAll('.filter-checkbox:checked').forEach(function (checkbox) {
-        selectedFilters.push(checkbox.value);
-    });
-
-    chrome.storage.local.set({ selectedFilters: selectedFilters });
-}
-
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-    if (message.action === 'updateFilters') {
-        var selectedFilters = message.filters;
-        // 更新复选框的状态
-        document.querySelectorAll('.filter-checkbox').forEach(function (checkbox) {
-            if (selectedFilters.includes(checkbox.value)) {
-                checkbox.checked = true;
-            } else {
-                checkbox.checked = false;
-            }
-        });
-        // 更新搜索链接的显示状态
-        updateFilters();
-
-        // 将选中的筛选项保存到本地存储
-        chrome.storage.local.set({ selectedFilters: selectedFilters });
-    }
-});
-
-// 在弹出菜单打开时，从本地存储中恢复选中的筛选项
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    if (request.action === 'getSelectedFilters') {
-        chrome.storage.local.get('selectedFilters', function (result) {
-            var selectedFilters = result.selectedFilters || [];
-            // 向弹出菜单发送消息，传递选中的筛选项
-            sendResponse({ selectedFilters: selectedFilters });
-        });
-        return true; // 需要返回 true 以保持消息通道打开
-    }
-});
