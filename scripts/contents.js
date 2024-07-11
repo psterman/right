@@ -1,23 +1,12 @@
-//contents.js
-let selectedEngines = [];
+
 let currentPopup = null;
-let searchEngines = []; // 存储搜索引擎列表的变量
 
-// 接收来自options.js的搜索引擎列表和详细信息
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-    if (message.action === 'updateSearchEngines') {
-        // 过滤出选中的搜索引擎，并存储它们的详细信息
-        selectedEngines = message.searchEngines.filter(engine => engine.selected).map(engine => {
-            return {
-                name: engine.name,       // 搜索引擎的名称
-                urlBase: engine.urlBase   // 搜索引擎的基本URL
-            };
-        });
-
-        // 存储选中的搜索引擎详细信息到Chrome同步存储
-        chrome.storage.sync.set({ searchEngines: selectedEngines }, function () {
-            console.log('Selected search engines details saved.');
-        });
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.action === 'updateSearchEngines') {
+        // 这里处理接收到的搜索引擎更新
+        console.log('Search engines updated in content script:', request.searchEngines);
+        // 执行更新操作，例如更改页面上的搜索框行为
+        updateSearchBehavior(request.searchEngines);
     }
 });
 // 发送选中文本到后台脚本
@@ -76,7 +65,7 @@ function handleTextSelection(e) {
         hideSearchLinks();
     }
 }
-function showSearchLinks(selectedText, x, y, currentEngine, searchEngineData, websiteList) {
+function showSearchLinks(selectedText, x, y, currentEngine) {
 
     if (currentPopup) {
         document.body.removeChild(currentPopup);
@@ -101,7 +90,7 @@ function showSearchLinks(selectedText, x, y, currentEngine, searchEngineData, we
                     searchLinksContainer.appendChild(customSearchLink);
                 }
             });
-
+            
             // 读取复选框的状态
             chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'screenshotCheckbox'], function (checkboxes) {
                 var showCopy = checkboxes.copyCheckbox;
