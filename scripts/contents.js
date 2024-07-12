@@ -2,18 +2,12 @@
 let currentPopup = null;
 // 从存储中检索选中的搜索引擎
 // 从存储中检索选中的搜索引擎列表
-// 在 saveCheckboxStatus 函数中，保持键名一致
-chrome.storage.sync.set({ searchEnginesList: selectedEngines }, function () {
-    console.log('选中的搜索引擎列表已保存到 Chrome 存储');
-});
-
-// 修改后的 chrome.storage.sync.get 调用
 chrome.storage.sync.get('searchEnginesList', function (data) {
     var selectedEngines = data.searchEnginesList;
     console.log('已从存储中检索到选中的搜索引擎列表：', selectedEngines);
 
-    // 确保 selectedEngines 是一个数组
-    if (Array.isArray(selectedEngines) && selectedEngines.length > 0) {
+    // 处理选中的搜索引擎列表
+    if (selectedEngines && selectedEngines.length > 0) {
         // 遍历处理每个选中的搜索引擎
         selectedEngines.forEach(function (engine) {
             var engineName = engine.name;
@@ -23,8 +17,6 @@ chrome.storage.sync.get('searchEnginesList', function (data) {
             console.log('搜索引擎名称：', engineName);
             console.log('搜索引擎URL基址：', engineUrlBase);
         });
-    } else {
-        console.log('未找到有效的搜索引擎列表');
     }
 });
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
@@ -116,7 +108,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                     searchLinksContainer.appendChild(customSearchLink);
                 }
             });
-            
+
             // 读取复选框的状态
             chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'screenshotCheckbox'], function (checkboxes) {
                 var showCopy = checkboxes.copyCheckbox;
