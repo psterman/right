@@ -36,6 +36,9 @@ for (var i = 0; i < checkboxList.length; i++) {
 
 	checkbox.value = engine.name;
 	checkbox.nextElementSibling.textContent = engine.name;
+	// 添加name和urlbase属性到复选框元素
+	checkbox.setAttribute('data-name', engine.name);
+	checkbox.setAttribute('data-urlbase', engine.urlbase);
 }
 function $(id) { return document.getElementById(id); }
 var youtubeembed = "https://www.youtube.com/embed/?listType=playlist&list=PLfXHh3TKRb4Z-C2w3SLAY_InRNET-DgI1&rel=0";
@@ -44,17 +47,7 @@ var darkmode = false;
 var firstdefaultvalues = {};
 function defaultgetsettings() {
 	// Initialize search engines data
-	var searchEngineData = [
-		{ name: "Google", urlbase: "https://www.google.com/search?q=" },
-		{ name: "Bing", urlbase: "https://www.bing.com/search?q=" },
-		{ name: "DuckDuckGo", urlbase: "https://duckduckgo.com/?q=" },
-		{ name: "Baidu", urlbase: "https://www.baidu.com/s?wd=" },
-		{ name: "Yandex", urlbase: "https://yandex.com/search/?text=" }
-	];
 	
-
-	// Save search engines data to Chrome storage
-	chrome.storage.sync.set({ "searchengines": searchEngineData });
 	// Option default value to read if there is no current value from chrome.storage AND init default value
 	chrome.storage.sync.get(["icon", "contextmenus", "searchgoogle", "searchbing", "searchduckduckgo", "searchbaidu", "searchyandex", "navtop", "navbottom", "navhidden", "typepanelzone", "typepanelcustom", "typepanellasttime", "websitezoomname", "websitename1", "websiteurl1", "websitename2", "websiteurl2", "websitename3", "websiteurl3", "opennonebookmarks", "openbrowserbookmarks", "openquickbookmarks", "googlesidepanel", "defaultzoom", "step"], function (items) {
 		// find no localstore
@@ -97,51 +90,8 @@ function defaultgetsettings() {
 	});
 }
 
-// Option to save current value
+// 保存选中的搜索引擎到 Chrome 存储
 function save_options() {
-	var selectedEngines = []; // 存储选中的搜索引擎数据的数组
-
-	// 获取所有搜索引擎复选框的父元素
-	var searchEngineList = document.getElementById("searchEngineList");
-	// 获取所有复选框元素
-	var checkboxes = searchEngineList.getElementsByClassName("search-engine-checkbox");
-
-	// 遍历复选框元素，检查每个搜索引擎的复选框是否选中
-	for (var i = 0; i < checkboxes.length; i++) {
-		var checkbox = checkboxes[i];
-		var engineName = checkbox.value;
-		var isChecked = checkbox.checked;
-
-		// 查找对应的搜索引擎对象
-		var engine = searchEngineData.find(function (item) {
-			return item.name === engineName;
-		});
-
-		if (engine) {
-			selectedEngines.push({
-				name: engine.name,
-				urlbase: engine.urlbase,
-				checked: isChecked
-			});
-		}
-	}
-
-	// 保存选中的搜索引擎到 Chrome 存储
-	chrome.storage.sync.set({ 'selectedSearchEngines': selectedEngines }, function () {
-		console.log('Selected search engines saved.');
-	});
-
-	// 发送更新到 contents.js
-	chrome.runtime.sendMessage({
-		action: 'updateSearchEngines',
-		selectedSearchEngines: selectedEngines
-	});
-
-	// 将selectedEngines保存到Chrome存储中
-	chrome.storage.sync.set({ "selectedEngines": selectedEngines }, function () {
-		// 保存成功后的回调函数
-		console.log("Selected engines saved");
-	});
 	chrome.storage.sync.set({ "icon": $("btnpreview").src, "optionskipremember": $("optionskipremember").checked, "contextmenus": $("contextmenus").checked, "searchgoogle": $("searchgoogle").checked, "searchbing": $("searchbing").checked, "searchduckduckgo": $("searchduckduckgo").checked, "searchbaidu": $("searchbaidu").checked, "searchyandex": $("searchyandex").checked, "navtop": $("navtop").checked, "navbottom": $("navbottom").checked, "navhidden": $("navhidden").checked, "typepanelzone": $("typepanelzone").checked, "typepanelcustom": $("typepanelcustom").checked, "typepanellasttime": $("typepanellasttime").checked, "websitezoomname": $("websitezoomname").value, "opentab": $("opentab").checked, "opencopy": $("opencopy").checked, "opennonebookmarks": $("opennonebookmarks").checked, "openbrowserbookmarks": $("openbrowserbookmarks").checked, "openquickbookmarks": $("openquickbookmarks").checked, "websitename1": $("websitename1").value, "websiteurl1": $("websiteurl1").value, "websitename2": $("websitename2").value, "websiteurl2": $("websiteurl2").value, "websitename3": $("websitename3").value, "websiteurl3": $("websiteurl3").value, "websitename4": $("websitename4").value, "websiteurl4": $("websiteurl4").value, "websitename5": $("websitename5").value, "websiteurl5": $("websiteurl5").value, "websitename6": $("websitename6").value, "websiteurl6": $("websiteurl6").value, "websitename7": $("websitename7").value, "websiteurl7": $("websiteurl7").value, "websitename8": $("websitename8").value, "websiteurl8": $("websiteurl8").value, "websitename9": $("websitename9").value, "websiteurl9": $("websiteurl9").value, "websitename10": $("websitename10").value, "websiteurl10": $("websiteurl10").value, "googlesidepanel": $("googlesidepanel").checked, "zoom": $("zoom").checked, "defaultzoom": $("defaultzoom").value, "step": $("step").value });
 }
 
@@ -1216,20 +1166,30 @@ function updateFilters() {
 	});
 }
 // 更新搜索引擎
+// 更新搜索引擎选项并通知后台脚本
 function updateSearchEngines() {
-	// 获取用户勾选的搜索引擎
-	// 获取用户勾选的搜索引擎
+	// 获取用户勾选的搜索引擎，包括 name 和 urlbase
 	var selectedEngines = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
 		.map(function (checkbox) {
+			var engine = searchEngineData.find(function (item) {
+				return item.name === checkbox.value;
+			});
 			return {
-				name: checkbox.value,
+				name: engine.name,
+				urlbase: engine.urlbase, // 确保包含 urlbase
 				selected: true
 			};
 		});
 
 	// 保存搜索引擎到本地存储
 	chrome.storage.local.set({ searchEngines: selectedEngines }, function () {
-		console.log('Search engines updated.');
+		console.log('Selected search engines updated in storage.');
+	});
+
+	// 发送更新到后台脚本
+	chrome.runtime.sendMessage({
+		action: 'updateSearchEngines',
+		searchEngines: selectedEngines // 确保这个消息包含 urlbase
 	});
 }
 
@@ -1461,65 +1421,17 @@ chrome.runtime.sendMessage({
 	jumpOption: jumpCheckbox.checked,
 	closeOption: closeCheckbox.checked,
 	screenshotOption: screenshotCheckbox.checked
-});
-// 为复选框添加change事件监听器，以保存状态并通知后台脚本更新搜索引擎列表
-var checkboxes = document.querySelectorAll('.search-engine-checkbox');
-checkboxes.forEach(function (checkbox) {
-	checkbox.addEventListener('change', function () {
-		// 保存当前状态到 Chrome 存储
-		chrome.storage.sync.set({ [this.value]: { selected: this.checked } }, function () {
-			if (chrome.runtime.lastError) {
-				console.error(chrome.runtime.lastError.message);
-			} else {
-				// 创建只包含当前变化复选框状态的对象
-				let updatedEngine = {
-					name: this.value,
-					selected: this.checked
-				};
-				// 发送更新到后台脚本
-				chrome.runtime.sendMessage({
-					action: 'updateSearchEngines',
-					searchEngines: selectedEngines.map(engine => {
-						return {
-							name: engine.name,
-							selected: engine.selected,
-							urlBase: engine.urlBase
-						};
-					})
-				});
-			}
-		});
-	});
-});
-
-
-// 发送更新搜索引擎的消息给contents.js
-function updateSearchEngines(searchEngines) {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'updateSearchEngines', searchEngines: searchEngines });
-    });
-}
-
-// 监听选项页面的表单提交事件
-document.getElementById('searchEnginesForm').addEventListener('submit', function (event) {
-    event.preventDefault(); // 阻止表单的默认提交行为
-
-    // 获取选中的搜索引擎复选框
-    const checkboxes = document.querySelectorAll('input[name="searchEngine"]');
-    const selectedEngines = Array.from(checkboxes).map(checkbox => {
-        return {
-            name: checkbox.getAttribute('data-name'),
-            urlBase: checkbox.getAttribute('data-urlbase'),
-            selected: checkbox.checked
-        };
-    });
-
-    // 发送更新搜索引擎的消息给contents.js
-    updateSearchEngines(selectedEngines);
-});
-
-// 获取搜索引擎复选框元素列表
+});// 获取搜索引擎复选框元素列表
 var checkboxList = document.querySelectorAll(".search-engine-checkbox");
+
+// 定义搜索引擎数据数组
+var searchEngineData = [
+	{ name: "Google", urlbase: "https://www.google.com/search?q=" },
+	{ name: "Bing", urlbase: "https://www.bing.com/search?q=" },
+	{ name: "DuckDuckGo", urlbase: "https://duckduckgo.com/?q=" },
+	{ name: "Baidu", urlbase: "https://www.baidu.com/s?wd=" },
+	{ name: "Yandex", urlbase: "https://yandex.com/search/?text=" }
+];
 
 // 遍历搜索引擎复选框元素列表，并绑定搜索引擎数据
 for (var i = 0; i < checkboxList.length; i++) {
@@ -1528,21 +1440,52 @@ for (var i = 0; i < checkboxList.length; i++) {
 
 	checkbox.value = engine.name;
 	checkbox.nextElementSibling.textContent = engine.name;
+	// 添加name和urlbase属性到复选框元素
+	checkbox.setAttribute('data-name', engine.name);
+	checkbox.setAttribute('data-urlbase', engine.urlbase);
 }
 
-// 监听复选框状态变化事件
-document.getElementById("searchEngineList").addEventListener("change", function (event) {
-	var selectedEngines = []; // 存储选中的搜索引擎数据的数组
+// 保存选中的搜索引擎到 Chrome 存储
+function saveCheckboxStatus() {
+	var selectedEngines = [];
 
-	// 遍历搜索引擎复选框元素列表，获取选中的搜索引擎数据
+	// 遍历搜索引擎复选框元素列表
 	for (var i = 0; i < checkboxList.length; i++) {
 		var checkbox = checkboxList[i];
+
+		// 检查复选框是否选中
 		if (checkbox.checked) {
-			var engine = searchEngineData[i];
-			selectedEngines.push({ name: engine.name, urlbase: engine.urlbase });
+			var engine = {
+				name: checkbox.getAttribute('data-name'),
+				urlbase: checkbox.getAttribute('data-urlbase')
+			};
+
+			selectedEngines.push(engine);
 		}
 	}
 
-	// 将选中的搜索引擎数据保存到Chrome存储中
-	chrome.storage.sync.set({ "searchengines": selectedEngines });
+	// 将选中的搜索引擎保存到 Chrome 存储
+	chrome.storage.sync.set({ selectedEngines: selectedEngines },
+		function () {
+		// 保存成功后的回调函数
+		console.log('选中的搜索引擎已保存到 Chrome 存储');
+	});
+}// 将选中的搜索引擎保存到存储中
+function saveSearchEngines() {
+	var searchEnginesList = document.getElementsByName('searchEnginesList');
+	var selectedEngines = Array.from(searchEnginesList)
+		.filter(engine => engine.checked)
+		.map(engine => ({
+			name: engine.getAttribute('data-name'),
+			urlBase: engine.getAttribute('data-url-base')
+		}));
+
+	chrome.storage.sync.set({ searchEngines: selectedEngines }, function () {
+		console.log('已将选中的搜索引擎保存到存储中：', selectedEngines);
+	});
+}
+
+// 在复选框更改时添加事件监听器以保存搜索引擎
+document.querySelectorAll('input[name="searchEnginesList"]').forEach(function (checkbox) {
+	checkbox.addEventListener('change', saveSearchEngines);
 });
