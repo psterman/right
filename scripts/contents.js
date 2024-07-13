@@ -1,24 +1,6 @@
 
 let currentPopup = null;
 // 从存储中检索选中的搜索引擎
-// 从存储中检索选中的搜索引擎列表
-chrome.storage.sync.get('searchEnginesList', function (data) {
-    var selectedEngines = data.searchEnginesList;
-    console.log('已从存储中检索到选中的搜索引擎列表：', selectedEngines);
-
-    // 处理选中的搜索引擎列表
-    if (selectedEngines && selectedEngines.length > 0) {
-        // 遍历处理每个选中的搜索引擎
-        selectedEngines.forEach(function (engine) {
-            var engineName = engine.name;
-            var engineUrlBase = engine.urlBase;
-
-            // 在这里执行进一步的操作，如使用获得的名称和URL基址
-            console.log('搜索引擎名称：', engineName);
-            console.log('搜索引擎URL基址：', engineUrlBase);
-        });
-    }
-});
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === 'updateSearchEngines') {
         // 这里处理接收到的搜索引擎更新
@@ -82,25 +64,57 @@ function handleTextSelection(e) {
     } else {
         hideSearchLinks();
     }
-}
-function showSearchLinks(selectedText, x, y, currentEngine) {
+}function showSearchLinks(selectedText, x, y, currentEngine) {
+  if (currentPopup) {
+    document.body.removeChild(currentPopup);
+  }
+    var popup = document.createElement('div');
+    popup.style.position = 'fixed';
+    popup.style.zIndex = '9999';
+    popup.style.borderRadius = '20px';
+    popup.style.backgroundColor = 'black';
+    popup.className = 'search-popup flex-container';
 
-    if (currentPopup) {
-        document.body.removeChild(currentPopup);
+    var style = document.createElement('style');
+    style.innerHTML = '.search-popup a { text-decoration: none; }';
+    document.head.appendChild(style);
+
+    popup.style.maxWidth = 'auto';
+    popup.style.overflow = 'auto';
+
+    var screenWidth = window.innerWidth;
+    var menuWidth = 300;
+    var menuOffset = 10;
+
+    if (x + menuWidth + menuOffset > screenWidth) {
+        popup.style.right = (screenWidth - x + menuOffset) + 'px';
+        popup.style.left = 'auto';
+    } else {
+        popup.style.left = (x + menuOffset) + 'px';
+        popup.style.right = 'auto';
     }
 
-    // 读取用户勾选的复选框状态
-    chrome.storage.sync.get('websiteList', function (data) {
+    popup.style.top = y + 'px';
+    popup.style.zIndex = '9999';
+    popup.style.borderRadius = '20px';
+    popup.style.backgroundColor = 'black';
+    popup.className = 'search-popup flex-container';
 
+    var searchLinksContainer = document.createElement('div');
+    searchLinksContainer.style.display = 'flex';
+    searchLinksContainer.style.flexWrap = 'wrap'; // 添加这行以允许链接换行
+
+    // 获取网站列表
+    chrome.storage.sync.get(['websiteList', 'selectedEngines'], function (data) {
+        // 处理 websiteList
         if (data.websiteList) {
             data.websiteList.forEach(function (website) {
-                // 仅添加用户勾选的网站到搜索链接容器
                 if (website.checked) {
                     var customSearchLink = createActionLink(website.name, function () {
                         chrome.runtime.sendMessage({
                             action: 'setpage',
                             query: website.url + encodeURIComponent(selectedText),
-                            openSidebar: false
+                            openSidebar: false,
                         });
                         document.body.removeChild(popup);
                         currentPopup = null;
@@ -108,7 +122,47 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                     searchLinksContainer.appendChild(customSearchLink);
                 }
             });
+        }
 
+        // 处理 selectedEngines (新增部分)
+        if (data.selectedEngines && data.selectedEngines.length > 0) {
+            data.selectedEngines.forEach(function (engine) {
+                var engineSearchLink = createActionLink(engine.name, function () {
+                    chrome.runtime.sendMessage({
+                        action: 'setpage',
+                        query: engine.urlBase + encodeURIComponent(selectedText),
+                        openSidebar: false,
+                    });
+                    document.body.removeChild(popup);
+                    currentPopup = null;
+                });
+                searchLinksContainer.appendChild(engineSearchLink);
+            });
+        }
+      
+
+// Add selected search engines to the search links container
+    chrome.storage.sync.get('selectedEngines', function (enginesData) {
+              var selectedEngines = enginesData.selectedEngines;
+        if (selectedEngines && selectedEngines.length > 0) {
+                  selectedEngines.forEach(function (engine) {
+                      var engineName = engine.name;
+                      var engineUrlBase = engine.urlBase;
+
+                      var engineSearchLink = createActionLink(engineName, function () {
+                          chrome.runtime.sendMessage({
+                              action: 'setpage',
+                              query: engineUrlBase + encodeURIComponent(selectedText),
+                              openSidebar: false,
+                          });
+                          document.body.removeChild(popup);
+                          currentPopup = null;
+                      });
+                      searchLinksContainer.appendChild(engineSearchLink);
+                  });
+              }
+          });
+            
             // 读取复选框的状态
             chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'screenshotCheckbox'], function (checkboxes) {
                 var showCopy = checkboxes.copyCheckbox;
@@ -216,45 +270,8 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                 }
 
             });
-        } else {
-            console.error("No custom search engines found.");
-        }
     });
-    var popup = document.createElement('div');
-    popup.style.position = 'fixed';
-    popup.style.zIndex = '9999';
-    popup.style.borderRadius = '20px';
-    popup.style.backgroundColor = 'black';
-    popup.className = 'search-popup flex-container';
-
-    var style = document.createElement('style');
-    style.innerHTML = '.search-popup a { text-decoration: none; }';
-    document.head.appendChild(style);
-
-    popup.style.maxWidth = 'auto';
-    popup.style.overflow = 'auto';
-
-    var screenWidth = window.innerWidth;
-    var menuWidth = 300;
-    var menuOffset = 10;
-
-    if (x + menuWidth + menuOffset > screenWidth) {
-        popup.style.right = (screenWidth - x + menuOffset) + 'px';
-        popup.style.left = 'auto';
-    } else {
-        popup.style.left = (x + menuOffset) + 'px';
-        popup.style.right = 'auto';
-    }
-
-    popup.style.top = y + 'px';
-    popup.style.zIndex = '9999';
-    popup.style.borderRadius = '20px';
-    popup.style.backgroundColor = 'black';
-    popup.className = 'search-popup flex-container';
-
-    var searchLinksContainer = document.createElement('div');
-    searchLinksContainer.style.display = 'flex';
-
+    
 
     // 默认搜索引擎链接
     var engines = getEnginesByType(currentEngine);

@@ -1166,32 +1166,6 @@ function updateFilters() {
 	});
 }
 // 更新搜索引擎
-// 更新搜索引擎选项并通知后台脚本
-function updateSearchEngines() {
-	// 获取用户勾选的搜索引擎，包括 name 和 urlbase
-	var selectedEngines = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-		.map(function (checkbox) {
-			var engine = searchEngineData.find(function (item) {
-				return item.name === checkbox.value;
-			});
-			return {
-				name: engine.name,
-				urlbase: engine.urlbase, // 确保包含 urlbase
-				selected: true
-			};
-		});
-
-	// 保存搜索引擎到本地存储
-	chrome.storage.local.set({ searchEngines: selectedEngines }, function () {
-		console.log('Selected search engines updated in storage.');
-	});
-
-	// 发送更新到后台脚本
-	chrome.runtime.sendMessage({
-		action: 'updateSearchEngines',
-		searchEngines: selectedEngines // 确保这个消息包含 urlbase
-	});
-}
 
 // 还需要添加 editWebsite 函数的实现
 function editWebsite(index) {
@@ -1252,6 +1226,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (items.screenshotCheckbox !== undefined) {
 			document.getElementById('screenshotCheckbox').checked = items.screenshotCheckbox;
 		}
+	});
+	// 为每个复选框添加 "change" 事件监听器，以保存更改的状态
+	document.querySelectorAll('.search-engine-checkbox').forEach(function (checkbox) {
+		checkbox.addEventListener('change', saveCheckboxStatus);
 	});
 	// 为复选框添加change事件监听器，以保存状态
 	document.getElementById('copyCheckbox').addEventListener('change', function () {
@@ -1421,7 +1399,9 @@ chrome.runtime.sendMessage({
 	jumpOption: jumpCheckbox.checked,
 	closeOption: closeCheckbox.checked,
 	screenshotOption: screenshotCheckbox.checked
-});// 获取搜索引擎复选框元素列表
+});
+
+// 获取搜索引擎复选框元素列表
 var checkboxList = document.querySelectorAll(".search-engine-checkbox");
 
 // 定义搜索引擎数据数组
@@ -1445,42 +1425,19 @@ for (var i = 0; i < checkboxList.length; i++) {
 	checkbox.setAttribute('data-urlbase', engine.urlbase);
 }
 
-// 保存选中的搜索引擎到 Chrome 存储
-function saveCheckboxStatus() {
-	var selectedEngines = [];
-
-	// 遍历搜索引擎复选框元素列表
-	for (var i = 0; i < checkboxList.length; i++) {
-		var checkbox = checkboxList[i];
-
-		// 检查复选框是否选中
-		if (checkbox.checked) {
-			var engine = {
-				name: checkbox.getAttribute('data-name'),
-				urlbase: checkbox.getAttribute('data-urlbase')
-			};
-
-			selectedEngines.push(engine);
-		}
-	}
-
-	// 将选中的搜索引擎保存到 Chrome 存储
-	chrome.storage.sync.set({ selectedEngines: selectedEngines },
-		function () {
-		// 保存成功后的回调函数
-		console.log('选中的搜索引擎已保存到 Chrome 存储');
-	});
-}// 将选中的搜索引擎保存到存储中
+// 保存选中的搜索引擎到 Chrome 存储// 保存选中的搜索引擎到 Chrome 存储
 function saveSearchEngines() {
 	var searchEnginesList = document.getElementsByName('searchEnginesList');
 	var selectedEngines = Array.from(searchEnginesList)
 		.filter(engine => engine.checked)
 		.map(engine => ({
 			name: engine.getAttribute('data-name'),
-			urlBase: engine.getAttribute('data-url-base')
+			urlBase: engine.getAttribute('data-url-base'),
+			checked: engine.checked // 添加 checked 属性
 		}));
 
-	chrome.storage.sync.set({ searchEngines: selectedEngines }, function () {
+	// 修改存储的键为 selectedEngines
+	chrome.storage.sync.set({ selectedEngines: selectedEngines }, function () {
 		console.log('已将选中的搜索引擎保存到存储中：', selectedEngines);
 	});
 }
@@ -1489,3 +1446,27 @@ function saveSearchEngines() {
 document.querySelectorAll('input[name="searchEnginesList"]').forEach(function (checkbox) {
 	checkbox.addEventListener('change', saveSearchEngines);
 });
+
+document.getElementById('save').addEventListener('click', function () {
+	var searchEnginesList = [];
+	document.querySelectorAll('.engine').forEach(function (engine) {
+		var name = engine.querySelector('.name').value;
+		var urlBase = engine.querySelector('.urlBase').value;
+		searchEnginesList.push({ name: name, urlBase: urlBase });
+	});
+
+	// 修改存储的键为 searchEnginesList
+	chrome.storage.sync.set({ searchEnginesList: searchEnginesList }, function () {
+		console.log('Search engines saved.');
+	});
+});
+
+// 从Chrome存储中获取选中的搜索引擎数据
+function getSelectedEngines(callback) {
+	// 修改存储的键为 selectedEngines
+	chrome.storage.sync.get('selectedEngines', function (data) {
+		var selectedEngines = data.selectedEngines;
+		// 将选中的搜索引擎数据传递给回调函数
+		callback(selectedEngines);
+	});
+}
