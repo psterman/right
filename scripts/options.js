@@ -47,7 +47,7 @@ var darkmode = false;
 var firstdefaultvalues = {};
 function defaultgetsettings() {
 	// Initialize search engines data
-	
+
 	// Option default value to read if there is no current value from chrome.storage AND init default value
 	chrome.storage.sync.get(["icon", "contextmenus", "searchgoogle", "searchbing", "searchduckduckgo", "searchbaidu", "searchyandex", "navtop", "navbottom", "navhidden", "typepanelzone", "typepanelcustom", "typepanellasttime", "websitezoomname", "websitename1", "websiteurl1", "websitename2", "websiteurl2", "websitename3", "websiteurl3", "opennonebookmarks", "openbrowserbookmarks", "openquickbookmarks", "googlesidepanel", "defaultzoom", "step"], function (items) {
 		// find no localstore
@@ -1212,6 +1212,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	// 页面加载时恢复复选框状态
 	restoreCheckboxStatus();
+	chrome.storage.sync.get('selectedEngines', function (items) {
+		if (items.selectedEngines) {
+			// 确保selectedEngines被正确加载后，再进行其他操作
+			updateCheckboxes(items.selectedEngines);
+		}
+	});
 	// 读取复选框状态并设置到页面上的复选框
 	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'screenshotCheckbox'], function (items) {
 		if (items.copyCheckbox !== undefined) {
@@ -1228,8 +1234,20 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	// 为每个复选框添加 "change" 事件监听器，以保存更改的状态
-	document.querySelectorAll('.search-engine-checkbox').forEach(function (checkbox) {
-		checkbox.addEventListener('change', saveCheckboxStatus);
+	document.querySelectorAll('.engine-checkbox').forEach(checkbox => {
+		checkbox.addEventListener('change', function () {
+			// 获取搜索引擎名称和URL
+			const name = checkbox.getAttribute('data-name');
+			const urlBase = checkbox.getAttribute('data-urlbase');
+			// 更新搜索引擎的状态
+			searchEngineList.forEach(engine => {
+				if (engine.name === name && engine.urlBase === urlBase) {
+					engine.checked = checkbox.checked;
+				}
+			});
+			// 保存更新后的搜索引擎列表到Chrome存储
+			chrome.storage.sync.set({ selectedEngines: searchEngineList });
+		});
 	});
 	// 为复选框添加change事件监听器，以保存状态
 	document.getElementById('copyCheckbox').addEventListener('change', function () {
@@ -1400,18 +1418,28 @@ chrome.runtime.sendMessage({
 	closeOption: closeCheckbox.checked,
 	screenshotOption: screenshotCheckbox.checked
 });
+// 定义搜索引擎数据数组
+var searchEngineData = [
+	{ name: "Google", urlbase: "https://www.google.com/search?q=", checked: false },
+	{ name: "Bing", urlbase: "https://www.bing.com/search?q=", checked: false },
+	{ name: "DuckDuckGo", urlbase: "https://duckduckgo.com/?q=", checked: false },
+	{ name: "Baidu", urlbase: "https://www.baidu.com/s?wd=", checked: false },
+	{ name: "Yandex", urlbase: "https://yandex.com/search/?text=", checked: false }
+];
+
+// 初始化 selectedEngines，从存储中获取或使用默认值
+var selectedEngines = [];
+chrome.storage.sync.get('selectedEngines', function (items) {
+	if (items.selectedEngines) {
+		selectedEngines = items.selectedEngines;
+	} else {
+		// 如果没有存储的数据，使用默认选中 Google
+		selectedEngines = searchEngineData.filter(engine => engine.checked);
+	}
+});
 
 // 获取搜索引擎复选框元素列表
 var checkboxList = document.querySelectorAll(".search-engine-checkbox");
-
-// 定义搜索引擎数据数组
-var searchEngineData = [
-	{ name: "Google", urlbase: "https://www.google.com/search?q=" },
-	{ name: "Bing", urlbase: "https://www.bing.com/search?q=" },
-	{ name: "DuckDuckGo", urlbase: "https://duckduckgo.com/?q=" },
-	{ name: "Baidu", urlbase: "https://www.baidu.com/s?wd=" },
-	{ name: "Yandex", urlbase: "https://yandex.com/search/?text=" }
-];
 
 // 遍历搜索引擎复选框元素列表，并绑定搜索引擎数据
 for (var i = 0; i < checkboxList.length; i++) {
@@ -1419,54 +1447,26 @@ for (var i = 0; i < checkboxList.length; i++) {
 	var engine = searchEngineData[i];
 
 	checkbox.value = engine.name;
+	checkbox.checked = selectedEngines.some(selected => selected.name === engine.name && selected.checked);
 	checkbox.nextElementSibling.textContent = engine.name;
-	// 添加name和urlbase属性到复选框元素
-	checkbox.setAttribute('data-name', engine.name);
 	checkbox.setAttribute('data-urlbase', engine.urlbase);
 }
 
-// 保存选中的搜索引擎到 Chrome 存储// 保存选中的搜索引擎到 Chrome 存储
-function saveSearchEngines() {
-	var searchEnginesList = document.getElementsByName('searchEnginesList');
-	var selectedEngines = Array.from(searchEnginesList)
-		.filter(engine => engine.checked)
-		.map(engine => ({
-			name: engine.getAttribute('data-name'),
-			urlBase: engine.getAttribute('data-url-base'),
-			checked: engine.checked // 添加 checked 属性
-		}));
-
-	// 修改存储的键为 selectedEngines
+// 保存选中的搜索引擎到 Chrome 存储
+function saveSelectedEngines() {
+	var checkboxes = Array.from(document.querySelectorAll('input[name="searchEnginesList"]:checked'));
+	var selectedEngines = checkboxes.map(function (engine) {
+		return {
+			name: engine.value,
+			urlBase: engine.getAttribute('data-urlbase'),
+			checked: engine.checked // 确保使用正确的变量名
+		};
+	});
 	chrome.storage.sync.set({ selectedEngines: selectedEngines }, function () {
 		console.log('已将选中的搜索引擎保存到存储中：', selectedEngines);
 	});
 }
-
 // 在复选框更改时添加事件监听器以保存搜索引擎
 document.querySelectorAll('input[name="searchEnginesList"]').forEach(function (checkbox) {
-	checkbox.addEventListener('change', saveSearchEngines);
+	checkbox.addEventListener('change', saveSelectedEngines);
 });
-
-document.getElementById('save').addEventListener('click', function () {
-	var searchEnginesList = [];
-	document.querySelectorAll('.engine').forEach(function (engine) {
-		var name = engine.querySelector('.name').value;
-		var urlBase = engine.querySelector('.urlBase').value;
-		searchEnginesList.push({ name: name, urlBase: urlBase });
-	});
-
-	// 修改存储的键为 searchEnginesList
-	chrome.storage.sync.set({ searchEnginesList: searchEnginesList }, function () {
-		console.log('Search engines saved.');
-	});
-});
-
-// 从Chrome存储中获取选中的搜索引擎数据
-function getSelectedEngines(callback) {
-	// 修改存储的键为 selectedEngines
-	chrome.storage.sync.get('selectedEngines', function (data) {
-		var selectedEngines = data.selectedEngines;
-		// 将选中的搜索引擎数据传递给回调函数
-		callback(selectedEngines);
-	});
-}

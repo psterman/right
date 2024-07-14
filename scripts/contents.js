@@ -60,14 +60,15 @@ function handleTextSelection(e) {
     }
 
     if (selectedText) {
-        showSearchLinks(selectedText, x, y, 'baidu');
+        showSearchLinks(selectedText, x, y);
     } else {
         hideSearchLinks();
     }
-}function showSearchLinks(selectedText, x, y, currentEngine) {
-  if (currentPopup) {
-    document.body.removeChild(currentPopup);
-  }
+} function showSearchLinks(selectedText, x, y, currentEngine) {
+    if (currentPopup) {
+        document.body.removeChild(currentPopup);
+        currentPopup = null; // 更新 currentPopup
+    }
     var popup = document.createElement('div');
     popup.style.position = 'fixed';
     popup.style.zIndex = '9999';
@@ -106,27 +107,37 @@ function handleTextSelection(e) {
 
     // 获取网站列表
     chrome.storage.sync.get(['websiteList', 'selectedEngines'], function (data) {
-        // 处理 websiteList
-        if (data.websiteList) {
-            data.websiteList.forEach(function (website) {
-                if (website.checked) {
-                    var customSearchLink = createActionLink(website.name, function () {
-                        chrome.runtime.sendMessage({
-                            action: 'setpage',
-                            query: website.url + encodeURIComponent(selectedText),
-                            openSidebar: false,
-                        });
-                        document.body.removeChild(popup);
-                        currentPopup = null;
-                    });
-                    searchLinksContainer.appendChild(customSearchLink);
-                }
+        var websiteList = data.websiteList || [];
+        var selectedEngines = data.selectedEngines || [];
+
+        // 将 selectedEngines 数组中的搜索引擎对象添加 checked 属性
+        selectedEngines.forEach(function (engine) {
+            var isChecked = websiteList.some(function (website) {
+                return website.name === engine.name && website.checked;
             });
-        }
+
+            engine.checked = isChecked; // 设置选中状态
+        });
+
+        // 处理 websiteList
+        websiteList.forEach(function (website) {
+            if (website.checked) {
+                var customSearchLink = createActionLink(website.name, function () {
+                    chrome.runtime.sendMessage({
+                        action: 'setpage',
+                        query: website.url + encodeURIComponent(selectedText),
+                        openSidebar: false,
+                    });
+                    document.body.removeChild(popup);
+                    currentPopup = null;
+                });
+                searchLinksContainer.appendChild(customSearchLink);
+            }
+        });
 
         // 处理 selectedEngines (新增部分)
-        if (data.selectedEngines && data.selectedEngines.length > 0) {
-            data.selectedEngines.forEach(function (engine) {
+        selectedEngines.forEach(function (engine) {
+            if (engine.checked) {
                 var engineSearchLink = createActionLink(engine.name, function () {
                     chrome.runtime.sendMessage({
                         action: 'setpage',
@@ -137,141 +148,121 @@ function handleTextSelection(e) {
                     currentPopup = null;
                 });
                 searchLinksContainer.appendChild(engineSearchLink);
-            });
-        }
-      
+            }
+        });
 
-// Add selected search engines to the search links container
-    chrome.storage.sync.get('selectedEngines', function (enginesData) {
-              var selectedEngines = enginesData.selectedEngines;
-        if (selectedEngines && selectedEngines.length > 0) {
-                  selectedEngines.forEach(function (engine) {
-                      var engineName = engine.name;
-                      var engineUrlBase = engine.urlBase;
 
-                      var engineSearchLink = createActionLink(engineName, function () {
-                          chrome.runtime.sendMessage({
-                              action: 'setpage',
-                              query: engineUrlBase + encodeURIComponent(selectedText),
-                              openSidebar: false,
-                          });
-                          document.body.removeChild(popup);
-                          currentPopup = null;
-                      });
-                      searchLinksContainer.appendChild(engineSearchLink);
-                  });
-              }
-          });
-            
-            // 读取复选框的状态
-            chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'screenshotCheckbox'], function (checkboxes) {
-                var showCopy = checkboxes.copyCheckbox;
-                var showJump = checkboxes.jumpCheckbox;
-                var showClose = checkboxes.closeCheckbox;
-                var showscreen = checkboxes.screenshotCheckbox;
 
-                // 添加复制、跳转和关闭选项到搜索链接容器
-                if (showCopy) {
-                    var searchLinkCopy = createActionLink('复制', function () {
-                        var textToCopy = selectedText;
 
-                        var tempTextArea = document.createElement('textarea');
-                        tempTextArea.value = textToCopy;
-                        document.body.appendChild(tempTextArea);
+        // 读取复选框的状态
+        chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'screenshotCheckbox'], function (checkboxes) {
+            var showCopy = checkboxes.copyCheckbox;
+            var showJump = checkboxes.jumpCheckbox;
+            var showClose = checkboxes.closeCheckbox;
+            var showscreen = checkboxes.screenshotCheckbox;
 
-                        tempTextArea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(tempTextArea);
+            // 添加复制、跳转和关闭选项到搜索链接容器
+            if (showCopy) {
+                var searchLinkCopy = createActionLink('复制', function () {
+                    var textToCopy = selectedText;
 
-                        document.body.removeChild(popup);
-                        currentPopup = null;
+                    var tempTextArea = document.createElement('textarea');
+                    tempTextArea.value = textToCopy;
+                    document.body.appendChild(tempTextArea);
+
+                    tempTextArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempTextArea);
+
+                    document.body.removeChild(popup);
+                    currentPopup = null;
+                });
+                searchLinksContainer.appendChild(searchLinkCopy);
+            }
+
+            if (showJump) {
+                var openLinkInSidebar = createActionLink('跳转', function () {
+                    chrome.runtime.sendMessage({
+                        action: 'setpage',
+                        query: selectedText,
+                        openSidebar: true
                     });
-                    searchLinksContainer.appendChild(searchLinkCopy);
+                    document.body.removeChild(popup);
+                    currentPopup = null;
+                });
+                searchLinksContainer.appendChild(openLinkInSidebar);
+            }
+
+            if (showClose) {
+                var searchLinkClose = createActionLink('关闭', function () {
+                    document.body.removeChild(popup);
+                    currentPopup = null;
+                });
+                searchLinksContainer.appendChild(searchLinkClose);
+            }
+
+            if (showscreen) {
+                var screenshotLink = createActionLink('截图', function () {
+                    // 显示一个覆盖层或对话框来指导用户
+                    showScreenshotInstructions();
+                });
+                searchLinksContainer.appendChild(screenshotLink);
+            }
+
+            function showScreenshotInstructions() {
+                // 创建一个覆盖层
+                var overlay = document.createElement('div');
+                overlay.id = 'screenshot-instructions-overlay';
+                overlay.style.position = 'fixed';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.zIndex = '10000';
+                overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'; // 半透明背景
+
+                // 创建截图指令的文本
+                var instructionsText = document.createElement('p');
+                var instructionMessage = '';
+                if (navigator.platform.toUpperCase().indexOf('MAC') >= 0) {
+                    instructionMessage = '请按下 Command + Shift + 3 或 Command + Shift + 4 来截图。';
+                } else {
+                    instructionMessage = '请按下 Print Screen 键来截图。';
                 }
+                instructionsText.innerText = instructionMessage;
+                instructionsText.style.position = 'fixed';
+                instructionsText.style.top = '48%';
+                instructionsText.style.left = '50%';
+                instructionsText.style.transform = 'translate(-50%, -50%)';
+                instructionsText.style.color = '#fff';
+                instructionsText.style.fontSize = '20px';
 
-                if (showJump) {
-                    var openLinkInSidebar = createActionLink('跳转', function () {
-                        chrome.runtime.sendMessage({
-                            action: 'setpage',
-                            query: selectedText,
-                            openSidebar: true
-                        });
-                        document.body.removeChild(popup);
-                        currentPopup = null;
-                    });
-                    searchLinksContainer.appendChild(openLinkInSidebar);
-                }
+                // 将指令文本添加到覆盖层
+                overlay.appendChild(instructionsText);
 
-                if (showClose) {
-                    var searchLinkClose = createActionLink('关闭', function () {
-                        document.body.removeChild(popup);
-                        currentPopup = null;
-                    });
-                    searchLinksContainer.appendChild(searchLinkClose);
-                }
+                // 添加关闭按钮
+                var closeButton = document.createElement('button');
+                closeButton.innerText = '关闭';
+                closeButton.style.position = 'fixed';
+                closeButton.style.top = '50%';
+                closeButton.style.left = '50%';
+                closeButton.style.transform = 'translate(-50%, -50%)';
+                closeButton.style.zIndex = '10001'; // 高于覆盖层
+                closeButton.onclick = function () {
+                    document.body.removeChild(overlay);
+                    currentPopup = null;
+                };
 
-                if (showscreen) {
-                    var screenshotLink = createActionLink('截图', function () {
-                        // 显示一个覆盖层或对话框来指导用户
-                        showScreenshotInstructions();
-                    });
-                    searchLinksContainer.appendChild(screenshotLink);
-                }
+                // 将关闭按钮添加到覆盖层
+                overlay.appendChild(closeButton);
 
-                function showScreenshotInstructions() {
-                    // 创建一个覆盖层
-                    var overlay = document.createElement('div');
-                    overlay.id = 'screenshot-instructions-overlay';
-                    overlay.style.position = 'fixed';
-                    overlay.style.top = '0';
-                    overlay.style.left = '0';
-                    overlay.style.width = '100%';
-                    overlay.style.height = '100%';
-                    overlay.style.zIndex = '10000';
-                    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'; // 半透明背景
+                // 将覆盖层添加到文档体
+                document.body.appendChild(overlay);
+            }
 
-                    // 创建截图指令的文本
-                    var instructionsText = document.createElement('p');
-                    var instructionMessage = '';
-                    if (navigator.platform.toUpperCase().indexOf('MAC') >= 0) {
-                        instructionMessage = '请按下 Command + Shift + 3 或 Command + Shift + 4 来截图。';
-                    } else {
-                        instructionMessage = '请按下 Print Screen 键来截图。';
-                    }
-                    instructionsText.innerText = instructionMessage;
-                    instructionsText.style.position = 'fixed';
-                    instructionsText.style.top = '48%';
-                    instructionsText.style.left = '50%';
-                    instructionsText.style.transform = 'translate(-50%, -50%)';
-                    instructionsText.style.color = '#fff';
-                    instructionsText.style.fontSize = '20px';
-
-                    // 将指令文本添加到覆盖层
-                    overlay.appendChild(instructionsText);
-
-                    // 添加关闭按钮
-                    var closeButton = document.createElement('button');
-                    closeButton.innerText = '关闭';
-                    closeButton.style.position = 'fixed';
-                    closeButton.style.top = '50%';
-                    closeButton.style.left = '50%';
-                    closeButton.style.transform = 'translate(-50%, -50%)';
-                    closeButton.style.zIndex = '10001'; // 高于覆盖层
-                    closeButton.onclick = function () {
-                        document.body.removeChild(overlay);
-                        currentPopup = null;
-                    };
-
-                    // 将关闭按钮添加到覆盖层
-                    overlay.appendChild(closeButton);
-
-                    // 将覆盖层添加到文档体
-                    document.body.appendChild(overlay);
-                }
-
-            });
+        });
     });
-    
+
 
     // 默认搜索引擎链接
     var engines = getEnginesByType(currentEngine);
