@@ -2,11 +2,9 @@
 let currentPopup = null;
 // 从存储中检索选中的搜索引擎
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    if (request.action === 'updateSearchEngines') {
-        // 这里处理接收到的搜索引擎更新
-        console.log('Search engines updated in content script:', request.searchEngines);
-        // 执行更新操作，例如更改页面上的搜索框行为
-        updateSearchBehavior(request.searchEngines);
+    if (request.action === 'updateSelectedEngines') {
+        selectedEngines = request.selectedEngines; // 存储更新的 selectedEngines
+        console.log('Selected engines updated in content script:', selectedEngines);
     }
 });
 // 发送选中文本到后台脚本
