@@ -36,9 +36,9 @@ for (var i = 0; i < checkboxList.length; i++) {
 
 	checkbox.value = engine.name;
 	checkbox.nextElementSibling.textContent = engine.name;
-	// 添加name和urlBase属性到复选框元素
+	// 添加name和urlbase属性到复选框元素
 	checkbox.setAttribute('data-name', engine.name);
-	checkbox.setAttribute('data-urlBase', engine.urlBase);
+	checkbox.setAttribute('data-urlbase', engine.urlbase);
 }
 function $(id) { return document.getElementById(id); }
 var youtubeembed = "https://www.youtube.com/embed/?listType=playlist&list=PLfXHh3TKRb4Z-C2w3SLAY_InRNET-DgI1&rel=0";
@@ -1182,34 +1182,28 @@ function editWebsite(index) {
 }
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
-    
-    restoreCheckboxStatus().then(selectedEngines => {
-        searchEngineData.forEach(function(engine) {
-            var label = document.createElement('label');
-            var checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'search-engine-checkbox';
-			checkbox.value = engine.name;
-			
-        // 检查 engine.urlBase 是否为非空
-        if (engine.urlBase && engine.urlBase.trim() !== '') {
-            checkbox.setAttribute('data-urlBase', engine.urlBase);
-            console.log(`Set data-urlBase for ${engine.name}: ${engine.urlBase}`);
-        } else {
-            console.error(`Missing or empty urlBase for engine: ${engine.name}`);
-        }
-            
-            // 设置复选框的选中状态
-            checkbox.checked = selectedEngines.some(selected => selected.name === engine.name);
-            
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(' ' + engine.name));
-            searchEngineList.appendChild(label);
-        });
+	var searchEngineList = document.getElementById('searchEngineList');
 
-        // 添加事件监听器以保存更改
-        searchEngineList.addEventListener('change', saveCheckboxStatus);
-    });
+	restoreCheckboxStatus().then(selectedEngines => {
+		searchEngineData.forEach(function (engine) {
+			var label = document.createElement('label');
+			var checkbox = document.createElement('input');
+			checkbox.type = 'checkbox';
+			checkbox.className = 'search-engine-checkbox';
+			checkbox.value = engine.name;
+			checkbox.setAttribute('data-urlbase', engine.urlbase);
+
+			// 设置复选框的选中状态
+			checkbox.checked = selectedEngines.some(selected => selected.name === engine.name);
+
+			label.appendChild(checkbox);
+			label.appendChild(document.createTextNode(' ' + engine.name));
+			searchEngineList.appendChild(label);
+		});
+
+		// 添加事件监听器以保存更改
+		searchEngineList.addEventListener('change', saveCheckboxStatus);
+	});
 	// 保存复选框状态
 	function saveCheckboxStatus() {
 		var checkboxes = document.getElementsByClassName("search-engine-checkbox");
@@ -1220,7 +1214,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			if (checkbox.checked) {
 				selectedEngines.push({
 					name: checkbox.value,
-					urlBase: checkbox.getAttribute('data-urlBase')
+					urlBase: checkbox.getAttribute('data-urlbase')
 				});
 			}
 		}
@@ -1250,8 +1244,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			});
 		});
 	}
-
-	var searchEngineList = document.getElementById('searchEngineList');
 	// 保存复选框状态
 	document.getElementById("searchEngineList").addEventListener("change", saveCheckboxStatus);
 
@@ -1283,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		checkbox.addEventListener('change', function () {
 			// 获取搜索引擎名称和URL
 			const name = checkbox.getAttribute('data-name');
-			const urlBase = checkbox.getAttribute('data-urlBase');
+			const urlBase = checkbox.getAttribute('data-urlbase');
 			// 更新搜索引擎的状态
 			searchEngineList.forEach(engine => {
 				if (engine.name === name && engine.urlBase === urlBase) {
@@ -1457,6 +1449,7 @@ var screenshotCheckbox = document.getElementById('screenshotCheckbox');
 // 更新搜索引擎选项
 chrome.runtime.sendMessage({
 	action: 'updateSearchEngines',
+	searchEngines: searchEngines,
 	copyOption: copyCheckbox.checked,
 	jumpOption: jumpCheckbox.checked,
 	closeOption: closeCheckbox.checked,
@@ -1464,11 +1457,11 @@ chrome.runtime.sendMessage({
 });
 // 定义搜索引擎数据数组
 var searchEngineData = [
-	{ name: "Google", urlBase: "https://www.google.com/search?q=", checked: true },
-	{ name: "Bing", urlBase: "https://www.bing.com/search?q=", checked: false },
-	{ name: "DuckDuckGo", urlBase: "https://duckduckgo.com/?q=", checked: false },
-	{ name: "Baidu", urlBase: "https://www.baidu.com/s?wd=", checked: false },
-	{ name: "Yandex", urlBase: "https://yandex.com/search/?text=", checked: false }
+	{ name: "Google", urlbase: "https://www.google.com/search?q=", checked: true },
+	{ name: "Bing", urlbase: "https://www.bing.com/search?q=", checked: false },
+	{ name: "DuckDuckGo", urlbase: "https://duckduckgo.com/?q=", checked: false },
+	{ name: "Baidu", urlbase: "https://www.baidu.com/s?wd=", checked: false },
+	{ name: "Yandex", urlbase: "https://yandex.com/search/?text=", checked: false }
 ];
 
 // 获取搜索引擎复选框元素列表
@@ -1480,9 +1473,9 @@ for (var i = 0; i < checkboxList.length; i++) {
 	var engine = searchEngineData[i];
 
 	checkbox.value = engine.name;
-	checkbox.checked = selectedEngines.some(selected => selected.name === engine.name);
+	checkbox.checked = selectedEngines.some(selected => selected.name === engine.name && selected.checked);
 	checkbox.nextElementSibling.textContent = engine.name;
-	checkbox.setAttribute('data-urlBase', engine.urlBase);
+	checkbox.setAttribute('data-urlbase', engine.urlbase);
 }
 // 假设 selectedEngines 已经在全局作用域中声明：
 
@@ -1491,28 +1484,26 @@ var selectedEngines = [];
 
 // 保存选中的搜索引擎到Chrome存储，并更新全局变量selectedEngines
 function saveCheckboxStatus() {
-    var checkboxes = document.getElementsByClassName("search-engine-checkbox");
-    var selectedEngines = [];
+	var checkboxes = document.getElementsByClassName("search-engine-checkbox");
+	var selectedEngines = [];
 
-    for (var i = 0; i < checkboxes.length; i++) {
-        var checkbox = checkboxes[i];
-        if (checkbox.checked) {
-            var urlBase = checkbox.getAttribute('data-urlBase');
-            if (urlBase) {
-                selectedEngines.push({
-                    name: checkbox.value,
-                    urlBase: urlBase
-                });
-                console.log(`Engine saved: ${checkbox.value}, urlBase: ${urlBase}`);
-            } else {
-                console.error(`Missing urlBase for engine: ${checkbox.value}`);
-            }
-        }
-    }
+	for (var i = 0; i < checkboxes.length; i++) {
+		var checkbox = checkboxes[i];
+		if (checkbox.checked) {
+			var engine = searchEngineData.find(e => e.name === checkbox.value);
+			if (engine) {
+				selectedEngines.push({
+					name: engine.name,
+					urlBase: engine.urlbase
+				});
+			}
+		}
+	}
 
-    chrome.storage.sync.set({ selectedEngines: selectedEngines }, function () {
-        console.log('All selected engines:', selectedEngines);
-    });
+	chrome.storage.sync.set({ selectedEngines: selectedEngines }, function () {
+		console.log('Selected engines saved:', selectedEngines);
+	});
+
 	// 发送消息更新 content script 中的 selectedEngines
 	chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 		chrome.tabs.sendMessage(tabs[0].id, {

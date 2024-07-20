@@ -144,38 +144,38 @@ function handleTextSelection(e) {
                 });
             }
         });
-// 创建一个映射对象，将搜索引擎名称映射到其URL基础字符串
-const engineUrlMap = {
-    'Google': 'https://www.google.com/search?q=',
-    'Bing': 'https://www.bing.com/search?q=',
-    'DuckDuckGo': 'https://duckduckgo.com/?q=',
-    'Baidu': 'https://www.baidu.com/s?wd=',
-    'Yandex': 'https://yandex.com/search/?text=',
-    // 可以根据需要添加更多搜索引擎
-};
+        // 创建一个映射对象，将搜索引擎名称映射到其URL基础字符串
+        const engineUrlMap = {
+            'Google': 'https://www.google.com/search?q=',
+            'Bing': 'https://www.bing.com/search?q=',
+            'DuckDuckGo': 'https://duckduckgo.com/?q=',
+            'Baidu': 'https://www.baidu.com/s?wd=',
+            'Yandex': 'https://yandex.com/search/?text=',
+            // 可以根据需要添加更多搜索引擎
+        };
 
-// 确保selectedEngines中的每个引擎都有其对应的urlBase
-selectedEngines.forEach(function (engine) {
-    // 使用映射对象获取正确的urlBase，如果找不到则使用一个默认值或空字符串
-    const urlBase = engineUrlMap[engine.name] || '';
+        // 确保selectedEngines中的每个引擎都有其对应的urlBase
+        selectedEngines.forEach(function (engine) {
+            // 使用映射对象获取正确的urlBase，如果找不到则使用一个默认值或空字符串
+            const urlBase = engineUrlMap[engine.name] || '';
 
-    // 确保urlBase不为空再添加到链接数组中
-    if (urlBase) {
-        allLinks.push({
-            name: engine.name,
-            action: function () {
-                // 使用获取到的urlBase构建搜索链接
-                chrome.runtime.sendMessage({
-                    action: 'setpage',
-                    query: urlBase + encodeURIComponent(selectedText),
-                    openSidebar: false,
+            // 确保urlBase不为空再添加到链接数组中
+            if (urlBase) {
+                allLinks.push({
+                    name: engine.name,
+                    action: function () {
+                        // 使用获取到的urlBase构建搜索链接
+                        chrome.runtime.sendMessage({
+                            action: 'setpage',
+                            query: urlBase + encodeURIComponent(selectedText),
+                            openSidebar: false,
+                        });
+                        document.body.removeChild(popup);
+                        currentPopup = null;
+                    }
                 });
-                document.body.removeChild(popup);
-                currentPopup = null;
             }
         });
-    }
-});
 
         // 创建并添加所有链接
         allLinks.forEach(function (link) {
@@ -291,7 +291,7 @@ selectedEngines.forEach(function (engine) {
         }
 
     });
-    
+
 
 
     // 默认搜索引擎链接

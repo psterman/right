@@ -9,9 +9,9 @@ const writereview = "https://chromewebstore.google.com/detail/page-sidebar-open-
 const linkchangelog = "https://www.stefanvd.net/project/page-sidebar/browser/google-chrome/changelog/";
 const linktranslate = "https://www.stefanvd.net/project/translate/";
 const linksupport = "https://www.stefanvd.net/support/";
-const linkwelcome = "https://www.stefanvd.net/project/page-sidebar/browser/google-chrome/welcome/";
-const linkuninstall = "https://www.stefanvd.net/project/page-sidebar/browser/google-chrome/uninstall/";
-const linkguide = "https://www.stefanvd.net/project/page-sidebar/browser/google-chrome/guide/";
+const linkwelcome = "https://v.flomoapp.com/mine?source=wechat";
+const linkuninstall = "https://v.flomoapp.com/mine?source=wechat";
+const linkguide = "https://www.stefanvd.net/project/page-sidebar/browser/google-chrome/guide/"; 
 const linkproductdescription = "https://www.stefanvd.net/project/page-sidebar/browser/";
 const browsernewtab = "chrome://newtab/";
 const browserstore = "https://chrome.google.com";
