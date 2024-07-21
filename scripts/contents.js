@@ -185,11 +185,13 @@ function handleTextSelection(e) {
     });
 
     // 读取复选框的状态
-    chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'screenshotCheckbox'], function (checkboxes) {
+    chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','screenshotCheckbox'], function (checkboxes) {
         var showCopy = checkboxes.copyCheckbox;
         var showJump = checkboxes.jumpCheckbox;
         var showClose = checkboxes.closeCheckbox;
+        var showRefresh = checkboxes.refreshCheckbox;
         var showscreen = checkboxes.screenshotCheckbox;
+
 
         // 添加复制、跳转和关闭选项到搜索链接容器
         if (showCopy) {
@@ -225,12 +227,22 @@ function handleTextSelection(e) {
 
         if (showClose) {
             var searchLinkClose = createActionLink('关闭', function () {
-                document.body.removeChild(popup);
-                currentPopup = null;
+                chrome.runtime.sendMessage({ action: "closeTab" });
             });
             searchLinksContainer.appendChild(searchLinkClose);
         }
 
+        if (showRefresh) {
+            var searchLinkRefresh = createActionLink('刷新', function () {
+                // 先移除弹出菜单
+                document.body.removeChild(popup);
+                currentPopup = null;
+
+                // 然后刷新当前页面
+                window.location.reload();
+            });
+            searchLinksContainer.appendChild(searchLinkRefresh);
+        }
         if (showscreen) {
             var screenshotLink = createActionLink('截图', function () {
                 // 显示一个覆盖层或对话框来指导用户
