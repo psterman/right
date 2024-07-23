@@ -1257,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	// 读取复选框状态并设置到页面上的复选框
-	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','screenshotCheckbox','outcheckbox'], function (items) {
+	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','PasteCheckbox'], function (items) {
 		if (items.copyCheckbox !== undefined) {
 			document.getElementById('copyCheckbox').checked = items.copyCheckbox;
 		}
@@ -1270,8 +1270,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (items.refreshCheckbox !== undefined) {
 			document.getElementById('refreshCheckbox').checked = items.refreshCheckbox;
 		}
-		if (items.screenshotCheckbox !== undefined) {
-			document.getElementById('screenshotCheckbox').checked = items.screenshotCheckbox;
+		if (items.PasteCheckbox !== undefined) {
+			document.getElementById('PasteCheckbox').checked = items.PasteCheckbox;
 		}
 	});
 	// 为每个复选框添加 "change" 事件监听器，以保存更改的状态
@@ -1305,8 +1305,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	document.getElementById('refreshCheckbox').addEventListener('change', function () {
 		chrome.storage.sync.set({ 'refreshCheckbox': this.checked });
 	});
-	document.getElementById('screenshotCheckbox').addEventListener('change', function () {
-		chrome.storage.sync.set({ 'screenshotCheckbox': this.checked });
+	document.getElementById('PasteCheckbox').addEventListener('change', function () {
+		chrome.storage.sync.set({ 'PasteCheckbox': this.checked });
 	});
 	
 	// 在contents.js中，适当位置初始化selectedSearchEngines
@@ -1453,7 +1453,7 @@ var copyCheckbox = document.getElementById('copyCheckbox');
 var jumpCheckbox = document.getElementById('jumpCheckbox');
 var closeCheckbox = document.getElementById('closeCheckbox');
 var refreshCheckbox = document.getElementById('refreshCheckbox');
-var screenshotCheckbox = document.getElementById('screenshotCheckbox');
+var PasteCheckbox = document.getElementById('PasteCheckbox');
 // 更新搜索引擎选项
 chrome.runtime.sendMessage({
 	action: 'updateSearchEngines',
@@ -1462,7 +1462,7 @@ chrome.runtime.sendMessage({
 	jumpOption: jumpCheckbox.checked,
 	closeOption: closeCheckbox.checked,
 	refreshOption: refreshCheckbox.checked,
-	screenshotOption: screenshotCheckbox.checked
+	pasteOption: PasteCheckbox.checked
 });
 // 定义搜索引擎数据数组
 var searchEngineData = [
@@ -1470,7 +1470,9 @@ var searchEngineData = [
 	{ name: "Bing", urlbase: "https://www.bing.com/search?q=", checked: false },
 	{ name: "DuckDuckGo", urlbase: "https://duckduckgo.com/?q=", checked: false },
 	{ name: "Baidu", urlbase: "https://www.baidu.com/s?wd=", checked: false },
-	{ name: "Yandex", urlbase: "https://yandex.com/search/?text=", checked: false }
+	{ name: "Yandex", urlbase: "https://yandex.com/search/?text=", checked: false },
+	{ name: "Deepl", urlbase: "https://www.deepl.com/zh/translator#en/zh-hans/", checked: false },
+	{ name: "doubao", urlbase: "https://www.doubao.com/chat/", checked: false }
 ];
 
 // 获取搜索引擎复选框元素列表

@@ -151,6 +151,8 @@ function handleTextSelection(e) {
             'DuckDuckGo': 'https://duckduckgo.com/?q=',
             'Baidu': 'https://www.baidu.com/s?wd=',
             'Yandex': 'https://yandex.com/search/?text=',
+            'Deepl': 'https://www.deepl.com/zh/translator#en/-hans/',
+            'doubao': 'https://www.doubao.com/chat/',	
             // 可以根据需要添加更多搜索引擎
         };
 
@@ -185,12 +187,12 @@ function handleTextSelection(e) {
     });
 
     // 读取复选框的状态
-    chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','screenshotCheckbox'], function (checkboxes) {
+    chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','PasteCheckbox'], function (checkboxes) {
         var showCopy = checkboxes.copyCheckbox;
         var showJump = checkboxes.jumpCheckbox;
         var showClose = checkboxes.closeCheckbox;
         var showRefresh = checkboxes.refreshCheckbox;
-        var showscreen = checkboxes.screenshotCheckbox;
+        var showPaste = checkboxes.PasteCheckbox;
 
 
         // 添加复制、跳转和关闭选项到搜索链接容器
@@ -243,65 +245,29 @@ function handleTextSelection(e) {
             });
             searchLinksContainer.appendChild(searchLinkRefresh);
         }
-        if (showscreen) {
-            var screenshotLink = createActionLink('截图', function () {
-                // 显示一个覆盖层或对话框来指导用户
-                showScreenshotInstructions();
+        if (showPaste) {
+            // 创建粘贴链接
+            var searchLinkPaste = createActionLink('粘贴', async function () {
+                try {
+                    // 读取剪贴板中的文本
+                    const pastedText = await navigator.clipboard.readText();
+                    console.log(pastedText); // 用于调试，查看粘贴的文本
+
+                    // 在这里你可以执行进一步的操作，比如将粘贴的文本发送到后台脚本或创建搜索链接等
+                    // 例如：
+                    // chrome.runtime.sendMessage({ action: 'setpage', query: pastedText });
+
+                    // 如果存在 input 元素和 popup，则移除它们
+                    if (pasteInput) document.body.removeChild(pasteInput);
+                    if (popup) document.body.removeChild(popup);
+                    currentPopup = null;
+
+                } catch (err) {
+                    console.error('Failed to read the clipboard contents: ', err);
+                }
             });
-            searchLinksContainer.appendChild(screenshotLink);
+            searchLinksContainer.appendChild(searchLinkPaste);
         }
-
-        function showScreenshotInstructions() {
-            // 创建一个覆盖层
-            var overlay = document.createElement('div');
-            overlay.id = 'screenshot-instructions-overlay';
-            overlay.style.position = 'fixed';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100%';
-            overlay.style.height = '100%';
-            overlay.style.zIndex = '10000';
-            overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'; // 半透明背景
-
-            // 创建截图指令的文本
-            var instructionsText = document.createElement('p');
-            var instructionMessage = '';
-            if (navigator.platform.toUpperCase().indexOf('MAC') >= 0) {
-                instructionMessage = '请按下 Command + Shift + 3 或 Command + Shift + 4 来截图。';
-            } else {
-                instructionMessage = '请按下 Print Screen 键来截图。';
-            }
-            instructionsText.innerText = instructionMessage;
-            instructionsText.style.position = 'fixed';
-            instructionsText.style.top = '48%';
-            instructionsText.style.left = '50%';
-            instructionsText.style.transform = 'translate(-50%, -50%)';
-            instructionsText.style.color = '#fff';
-            instructionsText.style.fontSize = '20px';
-
-            // 将指令文本添加到覆盖层
-            overlay.appendChild(instructionsText);
-
-            // 添加关闭按钮
-            var closeButton = document.createElement('button');
-            closeButton.innerText = '关闭';
-            closeButton.style.position = 'fixed';
-            closeButton.style.top = '50%';
-            closeButton.style.left = '50%';
-            closeButton.style.transform = 'translate(-50%, -50%)';
-            closeButton.style.zIndex = '10001'; // 高于覆盖层
-            closeButton.onclick = function () {
-                document.body.removeChild(overlay);
-                currentPopup = null;
-            };
-
-            // 将关闭按钮添加到覆盖层
-            overlay.appendChild(closeButton);
-
-            // 将覆盖层添加到文档体
-            document.body.appendChild(overlay);
-        }
-
     });
 
 

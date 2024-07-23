@@ -546,3 +546,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		chrome.tabs.remove(sender.tab.id);
 	}
 });
+
+//粘贴
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	if (message.action === "paste") {
+		navigator.clipboard.readText()
+			.then(text => {
+				sendResponse({ success: true, text: text });
+			})
+			.catch(err => {
+				console.error('Failed to read clipboard contents: ', err);
+				sendResponse({ success: false, error: err.message });
+			});
+		return true; // 这很重要，它告诉Chrome我们将异步发送响应
+	}
+});

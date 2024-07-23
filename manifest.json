@@ -65,7 +65,8 @@
       "storage",
       "sidePanel",
       "declarativeNetRequestWithHostAccess",
-      "activeTab"
+      "activeTab",
+      "clipboardRead"
    ],
    "short_name": "__MSG_name__",
    "side_panel": {
