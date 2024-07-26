@@ -152,21 +152,21 @@ function handleTextSelection(e) {
             'Baidu': 'https://www.baidu.com/s?wd=',
             'Yandex': 'https://yandex.com/search/?text=',
             'Deepl': 'https://www.deepl.com/zh/translator#en/-hans/',
-            'doubao': 'https://www.doubao.com/chat/',	
+            'doubao': 'https://www.doubao.com/chat/',
+            'download': 'https://9xbuddy.in/process?url=',
+
             // 可以根据需要添加更多搜索引擎
         };
 
-        // 确保selectedEngines中的每个引擎都有其对应的urlBase
-        selectedEngines.forEach(function (engine) {
-            // 使用映射对象获取正确的urlBase，如果找不到则使用一个默认值或空字符串
-            const urlBase = engineUrlMap[engine.name] || '';
+        // 确保selectedEngines中的每个引擎都有其对应的urlBaseselectedEngines.forEach(function (engine) {
+        const urlBase = engineUrlMap[engine.name];
 
-            // 确保urlBase不为空再添加到链接数组中
-            if (urlBase) {
+        if (urlBase) {
+            // 对于一般的搜索引擎，创建搜索链接
+            if (engine.name !== 'download') {
                 allLinks.push({
                     name: engine.name,
                     action: function () {
-                        // 使用获取到的urlBase构建搜索链接
                         chrome.runtime.sendMessage({
                             action: 'setpage',
                             query: urlBase + encodeURIComponent(selectedText),
@@ -176,15 +176,31 @@ function handleTextSelection(e) {
                         currentPopup = null;
                     }
                 });
+            } else {
+                // 对于 'download' 引擎，创建使用当前页面URL的下载链接
+                const currentUrl = window.location.href;
+                const searchUrl = urlBase + encodeURIComponent(currentUrl);
+                allLinks.push({
+                    name: engine.name,
+                    action: function () {
+                        chrome.runtime.sendMessage({
+                            action: 'setpage',
+                            query: searchUrl,
+                            openSidebar: false,
+                        });
+                        document.body.removeChild(popup);
+                        currentPopup = null;
+                    }
+                });
             }
-        });
-
-        // 创建并添加所有链接
-        allLinks.forEach(function (link) {
-            var actionLink = createActionLink(link.name, link.action);
-            searchLinksContainer.appendChild(actionLink);
-        });
+        }
     });
+
+    // 创建并添加所有链接
+    allLinks.forEach(function (link) {
+        var actionLink = createActionLink(link.name, link.action);
+        searchLinksContainer.appendChild(actionLink);
+        });
 
     // 读取复选框的状态
     chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','pasteCheckbox','downloadCheckbox'], function (checkboxes) {

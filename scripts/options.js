@@ -1480,7 +1480,8 @@ var searchEngineData = [
 	{ name: "Baidu", urlbase: "https://www.baidu.com/s?wd=", checked: false },
 	{ name: "Yandex", urlbase: "https://yandex.com/search/?text=", checked: false },
 	{ name: "Deepl", urlbase: "https://www.deepl.com/zh/translator#en/zh-hans/", checked: false },
-	{ name: "doubao", urlbase: "https://www.doubao.com/chat/", checked: false }
+	{ name: "doubao", urlbase: "https://www.doubao.com/chat/", checked: false },
+    { name: "download", urlbase: "https://9xbuddy.in/process?url=", checked: false }
 ];
 
 // 获取搜索引擎复选框元素列表
