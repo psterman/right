@@ -1257,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	// 读取复选框状态并设置到页面上的复选框
-	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','PasteCheckbox'], function (items) {
+	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','pasteCheckbox','downloadCheckbox'], function (items) {
 		if (items.copyCheckbox !== undefined) {
 			document.getElementById('copyCheckbox').checked = items.copyCheckbox;
 		}
@@ -1270,8 +1270,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (items.refreshCheckbox !== undefined) {
 			document.getElementById('refreshCheckbox').checked = items.refreshCheckbox;
 		}
-		if (items.PasteCheckbox !== undefined) {
-			document.getElementById('PasteCheckbox').checked = items.PasteCheckbox;
+		if (items.pasteCheckbox !== undefined) {
+			document.getElementById('pasteCheckbox').checked = items.pasteCheckbox;
+		}
+		if (items.downloadCheckbox !== undefined) {
+			document.getElementById('downloadCheckbox').checked = items.downloadCheckbox;
 		}
 	});
 	// 为每个复选框添加 "change" 事件监听器，以保存更改的状态
@@ -1305,10 +1308,12 @@ document.addEventListener('DOMContentLoaded', function () {
 	document.getElementById('refreshCheckbox').addEventListener('change', function () {
 		chrome.storage.sync.set({ 'refreshCheckbox': this.checked });
 	});
-	document.getElementById('PasteCheckbox').addEventListener('change', function () {
-		chrome.storage.sync.set({ 'PasteCheckbox': this.checked });
+	document.getElementById('pasteCheckbox').addEventListener('change', function () {
+		chrome.storage.sync.set({ 'pasteCheckbox': this.checked });
 	});
-	
+	document.getElementById('downloadCheckbox').addEventListener('change', function () {
+		chrome.storage.sync.set({ 'downloadCheckbox': this.checked });
+	});
 	// 在contents.js中，适当位置初始化selectedSearchEngines
 	// 加载用户勾选的搜索引擎
 	chrome.storage.sync.get('selectedSearchEngines', function (result) {
@@ -1453,7 +1458,9 @@ var copyCheckbox = document.getElementById('copyCheckbox');
 var jumpCheckbox = document.getElementById('jumpCheckbox');
 var closeCheckbox = document.getElementById('closeCheckbox');
 var refreshCheckbox = document.getElementById('refreshCheckbox');
-var PasteCheckbox = document.getElementById('PasteCheckbox');
+var pasteCheckbox = document.getElementById('pasteCheckbox');
+var downloadCheckbox = document.getElementById('downloadCheckbox');
+
 // 更新搜索引擎选项
 chrome.runtime.sendMessage({
 	action: 'updateSearchEngines',
@@ -1462,7 +1469,8 @@ chrome.runtime.sendMessage({
 	jumpOption: jumpCheckbox.checked,
 	closeOption: closeCheckbox.checked,
 	refreshOption: refreshCheckbox.checked,
-	pasteOption: PasteCheckbox.checked
+	downloadOption: downloadCheckbox.checked,
+	pasteOption: pasteCheckbox.checked
 });
 // 定义搜索引擎数据数组
 var searchEngineData = [

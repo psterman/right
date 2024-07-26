@@ -187,13 +187,13 @@ function handleTextSelection(e) {
     });
 
     // 读取复选框的状态
-    chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','PasteCheckbox'], function (checkboxes) {
+    chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','pasteCheckbox','downloadCheckbox'], function (checkboxes) {
         var showCopy = checkboxes.copyCheckbox;
         var showJump = checkboxes.jumpCheckbox;
         var showClose = checkboxes.closeCheckbox;
         var showRefresh = checkboxes.refreshCheckbox;
-        var showPaste = checkboxes.PasteCheckbox;
-
+        var showPaste = checkboxes.pasteCheckbox;
+        var showDownload = checkboxes.downloadCheckbox;
 
         // 添加复制、跳转和关闭选项到搜索链接容器
         if (showCopy) {
@@ -247,26 +247,26 @@ function handleTextSelection(e) {
         }
         if (showPaste) {
             // 创建粘贴链接
-            var searchLinkPaste = createActionLink('粘贴', async function () {
-                try {
-                    // 读取剪贴板中的文本
-                    const pastedText = await navigator.clipboard.readText();
-                    console.log(pastedText); // 用于调试，查看粘贴的文本
+            var searchLinkPaste = createActionLink('刷新1', function () {
+                // 先移除弹出菜单
+                document.body.removeChild(popup);
+                currentPopup = null;
 
-                    // 在这里你可以执行进一步的操作，比如将粘贴的文本发送到后台脚本或创建搜索链接等
-                    // 例如：
-                    // chrome.runtime.sendMessage({ action: 'setpage', query: pastedText });
-
-                    // 如果存在 input 元素和 popup，则移除它们
-                    if (pasteInput) document.body.removeChild(pasteInput);
-                    if (popup) document.body.removeChild(popup);
-                    currentPopup = null;
-
-                } catch (err) {
-                    console.error('Failed to read the clipboard contents: ', err);
-                }
+                // 然后刷新当前页面
+                window.location.reload();
             });
             searchLinksContainer.appendChild(searchLinkPaste);
+        }
+        if (showDownload) {
+            var searchLinkDownload = createActionLink('刷新2', function () {
+                // 先移除弹出菜单
+                document.body.removeChild(popup);
+                currentPopup = null;
+
+                // 然后刷新当前页面
+                window.location.reload();
+            });
+            searchLinksContainer.appendChild(searchLinkDownload);
         }
     });
 
