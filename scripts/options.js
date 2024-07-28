@@ -1184,7 +1184,13 @@ function editWebsite(index) {
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
 	var searchEngineList = document.getElementById('searchEngineList');
+	// 获取按钮元素
+	var exportButton = document.getElementById('export-json-button');
 
+	// 为按钮添加点击事件监听器
+	exportButton.addEventListener('click', function () {
+		exportWebsiteListAsJSON(); // 调用导出函数
+	});
 	restoreCheckboxStatus().then(selectedEngines => {
 		searchEngineData.forEach(function (engine) {
 			var label = document.createElement('label');
@@ -1542,4 +1548,20 @@ function saveCheckboxStatus() {
 			selectedEngines: selectedEngines
 		});
 	});
+}
+// 在options.js文件中添加以下函数
+// 在options.js中实现以下函数
+function exportWebsiteListAsJSON() {
+    var websiteListJSON = JSON.stringify(websiteList, null, 2); // 转换为JSON字符串，并格式化
+    var blob = new Blob([websiteListJSON], { type: 'application/json' }); // 创建Blob对象
+    var url = URL.createObjectURL(blob); // 创建下载链接
+
+    // 创建一个隐藏的下载链接元素
+    var downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = 'websiteList.json'; // 设置下载文件名
+    document.body.appendChild(downloadLink); // 将下载链接添加到DOM中
+    downloadLink.click(); // 模拟点击下载
+    document.body.removeChild(downloadLink); // 下载后移除下载链接
+    URL.revokeObjectURL(url); // 释放URL对象
 }
