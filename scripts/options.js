@@ -1186,7 +1186,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	var searchEngineList = document.getElementById('searchEngineList');
 	// 获取按钮元素
 	var exportButton = document.getElementById('export-json-button');
-
+	var importButton = document.getElementById('import-json-button');
+	importButton.addEventListener('click', importWebsiteListFromJSON);
 	// 为按钮添加点击事件监听器
 	exportButton.addEventListener('click', function () {
 		exportWebsiteListAsJSON(); // 调用导出函数
@@ -1564,4 +1565,39 @@ function exportWebsiteListAsJSON() {
     downloadLink.click(); // 模拟点击下载
     document.body.removeChild(downloadLink); // 下载后移除下载链接
     URL.revokeObjectURL(url); // 释放URL对象
+}
+function importWebsiteListFromJSON() {
+	// 创建一个文件输入元素
+	var input = document.createElement('input');
+	input.type = 'file';
+	input.accept = '.json';
+
+	input.addEventListener('change', function (e) {
+		var file = e.target.files[0];
+		if (file) {
+			var reader = new FileReader();
+
+			reader.onload = function (e) {
+				// 将读取到的内容解析为JSON
+				var websites = JSON.parse(e.target.result);
+
+				// 更新websiteList并保存到Chrome存储
+				if (Array.isArray(websites)) {
+					chrome.storage.sync.set({ "websiteList": websites }, function () {
+						if (chrome.runtime.lastError) {
+							console.error(chrome.runtime.lastError.message);
+						} else {
+							console.log("Website list imported successfully.");
+							// 刷新页面或更新UI以显示新导入的网站
+							loadWebsiteList(); // 假设这是用于加载和显示网站列表的函数
+						}
+					});
+				}
+			};
+
+			reader.readAsText(file);
+		}
+	});
+
+	input.click(); // 触发文件选择对话框
 }
