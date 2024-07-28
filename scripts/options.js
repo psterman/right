@@ -1055,12 +1055,14 @@ function displayWebsiteList() {
 		var editButton = document.createElement('button');
 		var deleteButton = document.createElement('button');
 		var checkbox = document.createElement('input');
+		var exportButton = document.createElement('button');
 		checkbox.type = 'checkbox';
 		checkbox.id = 'checkbox-' + index; // 设置唯一ID以便后续引用
 		checkbox.checked = website.checked; // 根据存储的状态设置复选框
 		nameSpan.textContent = website.name;
 		editButton.textContent = '编辑';
 		deleteButton.textContent = '删除';
+		exportButton.textContent = '导出JSON';
 
 		checkbox.type = 'checkbox';
 		checkbox.value = website.name;
@@ -1072,7 +1074,7 @@ function displayWebsiteList() {
 		listItem.appendChild(nameSpan);
 		listItem.appendChild(editButton);
 		listItem.appendChild(deleteButton);
-
+		listItem.appendChild(exportButton);
 		// 添加到列表容器
 		websiteListContainer.appendChild(listItem);
 
@@ -1081,7 +1083,10 @@ function displayWebsiteList() {
 			deleteWebsite(index);
 			displayWebsiteList();
 		});
-
+		//导出按钮添加点击事件
+		exportButton.addEventListener('click', function () {
+			exportWebsiteAsJSON(index); // 导出当前网站的JSON
+		});
 		// 为编辑按钮添加点击事件
 		editButton.addEventListener('click', function () {
 			editWebsite(index);
@@ -1264,7 +1269,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	// 读取复选框状态并设置到页面上的复选框
-	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','pasteCheckbox','downloadCheckbox'], function (items) {
+	chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox'], function (items) {
 		if (items.copyCheckbox !== undefined) {
 			document.getElementById('copyCheckbox').checked = items.copyCheckbox;
 		}
@@ -1488,7 +1493,7 @@ var searchEngineData = [
 	{ name: "Yandex", urlbase: "https://yandex.com/search/?text=", checked: false },
 	{ name: "Deepl", urlbase: "https://www.deepl.com/zh/translator#en/zh-hans/", checked: false },
 	{ name: "Doubao", urlbase: "https://www.doubao.com/chat/", checked: false },
-    { name: "Download", urlbase: "https://9xbuddy.in/process?url=", checked: false },
+	{ name: "Download", urlbase: "https://9xbuddy.in/process?url=", checked: false },
 	{ name: "Tongyi", urlbase: "https://tongyi.aliyun.com/qianwen/", checked: false },
 	{ name: "Doubao", urlbase: "https://www.doubao.com/chat/", checked: false },
 	{ name: "Kimi", urlbase: "https://kimi.moonshot.cn/", checked: false },
@@ -1499,9 +1504,9 @@ var searchEngineData = [
 	{ name: "Perplexity", urlbase: "https://www.perplexity.ai/", checked: false },
 	{ name: "Chatgpt", urlbase: "https://chatgpt.com/", checked: false },
 	{ name: "Gemini", urlbase: "https://gemini.google.com/", checked: false }
- 			];
+];
 
-			
+
 // 获取搜索引擎复选框元素列表
 var checkboxList = document.querySelectorAll(".search-engine-checkbox");
 
@@ -1553,18 +1558,18 @@ function saveCheckboxStatus() {
 // 在options.js文件中添加以下函数
 // 在options.js中实现以下函数
 function exportWebsiteListAsJSON() {
-    var websiteListJSON = JSON.stringify(websiteList, null, 2); // 转换为JSON字符串，并格式化
-    var blob = new Blob([websiteListJSON], { type: 'application/json' }); // 创建Blob对象
-    var url = URL.createObjectURL(blob); // 创建下载链接
+	var websiteListJSON = JSON.stringify(websiteList, null, 2); // 转换为JSON字符串，并格式化
+	var blob = new Blob([websiteListJSON], { type: 'application/json' }); // 创建Blob对象
+	var url = URL.createObjectURL(blob); // 创建下载链接
 
-    // 创建一个隐藏的下载链接元素
-    var downloadLink = document.createElement('a');
-    downloadLink.href = url;
-    downloadLink.download = 'websiteList.json'; // 设置下载文件名
-    document.body.appendChild(downloadLink); // 将下载链接添加到DOM中
-    downloadLink.click(); // 模拟点击下载
-    document.body.removeChild(downloadLink); // 下载后移除下载链接
-    URL.revokeObjectURL(url); // 释放URL对象
+	// 创建一个隐藏的下载链接元素
+	var downloadLink = document.createElement('a');
+	downloadLink.href = url;
+	downloadLink.download = 'websiteList.json'; // 设置下载文件名
+	document.body.appendChild(downloadLink); // 将下载链接添加到DOM中
+	downloadLink.click(); // 模拟点击下载
+	document.body.removeChild(downloadLink); // 下载后移除下载链接
+	URL.revokeObjectURL(url); // 释放URL对象
 }
 function importWebsiteListFromJSON() {
 	// 创建一个文件输入元素
@@ -1600,4 +1605,28 @@ function importWebsiteListFromJSON() {
 	});
 
 	input.click(); // 触发文件选择对话框
+} function exportWebsiteAsJSON(index) {
+	var website = websiteList[index];
+	var websiteJSON = JSON.stringify(website, null, 2); // 将网站对象转换为 JSON 字符串
+
+	// 创建一个 Blob 对象，包含 JSON 字符串数据
+	var blob = new Blob([websiteJSON], { type: 'application/json' });
+
+	// 创建一个下载链接的 URL
+	var url = URL.createObjectURL(blob);
+
+	// 创建一个隐藏的下载链接元素
+	var downloadLink = document.createElement('a');
+	downloadLink.href = url;
+	downloadLink.download = 'website_' + index + '.json'; // 设置下载文件名
+
+	// 将下载链接添加到文档中，但不显示
+	document.body.appendChild(downloadLink);
+
+	// 模拟点击下载链接
+	downloadLink.click();
+
+	// 下载完成后，移除下载链接并释放 URL 对象
+	document.body.removeChild(downloadLink);
+	URL.revokeObjectURL(url);
 }
