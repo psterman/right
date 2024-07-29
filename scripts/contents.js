@@ -443,11 +443,13 @@ function showInputContextMenu(inputElement, x, y) {
     const pasteLink = createActionLink('粘贴', function () {
         navigator.clipboard.readText().then(text => {
             inputElement.value = text;
+            hideInputContextMenu();
         });
     });
 
     const clearLink = createActionLink('清空', function () {
         inputElement.value = '';
+        hideInputContextMenu();
     });
 
     searchLinksContainer.appendChild(pasteLink);
@@ -485,3 +487,10 @@ inputElement.addEventListener('focus', function (e) {
     var y = e.clientY;
     showInputContextMenu(inputElement, x, y);
 });
+//粘贴or清空点击后菜单消失
+function hideInputContextMenu() {
+    if (currentPopup) {
+        document.body.removeChild(currentPopup);
+        currentPopup = null;
+    }
+}
