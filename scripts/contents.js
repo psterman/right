@@ -70,16 +70,19 @@ function handleTextSelection(e) {
 
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
         selectedText = target.value.substring(target.selectionStart, target.selectionEnd).trim();
+
+        // 修改条件检查，确保在输入框中有文本时显示菜单
+        if (selectedText !== '') {
+            showInputContextMenu(target, x, y);
+        }
     } else if (!selection.isCollapsed) {
         selectedText = selection.toString().trim();
+        if (selectedText) {
+            showSearchLinks(selectedText, x, y, selectedEngines);
+        }
     }
-
-    if (selectedText) {
-        showSearchLinks(selectedText, x, y);
-    } else {
-        hideSearchLinks();
-    }
-} function showSearchLinks(selectedText, x, y, currentEngine) {
+}
+function showSearchLinks(selectedText, x, y, currentEngine) {
     if (currentPopup) {
         document.body.removeChild(currentPopup);
         currentPopup = null; // 更新 currentPopup
@@ -382,3 +385,103 @@ function handleTextSelection(e) {
         }
     }
 }
+// 为所有输入框和文本区域添加事件监听
+document.addEventListener('DOMContentLoaded', () => {
+    const inputs = document.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+        input.addEventListener('focus', handleInputFocus);
+        input.addEventListener('contextmenu', handleContextMenu);
+    });
+});
+function handleInputFocus(e) {
+    const input = e.target;
+    const rect = input.getBoundingClientRect();
+    showInputContextMenu(input, rect.left, rect.bottom);
+}
+// 修改 showInputContextMenu，调整位置计算等
+function showInputContextMenu(inputElement, x, y) {
+    if (currentPopup) {
+        document.body.removeChild(currentPopup);
+        currentPopup = null;
+    }
+
+    const popup = document.createElement('div');
+    popup.style.position = 'fixed';
+    popup.style.zIndex = '9999';
+    popup.style.borderRadius = '20px';
+    popup.style.backgroundColor = 'black';
+    popup.className = 'search-popup flex-container';
+
+    const style = document.createElement('style');
+    style.innerHTML = '.search-popup a { text-decoration: none; }';
+    document.head.appendChild(style);
+
+    popup.style.maxWidth = 'auto';
+    popup.style.overflow = 'auto';
+
+    const screenWidth = window.innerWidth;
+    const menuWidth = 300;
+    const menuOffset = 10;
+
+    if (x + menuWidth + menuOffset > screenWidth) {
+        popup.style.right = (screenWidth - x + menuOffset) + 'px';
+        popup.style.left = 'auto';
+    } else {
+        popup.style.left = (x + menuOffset) + 'px';
+        popup.style.right = 'auto';
+    }
+
+    popup.style.top = y + 'px';
+    popup.style.zIndex = '9999';
+    popup.style.borderRadius = '20px';
+    popup.className = 'search-popup flex-container';
+
+    const searchLinksContainer = document.createElement('div');
+    searchLinksContainer.style.display = 'flex';
+    searchLinksContainer.style.flexWrap = 'wrap';
+
+    const pasteLink = createActionLink('粘贴', function () {
+        navigator.clipboard.readText().then(text => {
+            inputElement.value = text;
+        });
+    });
+
+    const clearLink = createActionLink('清空', function () {
+        inputElement.value = '';
+    });
+
+    searchLinksContainer.appendChild(pasteLink);
+    searchLinksContainer.appendChild(clearLink);
+
+    popup.appendChild(searchLinksContainer);
+    document.body.appendChild(popup);
+    currentPopup = popup;
+}
+
+function createActionLink(text, action) {
+    const link = document.createElement('a');
+    link.textContent = text;
+    link.style.color = 'white';
+    link.style.padding = '5px 10px';
+    link.style.cursor = 'pointer';
+    link.style.backgroundColor = 'black';
+    link.style.transition = 'background-color 0.3s';
+
+    link.addEventListener('mouseover', function () {
+        this.style.backgroundColor = 'rgb(37, 138, 252)';
+    });
+
+    link.addEventListener('mouseout', function () {
+        this.style.backgroundColor = 'black';
+    });
+
+    link.addEventListener('click', action);
+
+    return link;
+}
+// 在输入框的 focus 事件中触发弹出菜单
+inputElement.addEventListener('focus', function (e) {
+    var x = e.clientX;
+    var y = e.clientY;
+    showInputContextMenu(inputElement, x, y);
+});

@@ -1630,3 +1630,25 @@ function importWebsiteListFromJSON() {
 	document.body.removeChild(downloadLink);
 	URL.revokeObjectURL(url);
 }
+// 粘贴按钮元素
+var pasteButton = document.getElementById("btnpaste");
+
+// 初始化粘贴按钮
+pasteButton.addEventListener("click", async function () {
+	try {
+		// 获取剪贴板内容
+		const clipboardText = await navigator.clipboard.readText();
+
+		// 显示剪贴板内容预览
+		document.getElementById("clipboardPreview").textContent = clipboardText;
+		document.getElementById("clipboardPreview").style.display = "block";
+	} catch (err) {
+		console.error("Failed to read clipboard contents: ", err);
+	}
+});
+
+// 清除剪贴板预览内容
+document.getElementById("clipboardPreviewClose").addEventListener("click", function () {
+	document.getElementById("clipboardPreview").style.display = "none";
+	document.getElementById("clipboardPreview").textContent = "";
+});
