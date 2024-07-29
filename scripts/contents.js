@@ -149,25 +149,25 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         });
         // 创建一个映射对象，将搜索引擎名称映射到其URL基础字符串
         const engineUrlMap = {
-            'Google' : 'https://www.google.com/search?q=',
-            'Bing' : 'https://www.bing.com/search?q=',
-            'DuckDuckGo' : 'https://duckduckgo.com/?q=',
-            'Baidu' : 'https://www.baidu.com/s?wd=',
-            'Yandex' : 'https://yandex.com/search/?text=',
-            'Deepl' : 'https://www.deepl.com/zh/translator#en/-hans/',
+            'Google': 'https://www.google.com/search?q=',
+            'Bing': 'https://www.bing.com/search?q=',
+            'DuckDuckGo': 'https://duckduckgo.com/?q=',
+            'Baidu': 'https://www.baidu.com/s?wd=',
+            'Yandex': 'https://yandex.com/search/?text=',
+            'Deepl': 'https://www.deepl.com/zh/translator#en/-hans/',
             'Doubao': 'https://www.doubao.com/chat/',
             'download': 'https://9xbuddy.in/process?url=',
-            'Tongyi' : 'https://tongyi.aliyun.com/qianwen/',
+            'Tongyi': 'https://tongyi.aliyun.com/qianwen/',
             'Doubao': 'https://www.doubao.com/chat/',
             'Kimi': 'https://kimi.moonshot.cn/',
-            'Yuanbao' : 'https://yuanbao.tencent.com/bot/chat',
-            'Mita' : 'https://metaso.cn/',
-            'Yiyan' : 'https://yiyan.baidu.com/',
-            'Poe' : 'https://poe.com/ChatGPT',
-            'Perplexity' : 'https://www.perplexity.ai/',
-            'Chatgpt' : 'https://chatgpt.com/',
+            'Yuanbao': 'https://yuanbao.tencent.com/bot/chat',
+            'Mita': 'https://metaso.cn/',
+            'Yiyan': 'https://yiyan.baidu.com/',
+            'Poe': 'https://poe.com/ChatGPT',
+            'Perplexity': 'https://www.perplexity.ai/',
+            'Chatgpt': 'https://chatgpt.com/',
             'Gemini': 'https://gemini.google.com/'
-             // 可以根据需要添加更多搜索引擎
+            // 可以根据需要添加更多搜索引擎
         };
 
         // 确保selectedEngines中的每个引擎都有其对应的urlBase
@@ -201,13 +201,14 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     });
 
     // 读取复选框的状态
-    chrome.storage.sync.get(['copyCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox','pasteCheckbox','downloadCheckbox'], function (checkboxes) {
+    chrome.storage.sync.get(['copyCheckbox', 'cutCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox'], function (checkboxes) {
         var showCopy = checkboxes.copyCheckbox;
         var showJump = checkboxes.jumpCheckbox;
         var showClose = checkboxes.closeCheckbox;
         var showRefresh = checkboxes.refreshCheckbox;
         var showPaste = checkboxes.pasteCheckbox;
         var showDownload = checkboxes.downloadCheckbox;
+        var showCut = checkboxes.cutCheckbox;
 
         // 添加复制、跳转和关闭选项到搜索链接容器
         if (showCopy) {
@@ -226,6 +227,31 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                 currentPopup = null;
             });
             searchLinksContainer.appendChild(searchLinkCopy);
+        }
+        if (showCut) {
+            var searchLinkCut = createActionLink('剪切', async function () {
+                var textToCut = window.getSelection().toString().trim();
+
+                // 确保有文本被选中
+                if (textToCut) {
+                    try {
+                        // 复制选中的文本
+                        await copySelectedText(textToCut);
+                        // 执行剪切操作（删除选中的文本）
+                        deleteSelectedText();
+
+                        // 隐藏弹出菜单
+                        if (currentPopup) {
+                            document.body.removeChild(currentPopup);
+                            currentPopup = null;
+                        }
+                    } catch (err) {
+                        console.error('剪切操作失败:', err);
+                        alert('剪切操作失败，请检查浏览器权限设置。');
+                    }
+                }
+            });
+            searchLinksContainer.appendChild(searchLinkCut);
         }
 
         if (showJump) {
@@ -451,9 +477,16 @@ function showInputContextMenu(inputElement, x, y) {
         inputElement.value = '';
         hideInputContextMenu();
     });
+    const selectAllLink = createActionLink('全选', function () {
+        // 执行全选操作
+        inputElement.select();
+        // 隐藏输入框上下文菜单
+        hideInputContextMenu();
+    });
 
     searchLinksContainer.appendChild(pasteLink);
     searchLinksContainer.appendChild(clearLink);
+    searchLinksContainer.appendChild(selectAllLink);
 
     popup.appendChild(searchLinksContainer);
     document.body.appendChild(popup);
