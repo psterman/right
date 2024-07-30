@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // 如果页面加载时有选中文本，可以在这里调用 showSearchLinks
     });
 });
+
 // 当接收到从 options.js 发送的更新消息时
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === 'updateSelectedEngines') {
@@ -166,7 +167,8 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             'Poe': 'https://poe.com/ChatGPT',
             'Perplexity': 'https://www.perplexity.ai/',
             'Chatgpt': 'https://chatgpt.com/',
-            'Gemini': 'https://gemini.google.com/'
+            'Gemini': 'https://gemini.google.com/',
+            'bookmarks': 'https://v.flomoapp.com/'
             // 可以根据需要添加更多搜索引擎
         };
 
@@ -253,18 +255,24 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             });
             searchLinksContainer.appendChild(searchLinkCut);
         }
-
         if (showJump) {
-            var openLinkInSidebar = createActionLink('跳转', function () {
+            var openBookmarksInSidebar = createActionLink('侧边栏', function () {
+                // 发送消息给后台脚本，指示需要在侧边栏打开书签列表
                 chrome.runtime.sendMessage({
-                    action: 'setpage',
-                    query: selectedText,
-                    openSidebar: true
+                    action: 'openBookmarksInSidebar',
+                   
+                    openSidebar: true,
+                }, function (response) {
+                    if (response && response.success) {
+                        console.log("书签已在侧边栏打开");
+                    } else {
+                        console.error("无法在侧边栏打开书签");
+                    }
                 });
                 document.body.removeChild(popup);
                 currentPopup = null;
             });
-            searchLinksContainer.appendChild(openLinkInSidebar);
+            searchLinksContainer.appendChild(openBookmarksInSidebar);
         }
 
         if (showClose) {

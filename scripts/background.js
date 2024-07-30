@@ -561,3 +561,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		return true; // 这很重要，它告诉Chrome我们将异步发送响应
 	}
 });
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === 'openBookmarksInSidebar') {
+		chrome.sidePanel.open({ windowId: sender.tab.windowId }, function () {
+			// 侧边栏打开后，发送消息到侧边栏
+			chrome.tabs.sendMessage(sender.tab.id, { action: 'clickBookmarksButton' });
+			sendResponse({ success: true });
+		});
+		return true; // 保持消息通道开放
+	}
+});

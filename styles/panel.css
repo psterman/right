@@ -426,16 +426,23 @@ iframe {
 }
 
 #menubookmarks ul ul {
-  max-height: 480px;
+  max-height: 800px;
   overflow: auto;
   position: absolute;
-  top: 0;
+  left: 100px;
   background: var(--ext-primary-background);
   z-index: 1;
-  right: -200px;
-  width: 200px
+  width: 200px;
+  /* 占满整个侧边栏的宽度 */
 }
-
+/* 当按钮位于底部时，调整二级菜单的位置 */
+.bottom #menubookmarks ul ul {
+  
+  bottom: 0px;
+  width: 300px;
+left:100px;
+  /* 假设 iframe 的高度是 200px，这个值需要根据实际情况调整 */
+}
 .stefanvdremote {
   overflow: hidden;
   z-index: 2147483647 !important;

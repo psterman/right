@@ -745,3 +745,18 @@ chrome.runtime.onMessage.addListener(function (request) {
 		}
 	});
 })
+// 假设 iframe 的 ID 是 'preview'
+var iframe = document.getElementById('preview');
+var iframeHeight = iframe.offsetHeight;
+document.getElementById('btnbookmarks').addEventListener('click', function () {
+	var bookmarksMenu = document.getElementById('menubookmarks');
+	bookmarksMenu.classList.toggle('hidden');
+
+	if (this.classList.contains('bottom')) {
+		// 如果按钮在底部，调整二级菜单的位置
+		bookmarksMenu.style.top = '-' + iframeHeight + 'px';
+	} else {
+		// 否则，重置二级菜单的位置
+		bookmarksMenu.style.top = '0';
+	}
+});

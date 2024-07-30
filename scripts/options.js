@@ -1508,7 +1508,8 @@ var searchEngineData = [
 	{ name: "Poe", urlbase: "https://poe.com/ChatGPT", checked: false },
 	{ name: "Perplexity", urlbase: "https://www.perplexity.ai/", checked: false },
 	{ name: "Chatgpt", urlbase: "https://chatgpt.com/", checked: false },
-	{ name: "Gemini", urlbase: "https://gemini.google.com/", checked: false }
+	{ name: "Gemini", urlbase: "https://gemini.google.com/", checked: false },
+	{ name: "bookmarks", urlbase: "https://v.flomoapp.com/", checked: false },
 ];
 
 
