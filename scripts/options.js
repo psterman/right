@@ -1269,12 +1269,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	// 读取复选框状态并设置到页面上的复选框
-	chrome.storage.sync.get(['copyCheckbox', 'cutCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox'], function (items) {
+	chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox'], function (items) {
 		if (items.copyCheckbox !== undefined) {
 			document.getElementById('copyCheckbox').checked = items.copyCheckbox;
 		}
-		if (items.cutCheckbox !== undefined) {
-			document.getElementById('cutCheckbox').checked = items.cutCheckbox;
+		if (items.deleteCheckbox !== undefined) {
+			document.getElementById('deleteCheckbox').checked = items.deleteCheckbox;
 		}
 		if (items.jumpCheckbox !== undefined) {
 			document.getElementById('jumpCheckbox').checked = items.jumpCheckbox;
@@ -1312,7 +1312,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	document.getElementById('copyCheckbox').addEventListener('change', function () {
 		chrome.storage.sync.set({ 'copyCheckbox': this.checked });
 	});
-document.getElementById('cutCheckbox').addEventListener('change', function () { chrome.storage.sync.set({ 'cutCheckbox': this.checked }); });
+document.getElementById('deleteCheckbox').addEventListener('change', function () { chrome.storage.sync.set({ 'deleteCheckbox': this.checked }); });
 	document.getElementById('jumpCheckbox').addEventListener('change', function () {
 		chrome.storage.sync.set({ 'jumpCheckbox': this.checked });
 	});
@@ -1470,7 +1470,7 @@ function updateWebsiteCheckedStatus(name, isChecked) {
 
 // 获取复选框的状态
 var copyCheckbox = document.getElementById('copyCheckbox');
-var cutCheckbox = document.getElementById('cutCheckbox');
+var deleteCheckbox = document.getElementById('deleteCheckbox');
 var jumpCheckbox = document.getElementById('jumpCheckbox');
 var closeCheckbox = document.getElementById('closeCheckbox');
 var refreshCheckbox = document.getElementById('refreshCheckbox');
@@ -1482,7 +1482,7 @@ chrome.runtime.sendMessage({
 	action: 'updateSearchEngines',
 	searchEngines: searchEngines,
 	copyOption: copyCheckbox.checked,
-	cutOption: cutCheckbox.checked,
+	deleteOption: deleteCheckbox.checked,
 	jumpOption: jumpCheckbox.checked,
 	closeOption: closeCheckbox.checked,
 	refreshOption: refreshCheckbox.checked,

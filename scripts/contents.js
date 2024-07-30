@@ -203,14 +203,14 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     });
 
     // 读取复选框的状态
-    chrome.storage.sync.get(['copyCheckbox', 'cutCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox'], function (checkboxes) {
+    chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox'], function (checkboxes) {
         var showCopy = checkboxes.copyCheckbox;
         var showJump = checkboxes.jumpCheckbox;
         var showClose = checkboxes.closeCheckbox;
         var showRefresh = checkboxes.refreshCheckbox;
         var showPaste = checkboxes.pasteCheckbox;
         var showDownload = checkboxes.downloadCheckbox;
-        var showCut = checkboxes.cutCheckbox;
+        var showDelete = checkboxes.deleteCheckbox;
 
         // 添加复制、跳转和关闭选项到搜索链接容器
         if (showCopy) {
@@ -230,28 +230,28 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             });
             searchLinksContainer.appendChild(searchLinkCopy);
         }
-        if (showCut) {
-            var searchLinkCut = createActionLink('剪切', async function () {
-                var textToCut = window.getSelection().toString().trim();
 
-                // 确保有文本被选中
-                if (textToCut) {
-                    try {
-                        // 复制选中的文本
-                        await copySelectedText(textToCut);
-                        // 执行剪切操作（删除选中的文本）
-                        deleteSelectedText();
+        // 以下是在文本框上右键点击时显示的上下文菜单中的删除链接
+        // 修改后的 deleteSelectedText 函数
+        function deleteSelectedText(inputElement) {
+            var start = inputElement.selectionStart;
+            var end = inputElement.selectionEnd;
+            if (start !== end) {
+                var newValue = inputElement.value.substring(0, start) + inputElement.value.substring(end);
+                inputElement.value = newValue;
+                inputElement.focus(); // 确保输入框仍然获得焦点
+                // 将光标移至删除后的位置
+                inputElement.setSelectionRange(start, start);
+            }
+        }
 
-                        // 隐藏弹出菜单
-                        if (currentPopup) {
-                            document.body.removeChild(currentPopup);
-                            currentPopup = null;
-                        }
-                    } catch (err) {
-                        console.error('剪切操作失败:', err);
-                        alert('剪切操作失败，请检查浏览器权限设置。');
-                    }
-                }
+        // 创建删除选中文本的链接时，确保传递正确的 inputElement
+        if (showDelete) {
+            var searchLinkCut = createActionLink('删除选中文本', function () {
+                // 调用 deleteSelectedText 函数并传递正确的 inputElement
+                deleteSelectedText(e.target);
+                // 隐藏弹出菜单
+                hideInputContextMenu();
             });
             searchLinksContainer.appendChild(searchLinkCut);
         }

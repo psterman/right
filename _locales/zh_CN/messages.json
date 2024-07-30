@@ -3,13 +3,13 @@
       "message": "About"
    },
    "advancedoptions": {
-      "message": "Advanced Options"
+      "message": "高级"
    },
    "areyouhappy": {
       "message": "Are you happy about 右拐?"
    },
    "basicsettings": {
-      "message": "Basics"
+      "message": "主页"
    },
    "changelog": {
       "message": "Changelog"
@@ -51,7 +51,7 @@
       "message": "Start page"
    },
    "designmarquee": {
-      "message": "Design"
+      "message": "主题"
    },
    "designnavigation": {
       "message": "Navigation bar"
@@ -135,13 +135,13 @@
       "message": "Friendly Reminder…"
    },
    "guide": {
-      "message": "右拐"
+      "message": "教学"
    },
    "head2": {
       "message": "Choose your favorite icon:"
    },
    "help": {
-      "message": "Help"
+      "message": "我的"
    },
    "helptranslate": {
       "message": "Help Translate"
