@@ -26,6 +26,7 @@ To view a copy of this license, visit http://creativecommons.org/licenses/GPL/2.
 */
 //================================================
 
+
 // 获取搜索引擎复选框元素列表
 var checkboxList = document.querySelectorAll(".search-engine-checkbox");
 
@@ -1188,6 +1189,20 @@ function editWebsite(index) {
 }
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
+	var btnLightTheme = document.getElementById('btnLightTheme');
+	var btnDarkTheme = document.getElementById('btnDarkTheme');
+
+	btnLightTheme.addEventListener('click', function () {
+		// 实现浅色主题的切换逻辑
+		golightmode(); // 切换主题的函数（如果有）
+		chrome.storage.sync.set({ "darkmode": 0 }); // 保存主题设置
+	});
+
+	btnDarkTheme.addEventListener('click', function () {
+		// 实现暗色主题的切换逻辑
+		godarkmode(); // 切换主题的函数（如果有）
+		chrome.storage.sync.set({ "darkmode": 1 }); // 保存主题设置
+	});
 	var searchEngineList = document.getElementById('searchEngineList');
 	// 获取按钮元素
 	var exportButton = document.getElementById('export-json-button');
@@ -1657,4 +1672,19 @@ pasteButton.addEventListener("click", async function () {
 document.getElementById("clipboardPreviewClose").addEventListener("click", function () {
 	document.getElementById("clipboardPreview").style.display = "none";
 	document.getElementById("clipboardPreview").textContent = "";
+});
+// 获取新按钮的DOM引用
+var btnLightTheme = document.getElementById('btnLightTheme');
+var btnDarkTheme = document.getElementById('btnDarkTheme');
+
+// 为浅色主题按钮添加点击事件
+btnLightTheme.addEventListener('click', function () {
+	golightmode(); // 切换到浅色主题的函数
+	chrome.storage.sync.set({ "darkmode": 0 }); // 保存设置
+});
+
+// 为暗色主题按钮添加点击事件
+btnDarkTheme.addEventListener('click', function () {
+	godarkmode(); // 切换到暗色主题的函数
+	chrome.storage.sync.set({ "darkmode": 1 }); // 保存设置
 });
