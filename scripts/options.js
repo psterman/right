@@ -1688,3 +1688,4 @@ btnDarkTheme.addEventListener('click', function () {
 	godarkmode(); // 切换到暗色主题的函数
 	chrome.storage.sync.set({ "darkmode": 1 }); // 保存设置
 });
+

@@ -152,9 +152,9 @@ function init() {
 		}
 		opencopy = items["opencopy"]; if (opencopy == null) { opencopy = false; }
 		if (opencopy == true) {
-			document.getElementById("btncopy").className = "icon";
+			document.getElementById("btnpaste").className = "icon";
 		} else {
-			document.getElementById("btncopy").className = "hidden";
+			document.getElementById("btnpaste").className = "hidden";
 		}
 
 		opennonebookmarks = items["opennonebookmarks"]; if (opennonebookmarks == null) { opennonebookmarks = false; }
@@ -230,7 +230,7 @@ function init() {
 		document.getElementById("btnhome").addEventListener("click", actionHome, false);
 		document.getElementById("btngo").addEventListener("click", actionGo, false);
 		document.getElementById("searchbar").addEventListener("keypress", handleKeyPress, false);
-		document.getElementById("btncopy").addEventListener("click", actionCopyTab, false);
+		document.getElementById("btnpaste").addEventListener("click", actionPaste, false);
 		document.getElementById("btntab").addEventListener("click", actionOpenTab, false);
 		document.getElementById("btnbookmarks").addEventListener("click", function () {
 			if (document.getElementById("menubookmarks").className == "") {
@@ -282,7 +282,30 @@ function createbrowserbookmark() {
 		renderBookmarks(bookmarkTreeNodes[0].children, document.getElementById("list"));
 	});
 }
+//actionCopyTab 函数
+function actionPaste() {
+// 使用异步函数读取剪贴板内容
+navigator.clipboard.readText()
+	.then(text => {
+		// 创建一个新的 'paste' 事件
+		const pasteEvent = new ClipboardEvent('paste', {
+			bubbles: true,
+			cancelable: true,
+			data: text
+		});
 
+		// 分发 'paste' 事件到当前激活的元素
+		document.activeElement.dispatchEvent(pasteEvent);
+
+		// 如果默认的粘贴行为被阻止，我们可以尝试使用 document.execCommand
+		if (!pasteEvent.defaultPrevented) {
+			document.execCommand('insertText', false, text);
+		}
+	})
+	.catch(err => {
+		console.error('Failed to read clipboard contents: ', err);
+	});
+}
 function renderBookmarks(bookmarks, parentElement) {
 	bookmarks.forEach(function (bookmark) {
 		if (bookmark.children) {
@@ -366,43 +389,6 @@ function getDomain(url) {
 	// Find & remove port number
 	domain = domain.split(":")[0];
 	return domain;
-}
-
-function actionCopyTab() {
-	// Create a temporary textarea element to hold the text
-	const textarea = document.createElement("textarea");
-
-	// Assign the text you want to copy to the textarea
-	const textToCopy = currentSidePanelURL;
-	textarea.value = textToCopy;
-
-	// Set the textarea to be invisible
-	textarea.style.position = "fixed";
-	textarea.style.opacity = 0;
-
-	// Append the textarea to the DOM
-	document.body.appendChild(textarea);
-
-	// Select the text within the textarea
-	textarea.select();
-
-	try {
-		// Execute the copy command
-		const successful = document.execCommand("copy");
-		if (successful) {
-			console.log("Text copied to clipboard: " + textToCopy);
-			if (showingcopybadge == false) {
-				showcopytextbadge();
-			}
-		} else {
-			console.error("Unable to copy text to clipboard");
-		}
-	} catch (err) {
-		console.error("Error copying text to clipboard:", err);
-	}
-
-	// Remove the temporary textarea
-	document.body.removeChild(textarea);
 }
 
 var showingcopybadge = false;
@@ -664,9 +650,9 @@ chrome.runtime.onMessage.addListener(function (request) {
 		chrome.storage.sync.get(["opencopy"], function (items) {
 			opencopy = items["opencopy"]; if (opencopy == null) { opencopy = false; }
 			if (opencopy == true) {
-				document.getElementById("btncopy").className = "icon";
+				document.getElementById("btnpaste").className = "icon";
 			} else {
-				document.getElementById("btncopy").className = "hidden";
+				document.getElementById("btnpaste").className = "hidden";
 			}
 		});
 	} else if (request.msg == "setbookmarkswebsites") {

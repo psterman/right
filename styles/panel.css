@@ -289,7 +289,7 @@ iframe {
   border-radius: 30px
 }
 
-#btncopy {
+#btnpaste {
   height: 30px;
   width: 30px;
   background: transparent;
@@ -321,7 +321,7 @@ iframe {
 
 #btnhome:hover,
 #btntab:hover,
-#btncopy:hover,
+#btnpaste:hover,
 #btnbookmarks:hover {
   background: var(--ext-svg-fill-color-hover);
   cursor: pointer
