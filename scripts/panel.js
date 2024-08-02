@@ -231,6 +231,7 @@ function init() {
 		document.getElementById("btngo").addEventListener("click", actionGo, false);
 		document.getElementById("searchbar").addEventListener("keypress", handleKeyPress, false);
 		document.getElementById("btnpaste").addEventListener("click", actionPaste, false);
+		// panel.js 中的 btntab 点击事件处理函数
 		document.getElementById("btntab").addEventListener("click", actionOpenTab, false);
 		document.getElementById("btnbookmarks").addEventListener("click", function () {
 			if (document.getElementById("menubookmarks").className == "") {
@@ -284,27 +285,27 @@ function createbrowserbookmark() {
 }
 //actionCopyTab 函数
 function actionPaste() {
-// 使用异步函数读取剪贴板内容
-navigator.clipboard.readText()
-	.then(text => {
-		// 创建一个新的 'paste' 事件
-		const pasteEvent = new ClipboardEvent('paste', {
-			bubbles: true,
-			cancelable: true,
-			data: text
+	// 使用异步函数读取剪贴板内容
+	navigator.clipboard.readText()
+		.then(text => {
+			// 创建一个新的 'paste' 事件
+			const pasteEvent = new ClipboardEvent('paste', {
+				bubbles: true,
+				cancelable: true,
+				data: text
+			});
+
+			// 分发 'paste' 事件到当前激活的元素
+			document.activeElement.dispatchEvent(pasteEvent);
+
+			// 如果默认的粘贴行为被阻止，我们可以尝试使用 document.execCommand
+			if (!pasteEvent.defaultPrevented) {
+				document.execCommand('insertText', false, text);
+			}
+		})
+		.catch(err => {
+			console.error('Failed to read clipboard contents: ', err);
 		});
-
-		// 分发 'paste' 事件到当前激活的元素
-		document.activeElement.dispatchEvent(pasteEvent);
-
-		// 如果默认的粘贴行为被阻止，我们可以尝试使用 document.execCommand
-		if (!pasteEvent.defaultPrevented) {
-			document.execCommand('insertText', false, text);
-		}
-	})
-	.catch(err => {
-		console.error('Failed to read clipboard contents: ', err);
-	});
 }
 function renderBookmarks(bookmarks, parentElement) {
 	bookmarks.forEach(function (bookmark) {
@@ -413,12 +414,22 @@ function showcopytextbadge() {
 		showingcopybadge = false;
 	}, 4000);
 }
-
 function actionOpenTab() {
-	var iframeURL = currentSidePanelURL;
-	window.open(iframeURL, "_blank");
-}
+	var iframe = document.getElementById('preview');
+	var iframeURL = iframe.src; // 获取 preview iframe 当前的 src 属性值
 
+	// 发送当前 iframe 的 URL 到后台脚本
+	chrome.runtime.sendMessage({
+		action: 'openTabWithUrl',
+		url: iframeURL
+	});
+}
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === 'loadUrlInPreview') {
+		var previewFrame = document.getElementById('preview');
+		previewFrame.src = request.url; // 加载 URL 到侧边栏的 preview iframe
+	}
+});
 function handleDrop(e) {
 	e.preventDefault();
 	// console.log("drop");

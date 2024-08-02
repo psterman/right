@@ -571,3 +571,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 		return true; // 保持消息通道开放
 	}
 });
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === 'openTabWithUrl') {
+		// 在后台创建新标签页并加载 URL，不切换到新标签页
+		chrome.tabs.create({
+			url: request.url,
+			active: false // 设置 active 为 false 以在后台打开标签页
+		});
+	}
+});
