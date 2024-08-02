@@ -1,7 +1,6 @@
 
 var selectedsearch, searchgoogle, searchbing, searchduckduckgo, searchbaidu, searchyandex, typepanelzone, typepanelcustom, typepanellasttime, websitezoomname, websitelasttime, navtop, navbottom, navhidden, opentab, opencopy, opennonebookmarks, openbrowserbookmarks, openquickbookmarks, googlesidepanel, zoom, defaultzoom, step;
 document.addEventListener("DOMContentLoaded", init);
-
 var i18ntitelcopytext = chrome.i18n.getMessage("titlecopytextdone");
 var i18ndescopytext = chrome.i18n.getMessage("descopytextdone");
 
@@ -71,7 +70,26 @@ function init() {
 
 	// navigation bar
 	const dragDropNavbar = document.getElementById("drag-drop-navbar");
-	const navbar = document.getElementById("navbar");
+	const navbar = document.getElementById("navbar"); const searchEngineSelectContainer = document.createElement("div"); // 创建一个新的容器
+	const searchEngineSelect = document.createElement("select");
+	searchEngines.forEach(engine => {
+		const option = document.createElement("option");
+		option.textContent = engine.name;
+		option.value = engine.value;
+		searchEngineSelect.appendChild(option);
+	});
+	searchEngineSelectContainer.appendChild(searchEngineSelect); // 将下拉列表添加到新容器中
+
+	// 将新的下拉列表容器添加到 navbar 中，紧邻 btnhome 按钮
+	const btnHome = document.getElementById("btnhome");
+	navbar.insertBefore(searchEngineSelectContainer, btnHome.nextSibling);
+
+	// 添加 change 事件监听器
+	searchEngineSelect.addEventListener("change", function () {
+		selectedsearch = this.value;
+		// 可以在这里调用 performSearch 函数进行搜索
+		// performSearch(selectedsearch, document.getElementById("searchbar").value);
+	});
 	navbar.addEventListener("dragenter", (e) => {
 		e.preventDefault();
 		dragDropNavbar.className = "show";
@@ -229,6 +247,7 @@ function init() {
 		// navigation bar
 		document.getElementById("btnhome").addEventListener("click", actionHome, false);
 		document.getElementById("btngo").addEventListener("click", actionGo, false);
+		
 		document.getElementById("searchbar").addEventListener("keypress", handleKeyPress, false);
 		document.getElementById("btnpaste").addEventListener("click", actionPaste, false);
 		// panel.js 中的 btntab 点击事件处理函数
@@ -587,7 +606,13 @@ function performSearch(searchEngine, query) {
 			break;
 	}
 }
-
+const searchEngines = [
+	{ name: "Google", value: "searchgoogle" },
+	{ name: "Bing", value: "searchbing" },
+	{ name: "DuckDuckGo", value: "searchduckduckgo" },
+	{ name: "Baidu", value: "searchbaidu" },
+	{ name: "Yandex", value: "searchyandex" }
+];
 function clearBookmarksItems() {
 	var list = document.getElementById("list");
 	while (list.firstChild) {

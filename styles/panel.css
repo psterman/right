@@ -288,7 +288,16 @@ iframe {
   justify-content: center;
   border-radius: 30px
 }
-
+#btnsearch {
+  display: flex;
+  height: 30px;
+  width: 30px;
+  background: transparent;
+  border: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 30px
+}
 #btnpaste {
   height: 30px;
   width: 30px;
@@ -320,6 +329,7 @@ iframe {
 }
 
 #btnhome:hover,
+#btnsearch:hover,
 #btntab:hover,
 #btnpaste:hover,
 #btnbookmarks:hover {
@@ -579,4 +589,16 @@ left:100px;
 
 .hidden {
   display: none
+}
+
+/* 默认隐藏下拉列表 */
+.search-engine-select {
+  display: none;
+  position: absolute;
+  /* 其他样式 */
+}
+
+/* 当下拉列表显示时 */
+.search-engine-select.visible {
+  display: block;
 }
