@@ -2421,3 +2421,13 @@ button {
   background-color: var(--totl-primary-background);
   color: var(--totl-primary-font-color);
 }
+.saved-pages-list {
+      list-style: none;
+      padding: 0;
+    }
+  
+.saved-pages-list li {
+      margin: 4px 0;
+      padding: 4px;
+      border-bottom: 1px solid #ccc;
+    }

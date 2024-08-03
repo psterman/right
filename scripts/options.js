@@ -1189,6 +1189,28 @@ function editWebsite(index) {
 }
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
+	loadSavedPages();
+	chrome.storage.sync.get('savedPages', function (items) {
+		if (items.savedPages) {
+			var savedPages = items.savedPages;
+			var savedPagesList = document.getElementById('savedPagesList');
+
+			// 清空现有的列表
+			savedPagesList.innerHTML = '';
+
+			// 创建列表项并添加到列表中
+			var listItem = document.createElement('li');
+			listItem.textContent = `Homepage: ${savedPages.homepageName} - ${savedPages.homepageUrl}`;
+			savedPagesList.appendChild(listItem);
+
+			listItem = document.createElement('li');
+			listItem.textContent = `Sidebar: ${savedPages.sidebarName} - ${savedPages.sidebarUrl}`;
+			savedPagesList.appendChild(listItem);
+
+			// 绑定编辑和删除事件
+			// 这里需要添加更多的逻辑来实现编辑和删除功能
+		}
+	});
 	var btnLightTheme = document.getElementById('btnLightTheme');
 	var btnDarkTheme = document.getElementById('btnDarkTheme');
 
@@ -1688,4 +1710,51 @@ btnDarkTheme.addEventListener('click', function () {
 	godarkmode(); // 切换到暗色主题的函数
 	chrome.storage.sync.set({ "darkmode": 1 }); // 保存设置
 });
+function loadSavedPages() {
+	chrome.storage.sync.get('savedPages', function (items) {
+		var savedPagesList = document.getElementById('savedPagesList');
+		if (items.savedPages) {
+			var savedPages = items.savedPages;
+			var listHtml = '';
+			// 首先清空现有的列表
+			savedPagesList.innerHTML = '';
 
+			// 为每个保存的页面生成列表项
+			for (var pageKey in savedPages) {
+				if (savedPages.hasOwnProperty(pageKey)) {
+					var page = savedPages[pageKey];
+					listHtml += '<div class="savedPageItem">';
+					listHtml += '<h4>' + page.name + '</h4>';
+					listHtml += '<a href="' + page.url + '" target="_blank">' + page.url + '</a>';
+					listHtml += '<button class="editButton">Edit</button>';
+					listHtml += '<button class="deleteButton">Delete</button>';
+					listHtml += '</div>';
+				}
+			}
+			// 然后将生成的HTML添加到列表中
+			savedPagesList.innerHTML = listHtml;
+
+
+			// 为每个列表项添加编辑和删除按钮的事件监听器
+			var editButtons = document.querySelectorAll('.editButton');
+			var deleteButtons = document.querySelectorAll('.deleteButton');
+			editButtons.forEach(function (button, index) {
+				button.addEventListener('click', function () {
+					// 实现编辑逻辑
+				});
+			});
+			deleteButtons.forEach(function (button, index) {
+				button.addEventListener('click', function () {
+					// 实现删除逻辑
+				});
+			});
+		}
+	});
+}
+// 假设这是删除按钮的点击事件处理函数
+function deleteSavedPage(pageKey) {
+    chrome.storage.sync.remove('savedPages', function() {
+        console.log('Removed saved page:', pageKey);
+        loadSavedPages(); // 重新加载保存的页面列表
+    });
+}

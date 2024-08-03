@@ -288,7 +288,18 @@ iframe {
   justify-content: center;
   border-radius: 30px
 }
+
 #btnsearch {
+  display: flex;
+  height: 30px;
+  width: 30px;
+  background: transparent;
+  border: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 30px
+}
+#btnsave {
   display: flex;
   height: 30px;
   width: 30px;
@@ -332,6 +343,7 @@ iframe {
 #btnsearch:hover,
 #btntab:hover,
 #btnpaste:hover,
+#btnsave:hover,
 #btnbookmarks:hover {
   background: var(--ext-svg-fill-color-hover);
   cursor: pointer
