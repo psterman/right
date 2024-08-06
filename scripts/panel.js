@@ -262,14 +262,17 @@ function init() {
 				document.getElementById("menubookmarks").className = "";
 			}
 		});
-		document.getElementById("btnsave").addEventListener("click", saveCurrentPageAndSidebar);
-		document.addEventListener("click", () => {
-			if (!isMenuClick) {
-				// Hide the menu here
-				document.getElementById("menubookmarks").className = "hidden";
-			}
-			// Reset isMenuClick
-			isMenuClick = false;
+
+		document.getElementById("btnsave").addEventListener("click", function () {
+			// 使用 chrome.tabs API 获取当前活动标签页的 URL 和标题
+			chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+				var activeTab = tabs[0];
+				var homepageUrl = activeTab.url; // 获取当前标签页的 URL
+				var homepageTitle = activeTab.title || "Untitled"; // 获取当前标签页的标题，如果没有标题则使用默认标题 "Untitled"
+
+				// 调用保存逻辑函数，传入获取到的 URL 和标题
+				saveCurrentPageAndSidebar(homepageUrl, homepageTitle);
+			});
 		});
 	});
 }
@@ -785,28 +788,20 @@ document.getElementById('btnbookmarks').addEventListener('click', function () {
 		bookmarksMenu.style.top = '0';
 	}
 });
-// 定义保存逻辑
-function saveCurrentPageAndSidebar() {
-	// 获取当前主页和侧边栏的网址
-	var homepageUrl = document.getElementById("preview").src;
-	var sidebarUrl = currentSidePanelURL; // 这个变量应该在panel.js的其他部分被定义
 
-	// 获取主页和侧边栏的名称，这里我们使用页面的标题作为示例
-	var homepageName = document.title;
-	var sidebarName = "Sidebar"; // 侧边栏可能没有标题，我们给一个默认名称
+// 修改后的保存逻辑函数
+function saveCurrentPageAndSidebar(homepageUrl, homepageTitle) {
+	var sidebarUrl = document.getElementById("preview").src;
+	var sidebarName = "Sidebar";
 
-	// 创建保存的数据结构
 	var savedData = {
-		homepageName: homepageName,
+		homepageName: homepageTitle,
 		homepageUrl: homepageUrl,
 		sidebarName: sidebarName,
 		sidebarUrl: sidebarUrl
 	};
 
-	// 将数据存储到Chrome同步存储中
-	chrome.storage.sync.set({
-		'savedPages': savedData
-	}, function () {
+	chrome.storage.sync.set({ 'savedPages': savedData }, function () {
 		console.log("Saved homepage and sidebar successfully.");
 	});
 }

@@ -61,6 +61,8 @@
    },
    "permissions": [
       "tabs",
+      "notifications",
+      "scripting",
       "contextMenus",
       "storage",
       "sidePanel",
