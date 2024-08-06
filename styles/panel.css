@@ -614,3 +614,15 @@ left:100px;
 .search-engine-select.visible {
   display: block;
 }
+.save-success-hint {
+    position: fixed;
+    top: 50%; /* 或者任何你希望显示的位置 */
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 1;
+    transition: opacity 0.3s;
+    color: #faf9f9;
+    background-color: #8f8f8f;
+    padding: 10px 20px;
+    z-index: 1000; /* 确保提示显示在页面上方 */
+}

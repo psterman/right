@@ -800,8 +800,30 @@ function saveCurrentPageAndSidebar(homepageUrl, homepageTitle) {
 		sidebarName: sidebarName,
 		sidebarUrl: sidebarUrl
 	};
-
+	// 假设这是原来的 saveCurrentPageAndSidebar 函数的一部分
 	chrome.storage.sync.set({ 'savedPages': savedData }, function () {
 		console.log("Saved homepage and sidebar successfully.");
+
+		// 添加保存成功的提示
+		showSaveSuccessHint();
 	});
+
+	// 添加一个新的函数来显示保存成功的提示
+	function showSaveSuccessHint() {
+		// 创建一个提示元素
+		var hintElement = document.createElement('div');
+		hintElement.className = 'save-success-hint'; // 确保有相应的 CSS 样式
+		hintElement.textContent = 'Save successful!';
+
+		// 将提示添加到页面中
+		document.body.appendChild(hintElement);
+
+		// 设置提示在几秒后自动消失
+		setTimeout(function () {
+			hintElement.style.opacity = '0';
+			setTimeout(function () {
+				hintElement.remove();
+			}, 300); // 过渡效果完成后移除元素
+		}, 1000); // 3秒后开始淡出效果
+	}
 }
