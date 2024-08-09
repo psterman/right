@@ -1733,7 +1733,16 @@ function loadSavedPages() {
 			}
 			// 然后将生成的HTML添加到列表中
 			savedPagesList.innerHTML = listHtml;
-
+			
+			// 新增代码：为 "openAllSavedPages" 按钮添加事件监听器
+			var openAllButton = document.getElementById('openAllSavedPages');
+			openAllButton.addEventListener('click', function () {
+				// 发送消息到 background.js 请求打开所有保存的页面
+				chrome.runtime.sendMessage({
+					action: 'openAllSavedPages',
+					urls: [savedPages.homepageUrl, savedPages.sidebarUrl] // 传递主页和侧边栏的 URL
+				});
+			});
 
 			// 为每个列表项添加编辑和删除按钮的事件监听器
 			var editButtons = document.querySelectorAll('.editButton');

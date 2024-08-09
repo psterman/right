@@ -580,3 +580,28 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 		});
 	}
 });
+chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+	var activeTab = tabs[0];
+	var homepageUrl = activeTab.url; // 确保此处有值
+	var homepageTitle = activeTab.title || "Untitled"; // 使用 || 运算符提供默认标题
+
+	chrome.runtime.sendMessage({
+		action: "updateHomepageInfo",
+		homepageUrl: homepageUrl,
+		homepageTitle: homepageTitle
+	});
+});
+// 在 background.js 中添加消息监听器
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === 'openAllSavedPages') {
+		// 接收到打开所有页面的请求
+		var urlsToOpen = request.urls; // 获取要打开的 URL 列表
+		urlsToOpen.forEach(function (url) {
+			if (url) { // 确保 URL 存在
+				chrome.tabs.create({ url: url, active: false }); // 在后台创建新标签页
+			}
+		});
+		// 异步响应
+		return true;
+	}
+});

@@ -249,7 +249,7 @@ function init() {
 		// navigation bar
 		document.getElementById("btnhome").addEventListener("click", actionHome, false);
 		document.getElementById("btngo").addEventListener("click", actionGo, false);
-		
+
 		document.getElementById("searchbar").addEventListener("keypress", handleKeyPress, false);
 		document.getElementById("btnpaste").addEventListener("click", actionPaste, false);
 		// panel.js 中的 btntab 点击事件处理函数
