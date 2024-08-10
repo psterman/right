@@ -535,3 +535,15 @@ function hideInputContextMenu() {
         currentPopup = null;
     }
 }
+// contents.js
+
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.action === 'openSidebar') {
+        // 使用 chrome.sidePanel.open 或其他逻辑来打开侧边栏
+        chrome.sidePanel.open({
+            url: request.url,
+            windowId: sender.tab.windowId
+        });
+    }
+});
+

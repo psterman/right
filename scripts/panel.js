@@ -827,3 +827,23 @@ function saveCurrentPageAndSidebar(homepageUrl, homepageTitle) {
 		}, 1000); // 3秒后开始淡出效果
 	}
 }
+// panel.js 或内容脚本中添加消息监听器
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === 'openSidebar') {
+		var sidebarUrl = request.url;
+
+		// 根据 sidebarUrl 打开侧边栏的逻辑，可能涉及调用某些 API 或 DOM 操作
+		// 例如，如果侧边栏是一个 iframe，你可以这样做：
+		document.getElementById('sidebarIframe').src = sidebarUrl;
+
+		return true; // 表示消息处理是异步的
+	}
+}); // panel.js 中添加消息监听器
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === 'openSidebar') {
+		var sidebarIframe = document.getElementById('sidebarIframe');
+		if (sidebarIframe) {
+			sidebarIframe.src = request.url; // 设置 iframe 的 src 属性为接收到的 URL
+		}
+	}
+});

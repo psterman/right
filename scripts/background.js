@@ -591,17 +591,28 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 		homepageTitle: homepageTitle
 	});
 });
-// 在 background.js 中添加消息监听器
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-	if (request.action === 'openAllSavedPages') {
-		// 接收到打开所有页面的请求
-		var urlsToOpen = request.urls; // 获取要打开的 URL 列表
-		urlsToOpen.forEach(function (url) {
-			if (url) { // 确保 URL 存在
-				chrome.tabs.create({ url: url, active: false }); // 在后台创建新标签页
-			}
+// background.js// background.js
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+	if (message.action === 'openHomepageAndSidebar') {
+		var { homepageUrl, sidebarUrl } = message.urls;
+
+		// 发送 setpage 命令到侧边栏
+		chrome.sidePanel.open({ windowId: sender.tab.windowId }, function () {
+			setTimeout(function () {
+				// 延迟发送消息以设置侧边栏页面
+				chrome.runtime.sendMessage({
+					msg: "setpage",
+					value: sidebarUrl
+				});
+
+				// 进一步延迟以确保侧边栏加载
+				setTimeout(function () {
+					// 创建新标签页并加载主页网址
+					chrome.tabs.create({ url: homepageUrl, active: true });
+				}, 1000); // 根据需要调整延迟时间
+			}, 500); // 初始延迟以等待侧边栏响应
 		});
-		// 异步响应
-		return true;
+
+		return true; // 表示消息处理是异步的
 	}
 });
