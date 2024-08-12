@@ -342,9 +342,11 @@ iframe {
 #btnhome:hover,
 #btnsearch:hover,
 #btntab:hover,
+#btnbookmarks:hover,
 #btnpaste:hover,
 #btnsave:hover,
-#btnbookmarks:hover {
+#btn:hover,
+#btnOpen:hover {
   background: var(--ext-svg-fill-color-hover);
   cursor: pointer
 }
@@ -625,4 +627,14 @@ left:100px;
     background-color: #8f8f8f;
     padding: 10px 20px;
     z-index: 1000; /* 确保提示显示在页面上方 */
+}
+#btnOpen {
+  display: flex;
+  height: 30px;
+  width: 30px;
+  background: transparent;
+  border: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 30px
 }

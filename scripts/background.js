@@ -1,4 +1,3 @@
-
 if (typeof browser !== "undefined") {
 	var qtest = browser.sidebarAction;
 	if (typeof qtest !== "undefined") {
@@ -7,14 +6,10 @@ if (typeof browser !== "undefined") {
 		});
 	}
 }
-
 // Importing the constants
 // eslint-disable-next-line no-undef
 importScripts("constants.js");
-
-
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error) => console.error(error));
-
 chrome.runtime.onMessage.addListener(function request(request, sender, response) {
 	// eye protection & autodim & shortcut
 	switch (request.name) {
@@ -45,7 +40,6 @@ chrome.runtime.onMessage.addListener(function request(request, sender, response)
 	}
 	return true;
 });
-
 chrome.commands.onCommand.addListener(function (command) {
 	if (command == "toggle-feature-openweb") {
 		chrome.tabs.query({
@@ -64,7 +58,6 @@ chrome.commands.onCommand.addListener(function (command) {
 		});
 	}
 });
-
 // contextMenus
 function onClickHandler(info, tab) {
 	if (info.menuItemId == "totlguideemenu") {
@@ -141,14 +134,12 @@ function onClickHandler(info, tab) {
 		chrome.runtime.sendMessage({ msg: "setsearch", value: searchQuery });
 	}
 }
-
 // check to remove all contextmenus
 if (chrome.contextMenus) {
 	chrome.contextMenus.removeAll(function () {
 		// console.log("contextMenus.removeAll callback");
 	});
 }
-
 var sharemenusharetitle = chrome.i18n.getMessage("sharemenusharetitle");
 var sharemenuwelcomeguidetitle = chrome.i18n.getMessage("sharemenuwelcomeguidetitle");
 var sharemenutellafriend = chrome.i18n.getMessage("sharemenutellafriend");
@@ -161,7 +152,6 @@ var sharemenupostonweibo = chrome.i18n.getMessage("sharemenupostonweibo");
 var sharemenupostonvkontakte = chrome.i18n.getMessage("sharemenupostonvkontakte");
 var sharemenupostonwhatsapp = chrome.i18n.getMessage("sharemenupostonwhatsapp");
 var sharemenupostonqq = chrome.i18n.getMessage("sharemenupostonqq");
-
 function browsercontext(a, b, c, d) {
 	var item = { "title": a, "type": "normal", "id": b, "contexts": contexts };
 	var newitem;
@@ -181,24 +171,19 @@ function browsercontext(a, b, c, d) {
 		return chrome.contextMenus.create(item);
 	}
 }
-
 var actionmenuadded = false;
 if (chrome.contextMenus) {
 	if (actionmenuadded == false) {
 		actionmenuadded = true;
-
 		var contexts = ["action"];
-
 		browsercontext(sharemenuwelcomeguidetitle, "totlguideemenu", { "16": "images/IconGuide.png", "32": "images/IconGuide@2x.png" });
 		browsercontext(sharemenudonatetitle, "totldevelopmenu", { "16": "images/IconDonate.png", "32": "images/IconDonate@2x.png" });
 		browsercontext(sharemenuratetitle, "totlratemenu", { "16": "images/IconStar.png", "32": "images/IconStar@2x.png" });
-
 		// Create a parent item and two children.
 		var parent = null;
 		parent = browsercontext(sharemenusharetitle, "totlsharemenu", { "16": "images/IconShare.png", "32": "images/IconShare@2x.png" });
 		browsercontext(sharemenutellafriend, "totlshareemail", { "16": "images/IconEmail.png", "32": "images/IconEmail@2x.png" }, parent);
 		chrome.contextMenus.create({ "title": "", "type": "separator", "id": "totlsepartorshare", "contexts": contexts, "parentId": parent });
-
 		var uiLanguage = chrome.i18n.getUILanguage();
 		if (uiLanguage.includes("zh")) {
 			// Chinese users
@@ -216,27 +201,22 @@ if (chrome.contextMenus) {
 			browsercontext(sharemenupostonwhatsapp, "totlsharewhatsapp", { "16": "images/IconWhatsApp.png", "32": "images/IconWhatsApp@2x.png" }, parent);
 			browsercontext(sharemenupostonx, "totlsharetwitter", { "16": "images/IconTwitter.png", "32": "images/IconTwitter@2x.png" }, parent);
 		}
-
 		chrome.contextMenus.create({ "title": "", "type": "separator", "id": "totlsepartor", "contexts": contexts });
 		browsercontext(sharemenusubscribetitle, "totlsubscribe", { "16": "images/IconYouTube.png", "32": "images/IconYouTube@2x.png" });
-
 		chrome.contextMenus.onClicked.addListener(onClickHandler);
 	}
 }
-
 var contextmenus;
 chrome.storage.sync.get(["contextmenus"], function (items) {
 	contextmenus = items.contextmenus; if (contextmenus == null) contextmenus = true;
 	if (contextmenus) { checkcontextmenus(); }
 });
-
 // context menu for page and link and selection
 var menuitems = null;
 var contextmenuadded = false;
 var contextarraypage = [];
 var contextarraylink = [];
 var contextarrayselection = [];
-
 function addwebpagecontext(a, b, c, d) {
 	var k;
 	var addvideolength = b.length;
@@ -246,7 +226,6 @@ function addwebpagecontext(a, b, c, d) {
 		c.push(menuitems);
 	}
 }
-
 function checkcontextmenus() {
 	var baiduSearchTitle = "百度搜索";
 	var contextsSelection = ["selection"];
@@ -269,7 +248,6 @@ function checkcontextmenus() {
 		}
 	}
 }
-
 function cleanrightclickmenu(menu) {
 	if (menu.length > 0) {
 		menu.forEach(function (item) {
@@ -278,7 +256,6 @@ function cleanrightclickmenu(menu) {
 	}
 	menu.length = 0;
 }
-
 function removecontexmenus() {
 	if (chrome.contextMenus) {
 		cleanrightclickmenu(contextarraypage);
@@ -287,19 +264,16 @@ function removecontexmenus() {
 		contextmenuadded = false;
 	}
 }
-
 function onchangestorage(a, b, c, d) {
 	if (a[b]) {
 		if (a[b].newValue == true) { c(); } else { d(); }
 	}
 }
-
 async function getCurrentTab() {
 	let queryOptions = { active: true, currentWindow: true };
 	let tabs = await chrome.tabs.query(queryOptions);
 	return tabs[0];
 }
-
 chrome.storage.sync.get(["icon"], function (items) {
 	if (items["icon"] == undefined) {
 		if (exbrowser == "safari") {
@@ -315,7 +289,6 @@ chrome.storage.sync.get(["icon"], function (items) {
 		}
 	});
 });
-
 // update on refresh tab
 chrome.tabs.onUpdated.addListener(function () {
 	getCurrentTab().then((thattab) => {
@@ -331,7 +304,6 @@ chrome.tabs.onUpdated.addListener(function () {
 		});
 	});
 });
-
 chrome.storage.onChanged.addListener(function (changes) {
 	onchangestorage(changes, "contextmenus", checkcontextmenus, removecontexmenus);
 	if (changes["icon"]) {
@@ -436,9 +408,7 @@ chrome.storage.onChanged.addListener(function (changes) {
 		chrome.runtime.sendMessage({ msg: "setdefaultzoom" });
 	}
 });
-
 chrome.runtime.setUninstallURL(linkuninstall);
-
 function initwelcome() {
 	chrome.storage.sync.get(["firstRun"], function (chromeset) {
 		if ((chromeset["firstRun"] != "false") && (chromeset["firstRun"] != false)) {
@@ -448,11 +418,9 @@ function initwelcome() {
 		}
 	});
 }
-
 function installation() {
 	initwelcome();
 }
-
 chrome.runtime.onInstalled.addListener(function () {
 	installation();
 });
@@ -465,13 +433,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 function savePresetsToStorage(presets) {
 	chrome.storage.local.set({ 'presets': presets });
 }
-
 function loadPresetsFromStorage(callback) {
 	chrome.storage.local.get('presets', function (data) {
 		callback(data.presets || []);
 	});
 }
-
 // 添加消息监听器处理showSearchLinks动作
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 	if (request.action === 'showSearchLinks') {
@@ -508,7 +474,6 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 		});
 	}
 });
-
 function getSelectedText() {
 	// 这里需要实现获取选中文本的逻辑，可能需要与内容脚本交互
 	// 例如，可以发送消息给content script来获取选中文本
@@ -546,7 +511,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		chrome.tabs.remove(sender.tab.id);
 	}
 });
-
 //粘贴
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (message.action === "paste") {
@@ -584,35 +548,50 @@ chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 	var activeTab = tabs[0];
 	var homepageUrl = activeTab.url; // 确保此处有值
 	var homepageTitle = activeTab.title || "Untitled"; // 使用 || 运算符提供默认标题
-
 	chrome.runtime.sendMessage({
 		action: "updateHomepageInfo",
 		homepageUrl: homepageUrl,
 		homepageTitle: homepageTitle
 	});
 });
-// background.js// background.js
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 	if (message.action === 'openHomepageAndSidebar') {
 		var { homepageUrl, sidebarUrl } = message.urls;
-
-		// 发送 setpage 命令到侧边栏
 		chrome.sidePanel.open({ windowId: sender.tab.windowId }, function () {
 			setTimeout(function () {
-				// 延迟发送消息以设置侧边栏页面
 				chrome.runtime.sendMessage({
 					msg: "setpage",
 					value: sidebarUrl
 				});
-
-				// 进一步延迟以确保侧边栏加载
-				setTimeout(function () {
-					// 创建新标签页并加载主页网址
-					chrome.tabs.create({ url: homepageUrl, active: true });
-				}, 1000); // 根据需要调整延迟时间
-			}, 500); // 初始延迟以等待侧边栏响应
+				chrome.tabs.create({ url: homepageUrl, active: true }, function (tab) {
+					// 标签页创建成功后的回调
+					sendResponse({ success: true }); // 在操作完成后返回响应
+				});
+			}, 500);
 		});
-
-		return true; // 表示消息处理是异步的
+		return true; // 将返回操作移到异步操作内部
 	}
+});
+// 监听来自 content script 或其他部分的消息
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === 'openSidebarWithUrl') {
+		// 请求打开侧边栏
+		chrome.sidePanel.open({ url: request.url }, function () {
+			// 侧边栏打开后的回调，可以在这里发送响应或执行其他操作
+			// 例如，可以在这里发送消息告知侧边栏已打开
+			sendResponse({ success: true, message: 'Sidebar opened' });
+		});
+	} else if (request.action === 'openHomepageAndSidebar') {
+		// 请求打开主页和侧边栏
+		var { homepageUrl, sidebarUrl } = request.urls;
+		// 先打开侧边栏
+		chrome.sidePanel.open({ url: sidebarUrl }, function () {
+			// 侧边栏打开后，再打开主页标签页
+			chrome.tabs.create({ url: homepageUrl, active: true }, function (tab) {
+				// 主页标签页创建成功后的回调
+				sendResponse({ success: true, message: 'Homepage and sidebar opened' });
+			});
+		});
+	}
+	// 其他消息处理逻辑...
 });

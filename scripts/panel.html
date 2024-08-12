@@ -44,11 +44,21 @@
             </svg></button><button id="btnbookmarks" title="书签" class="hidden"><svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="24"
                     height="24" viewBox="0 0 30 30">
                     <path d="M23,27l-8-7l-8,7V5c0-1.105,0.895-2,2-2h12c1.105,0,2,0.895,2,2V27z"></path>
-                </svg></button>
+                </svg></button><div id="dropdownMenu" style="display:none;">
+                    <button id="btnSavePage">收藏当前页面</button>
+                    <button id="btnOpenAllPages">一键打开所有页面</button>
+                </div>
                 <button id="btnsave" title="书签" ><svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="24"
                         height="24" viewBox="0 0 30 30">
                         <path d="M 12 2 A 1 1 0 0 0 11.289062 2.296875 L 1.203125 11.097656 A 0.5 0.5 0 0 0 1 11.5 A 0.5 0.5 0 0 0 1.5 12 L 4 12 L 4 20 C 4 20.552 4.448 21 5 21 L 9 21 C 9.552 21 10 20.552 10 20 L 10 14 L 14 14 L 14 20 C 14 20.552 14.448 21 15 21 L 19 21 C 19.552 21 20 20.552 20 20 L 20 12 L 22.5 12 A 0.5 0.5 0 0 0 23 11.5 A 0.5 0.5 0 0 0 22.796875 11.097656 L 12.716797 2.3027344 A 1 1 0 0 0 12.710938 2.296875 A 1 1 0 0 0 12 2 z"></path>
-                    </svg></button>
+                    </svg>
+                </button>
+            <button id="btnOpen" title="Open All Saved Pages" class="icon" >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                    <path
+                        d="M18 16v-2h-2v2h2zm0-8c1.1 0 2 .9 2 2v3c0 1.1-.9 2-2 2h-2v2h2c2.2 0 4-1.8 4-4v-3c0-2.2-1.8-4-4-4h-2v2h2zm0-6C7.6 2 2 7.6 2 16h2c0-3.9 3.1-7 7-7s7 3.1 7 7c0 1.9-1.7 3.5-3.5 3.8V16c0 1.1-.9 2-2 2h-2c-1.1 0-2-.9-2-2V8h-2c-1.1 0-2-.9-2-2V4H4v2c0 1.1.9 2 2 2h2v10H4c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10z" />
+                </svg>
+            </button>
         <input id="searchbar" type="search" placeholder="Search" aria-label="Search through web">
         <button id="btngo" title="搜索"><span data-i18n="navgo"></span></button>
         <button id="btnpaste" title="粘贴"  class="btn-tooltip" class="hidden" ><svg xmlns="http://www.w3.org/2000/svg" viewBox="0,0,256,256" width="24"

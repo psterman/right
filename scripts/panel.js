@@ -1,11 +1,7 @@
-
 var selectedsearch, searchgoogle, searchbing, searchduckduckgo, searchbaidu, searchyandex, typepanelzone, typepanelcustom, typepanellasttime, websitezoomname, websitelasttime, navtop, navbottom, navhidden, opentab, opencopy, opennonebookmarks, openbrowserbookmarks, openquickbookmarks, googlesidepanel, zoom, defaultzoom, step;
 document.addEventListener("DOMContentLoaded", init);
-
-
 var i18ntitelcopytext = chrome.i18n.getMessage("titlecopytextdone");
 var i18ndescopytext = chrome.i18n.getMessage("descopytextdone");
-
 var winsend;
 // Detect URL to open back in new web browser tab
 var currentSidePanelURL = "";
@@ -30,21 +26,18 @@ window.addEventListener("message", (e) => {
 		}
 	}
 });
-
 // Elements
 var zoomInButton;
 var zoomOutButton;
 var zoomLevelDisplay;
 var zoomLevel = 100;
 // Function to update zoom level display
-
 function updateZoomLevel() {
 	zoomLevelDisplay.textContent = zoomLevel + "%";
 	winsend.postMessage({
 		method: "changeZoomScale", zoom: parseFloat(zoomLevel / 100)
 	}, "*");
 }
-
 var isMenuClick = false;
 function init() {
 	// complete page
@@ -56,20 +49,16 @@ function init() {
 		dragDropZone.classList.add("blurlayer");
 		// console.log("dragenter");
 	});
-
 	dragDropZone.addEventListener("dragover", (e) => {
 		e.preventDefault();
 		// console.log("dragover");
 	});
-
 	dragDropZone.addEventListener("dragleave", (e) => {
 		e.preventDefault();
 		removeblurlayerfull();
 		// console.log("dragleave");
 	});
-
 	dragDropZone.addEventListener("drop", handleDrop);
-
 	// navigation bar
 	const dragDropNavbar = document.getElementById("drag-drop-navbar");
 	const navbar = document.getElementById("navbar"); const searchEngineSelectContainer = document.createElement("div"); // 创建一个新的容器
@@ -81,11 +70,9 @@ function init() {
 		searchEngineSelect.appendChild(option);
 	});
 	searchEngineSelectContainer.appendChild(searchEngineSelect); // 将下拉列表添加到新容器中
-
 	// 将新的下拉列表容器添加到 navbar 中，紧邻 btnhome 按钮
 	const btnHome = document.getElementById("btnhome");
 	navbar.insertBefore(searchEngineSelectContainer, btnHome.nextSibling);
-
 	// 添加 change 事件监听器
 	searchEngineSelect.addEventListener("change", function () {
 		selectedsearch = this.value;
@@ -97,28 +84,22 @@ function init() {
 		dragDropNavbar.className = "show";
 		// console.log("dragenter");
 	});
-
 	dragDropNavbar.addEventListener("dragover", (e) => {
 		e.preventDefault();
 		// console.log("dragover");
 	});
-
 	dragDropNavbar.addEventListener("dragleave", (e) => {
 		e.preventDefault();
 		dragDropNavbar.className = "hidden";
 		// console.log("dragleave");
 	});
-
 	dragDropNavbar.addEventListener("drop", handleDrop);
-
 	// Add event listeners to detect mouse enter and leave events
 	document.addEventListener("mouseover", handleMouseEnter);
 	document.addEventListener("mouseout", handleMouseLeave);
-
 	document.querySelector(".close").addEventListener("click", () => {
 		document.getElementById("stefanvdpromo").className = "hidden";
 	});
-
 	zoomInButton = document.getElementById("zoom-in-button");
 	zoomOutButton = document.getElementById("zoom-out-button");
 	zoomLevelDisplay = document.getElementById("zoom-level");
@@ -126,12 +107,10 @@ function init() {
 		zoomLevel = parseInt(zoomLevel) + parseInt(step);
 		updateZoomLevel();
 	});
-
 	zoomOutButton.addEventListener("click", () => {
 		zoomLevel = parseInt(zoomLevel) - parseInt(step);
 		updateZoomLevel();
 	});
-
 	chrome.storage.sync.get(["firstDate", "optionskipremember", "navtop", "navbottom", "navhidden", "typepanelzone", "typepanelcustom", "typepanellasttime", "websitezoomname", "websitelasttime", "searchgoogle", "searchbing", "searchduckduckgo", "searchbaidu", "searchyandex", "opentab", "opencopy", "opennonebookmarks", "openbrowserbookmarks", "openquickbookmarks", "websitename1", "websiteurl1", "websitename2", "websiteurl2", "websitename3", "websiteurl3", "websitename4", "websiteurl4", "websitename5", "websiteurl5", "websitename6", "websiteurl6", "websitename7", "websiteurl7", "websitename8", "websiteurl8", "websitename9", "websiteurl9", "websitename10", "websiteurl10", "googlesidepanel", "zoom", "defaultzoom", "step"], function (items) {
 		searchgoogle = items["searchgoogle"]; if (searchgoogle == null) { searchgoogle = true; }
 		googlesidepanel = items["googlesidepanel"]; if (googlesidepanel == null) { googlesidepanel = true; }
@@ -142,7 +121,6 @@ function init() {
 		zoom = items["zoom"]; if (zoom == null) { zoom = false; }
 		defaultzoom = items["defaultzoom"]; if (defaultzoom == null) { defaultzoom = 100; }
 		step = items["step"]; if (step == null) { step = 5; }
-
 		//---
 		if (zoom == true) {
 			document.getElementById("zoombar").className = "zoom-panel";
@@ -150,7 +128,6 @@ function init() {
 		zoomLevel = parseInt(defaultzoom);
 		zoomLevelDisplay.textContent = defaultzoom + "%";
 		//---
-
 		if (searchgoogle) {
 			selectedsearch = "searchgoogle";
 		} else if (searchbing) {
@@ -176,7 +153,6 @@ function init() {
 		} else {
 			document.getElementById("btnpaste").className = "hidden";
 		}
-
 		opennonebookmarks = items["opennonebookmarks"]; if (opennonebookmarks == null) { opennonebookmarks = false; }
 		openbrowserbookmarks = items["openbrowserbookmarks"]; if (openbrowserbookmarks == null) { openbrowserbookmarks = false; }
 		openquickbookmarks = items["openquickbookmarks"]; if (openquickbookmarks == null) { openquickbookmarks = false; }
@@ -187,7 +163,6 @@ function init() {
 		} else {
 			document.getElementById("btnbookmarks").className = "hidden";
 		}
-
 		// Add menu items
 		if (openbrowserbookmarks == true) {
 			createbrowserbookmark();
@@ -196,7 +171,6 @@ function init() {
 		} else if (opennonebookmarks == true) {
 			// do nothing
 		}
-
 		// show remember page
 		var firstmonth = false;
 		var currentDate = new Date().getTime();
@@ -208,7 +182,6 @@ function init() {
 			chrome.storage.sync.set({ "firstDate": currentDate });
 			firstmonth = true;
 		}
-
 		if (firstmonth) {
 			// show nothing
 			document.getElementById("stefanvdpromo").className = "hidden";
@@ -219,19 +192,16 @@ function init() {
 				document.getElementById("stefanvdpromo").className = "hidden";
 			}
 		}
-
 		typepanelzone = items.typepanelzone; if (typepanelzone == null) typepanelzone = true;
 		typepanelcustom = items.typepanelcustom; if (typepanelcustom == null) typepanelcustom = false;
 		typepanellasttime = items.typepanellasttime; if (typepanellasttime == null) typepanellasttime = false;
 		websitezoomname = items.websitezoomname; if (websitezoomname == null) websitezoomname = "https://www.google.com";
 		websitelasttime = items.websitelasttime; if (websitelasttime == null) websitelasttime = "https://www.google.com";
-
 		if (typepanelcustom == true) {
 			open(websitezoomname, true);
 		} else if (typepanellasttime == true) {
 			open(websitelasttime, true);
 		}
-
 		navtop = items.navtop; if (navtop == null) navtop = true;
 		navbottom = items.navbottom; if (navbottom == null) navbottom = false;
 		navhidden = items.navhidden; if (navhidden == null) navhidden = false;
@@ -245,11 +215,10 @@ function init() {
 			var elementc = document.getElementById("psidebar");
 			elementc.classList.add("clean");
 		}
-
 		// navigation bar
 		document.getElementById("btnhome").addEventListener("click", actionHome, false);
 		document.getElementById("btngo").addEventListener("click", actionGo, false);
-
+		document.getElementById("btnOpen").addEventListener("click", openSavedHomepageAndSidebar, false);
 		document.getElementById("searchbar").addEventListener("keypress", handleKeyPress, false);
 		document.getElementById("btnpaste").addEventListener("click", actionPaste, false);
 		// panel.js 中的 btntab 点击事件处理函数
@@ -262,21 +231,43 @@ function init() {
 				document.getElementById("menubookmarks").className = "";
 			}
 		});
-
 		document.getElementById("btnsave").addEventListener("click", function () {
 			// 使用 chrome.tabs API 获取当前活动标签页的 URL 和标题
 			chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 				var activeTab = tabs[0];
 				var homepageUrl = activeTab.url; // 获取当前标签页的 URL
 				var homepageTitle = activeTab.title || "Untitled"; // 获取当前标签页的标题，如果没有标题则使用默认标题 "Untitled"
-
 				// 调用保存逻辑函数，传入获取到的 URL 和标题
 				saveCurrentPageAndSidebar(homepageUrl, homepageTitle);
 			});
 		});
 	});
+} function openSavedHomepageAndSidebar() {
+	// 从 chrome.storage.sync 获取保存的页面信息
+	chrome.storage.sync.get('savedPages', function (items) {
+		if (items.savedPages) {
+			var savedPages = items.savedPages;
+			// 创建新的标签页打开主页
+			chrome.tabs.create({
+				url: savedPages.homepageUrl,
+				active: true
+			}, function (homepageTab) {
+				// 主页标签页创建成功后，发送消息到 background.js 请求打开侧边栏
+				chrome.runtime.sendMessage({
+					action: 'openSidebarWithUrl',
+					url: savedPages.sidebarUrl
+				}, function (response) {
+					if (chrome.runtime.lastError) {
+						console.error(chrome.runtime.lastError.message);
+					} else {
+						// 处理响应，例如给用户反馈
+						console.log('Sidebar opened successfully');
+					}
+				});
+			});
+		}
+	});
 }
-
 function createmenuitems(items) {
 	const menu = document.getElementById("list");
 	for (let i = 1; i <= 10; i++) {
@@ -301,7 +292,6 @@ function createmenuitems(items) {
 		}
 	}
 }
-
 function createbrowserbookmark() {
 	// Fetch bookmarks and render them
 	chrome.bookmarks.getTree(function (bookmarkTreeNodes) {
@@ -319,10 +309,8 @@ function actionPaste() {
 				cancelable: true,
 				data: text
 			});
-
 			// 分发 'paste' 事件到当前激活的元素
 			document.activeElement.dispatchEvent(pasteEvent);
-
 			// 如果默认的粘贴行为被阻止，我们可以尝试使用 document.execCommand
 			if (!pasteEvent.defaultPrevented) {
 				document.execCommand('insertText', false, text);
@@ -348,25 +336,20 @@ function renderBookmarks(bookmarks, parentElement) {
 			folderIcon.height = 16;
 			folderIcon.width = 16;
 			folderLink.appendChild(folderIcon); // Append folder icon inside the link
-
 			// Create span for bookmark title
 			var titleSpan = document.createElement("div");
 			titleSpan.textContent = bookmark.title;
-
 			folderLink.appendChild(titleSpan);
 			listItemsub.appendChild(folderLink);
 			listItemsub.appendChild(sublist);
 			parentElement.appendChild(listItemsub);
-
 			// Add event listeners for mouseenter and mouseleave
 			listItemsub.addEventListener("mouseenter", function () {
 				sublist.className = "showitem";
 			});
-
 			listItemsub.addEventListener("mouseleave", function () {
 				sublist.className = "hideitem";
 			});
-
 			// Add class for CSS styling
 			listItemsub.classList.add("bookmark-item");
 		} else {
@@ -388,21 +371,17 @@ function renderBookmarks(bookmarks, parentElement) {
 			favicon.height = 16;
 			favicon.width = 16;
 			link.appendChild(favicon); // Append favicon inside the link
-
 			// Create span for bookmark title
 			var titleSpanRoot = document.createElement("div");
 			titleSpanRoot.textContent = bookmark.title;
-
 			link.appendChild(titleSpanRoot);
 			listItem.appendChild(link);
 			parentElement.appendChild(listItem);
-
 			// Add class for CSS styling
 			listItem.classList.add("bookmark-item");
 		}
 	});
 }
-
 // Function to extract domain from URL
 function getDomain(url) {
 	var domain;
@@ -416,23 +395,19 @@ function getDomain(url) {
 	domain = domain.split(":")[0];
 	return domain;
 }
-
 var showingcopybadge = false;
 function showcopytextbadge() {
 	var div = document.createElement("div");
 	div.setAttribute("id", "stefanvdremoteadd");
 	div.className = "stefanvdremote";
 	document.body.appendChild(div);
-
 	var h3 = document.createElement("h3");
 	h3.innerText = i18ntitelcopytext;
 	div.appendChild(h3);
-
 	var p = document.createElement("p");
 	p.innerText = i18ndescopytext;
 	div.appendChild(p);
 	showingcopybadge = true;
-
 	window.setTimeout(function () {
 		var element = document.getElementById("stefanvdremoteadd");
 		element.parentNode.removeChild(element);
@@ -442,7 +417,6 @@ function showcopytextbadge() {
 function actionOpenTab() {
 	var iframe = document.getElementById('preview');
 	var iframeURL = iframe.src; // 获取 preview iframe 当前的 src 属性值
-
 	// 发送当前 iframe 的 URL 到后台脚本
 	chrome.runtime.sendMessage({
 		action: 'openTabWithUrl',
@@ -469,13 +443,11 @@ function handleDrop(e) {
 			console.log(e);
 		}
 	}
-
 	const selectedText = e.dataTransfer.getData("text/plain").trim();
 	if (selectedText) {
 		performSearch(selectedsearch, selectedText);
 	}
 }
-
 function actionHome() {
 	if (typepanelcustom == true) {
 		open(websitezoomname, true);
@@ -486,7 +458,6 @@ function actionHome() {
 		document.getElementById("drag-drop-zone").className = "show";
 	}
 }
-
 function actionGo() {
 	var searchInput = document.getElementById("searchbar").value.trim();
 	// Check if the input is a valid URL
@@ -511,19 +482,16 @@ function actionGo() {
 		performSearch(selectedsearch, searchInput);
 	}
 }
-
 function handleKeyPress(event) {
 	if (event.key === "Enter") {
 		actionGo();
 	}
 }
-
 const open = async (currenturl) => {
 	const iframe = document.getElementById("preview");
 	if (iframe) {
 		iframe.className = "";
 	}
-
 	await chrome.declarativeNetRequest.updateSessionRules({
 		removeRuleIds: [1],
 		addRules: [{
@@ -543,11 +511,9 @@ const open = async (currenturl) => {
 		},
 		],
 	});
-
 	const dragDropNavbar = document.getElementById("drag-drop-navbar");
 	const dragDropZone = document.getElementById("drag-drop-zone");
 	const dragDropInfo = document.getElementById("drag-drop-info");
-
 	if (iframe) {
 		iframe.src = currenturl;
 		if (iframe.src != "" || iframe.src != null) {
@@ -557,33 +523,28 @@ const open = async (currenturl) => {
 		}
 	}
 };
-
 // Function to handle mouse entering the document
 function handleMouseEnter() {
 	// console.log("Mouse entered the frame.");
 }
-
 // Function to handle mouse leaving the document
 function handleMouseLeave() {
 	// console.log("Mouse left the frame.");
 	removeblurlayernav();
 	removeblurlayerfull();
 }
-
 function removeblurlayerfull() {
 	const dragDropZone = document.getElementById("drag-drop-zone");
 	if (dragDropZone.classList.contains("blurlayer")) {
 		dragDropZone.classList.remove("blurlayer");
 	}
 }
-
 function removeblurlayernav() {
 	const dragDropZone = document.getElementById("drag-drop-navbar");
 	if (dragDropZone.classList.contains("show")) {
 		dragDropZone.className = "hidden";
 	}
 }
-
 function performSearch(searchEngine, query) {
 	switch (searchEngine) {
 		case "searchgoogle":
@@ -625,7 +586,6 @@ function clearBookmarksItems() {
 		list.removeChild(list.firstChild);
 	}
 }
-
 chrome.runtime.onMessage.addListener(function (request) {
 	if (request.msg == "setpage") {
 		// console.log("received = " + request.value);
@@ -779,7 +739,6 @@ var iframeHeight = iframe.offsetHeight;
 document.getElementById('btnbookmarks').addEventListener('click', function () {
 	var bookmarksMenu = document.getElementById('menubookmarks');
 	bookmarksMenu.classList.toggle('hidden');
-
 	if (this.classList.contains('bottom')) {
 		// 如果按钮在底部，调整二级菜单的位置
 		bookmarksMenu.style.top = '-' + iframeHeight + 'px';
@@ -788,12 +747,10 @@ document.getElementById('btnbookmarks').addEventListener('click', function () {
 		bookmarksMenu.style.top = '0';
 	}
 });
-
 // 修改后的保存逻辑函数
 function saveCurrentPageAndSidebar(homepageUrl, homepageTitle) {
 	var sidebarUrl = document.getElementById("preview").src;
 	var sidebarName = "Sidebar";
-
 	var savedData = {
 		homepageName: homepageTitle,
 		homepageUrl: homepageUrl,
@@ -803,21 +760,17 @@ function saveCurrentPageAndSidebar(homepageUrl, homepageTitle) {
 	// 假设这是原来的 saveCurrentPageAndSidebar 函数的一部分
 	chrome.storage.sync.set({ 'savedPages': savedData }, function () {
 		console.log("Saved homepage and sidebar successfully.");
-
 		// 添加保存成功的提示
 		showSaveSuccessHint();
 	});
-
 	// 添加一个新的函数来显示保存成功的提示
 	function showSaveSuccessHint() {
 		// 创建一个提示元素
 		var hintElement = document.createElement('div');
 		hintElement.className = 'save-success-hint'; // 确保有相应的 CSS 样式
 		hintElement.textContent = 'Save successful!';
-
 		// 将提示添加到页面中
 		document.body.appendChild(hintElement);
-
 		// 设置提示在几秒后自动消失
 		setTimeout(function () {
 			hintElement.style.opacity = '0';
@@ -827,23 +780,37 @@ function saveCurrentPageAndSidebar(homepageUrl, homepageTitle) {
 		}, 1000); // 3秒后开始淡出效果
 	}
 }
-// panel.js 或内容脚本中添加消息监听器
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-	if (request.action === 'openSidebar') {
-		var sidebarUrl = request.url;
-
-		// 根据 sidebarUrl 打开侧边栏的逻辑，可能涉及调用某些 API 或 DOM 操作
-		// 例如，如果侧边栏是一个 iframe，你可以这样做：
-		document.getElementById('sidebarIframe').src = sidebarUrl;
-
-		return true; // 表示消息处理是异步的
-	}
-}); // panel.js 中添加消息监听器
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-	if (request.action === 'openSidebar') {
-		var sidebarIframe = document.getElementById('sidebarIframe');
-		if (sidebarIframe) {
-			sidebarIframe.src = request.url; // 设置 iframe 的 src 属性为接收到的 URL
-		}
+document.addEventListener('DOMContentLoaded', function () {
+	// 获取按钮的 DOM 引用
+	var btnOpenAllSavedPages = document.getElementById('btnOpenAllSavedPages');
+	// 确保按钮只添加一次事件监听器
+	if (btnOpenAllSavedPages) {
+		// 首先，从存储中获取保存的页面信息
+		chrome.storage.sync.get('savedPages', function (items) {
+			if (items && items.savedPages) {
+				var savedPages = items.savedPages;
+				// 绑定点击事件监听器
+				btnOpenAllSavedPages.addEventListener('click', function () {
+					// 发送包含URL信息的消息给background.js
+					chrome.runtime.sendMessage({
+						action: 'openHomepageAndSidebar',
+						urls: {
+							homepageUrl: savedPages.homepageUrl,
+							sidebarUrl: savedPages.sidebarUrl
+						}
+					}, function (response) {
+						if (chrome.runtime.lastError) {
+							console.error(chrome.runtime.lastError.message);
+						} else {
+							// 处理响应
+							console.log('Message sent successfully');
+						}
+					});
+				});
+			} else {
+				console.error('Saved pages not found in storage.');
+				// 你可能还想给用户一些反馈，告知他们没有找到保存的页面
+			}
+		});
 	}
 });

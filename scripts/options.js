@@ -1349,7 +1349,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	document.getElementById('copyCheckbox').addEventListener('change', function () {
 		chrome.storage.sync.set({ 'copyCheckbox': this.checked });
 	});
-document.getElementById('deleteCheckbox').addEventListener('change', function () { chrome.storage.sync.set({ 'deleteCheckbox': this.checked }); });
+	document.getElementById('deleteCheckbox').addEventListener('change', function () { chrome.storage.sync.set({ 'deleteCheckbox': this.checked }); });
 	document.getElementById('jumpCheckbox').addEventListener('change', function () {
 		chrome.storage.sync.set({ 'jumpCheckbox': this.checked });
 	});
@@ -1719,21 +1719,10 @@ function loadSavedPages() {
 			// 首先清空现有的列表
 			savedPagesList.innerHTML = '';
 
-			// 为每个保存的页面生成列表项
-			for (var pageKey in savedPages) {
-				if (savedPages.hasOwnProperty(pageKey)) {
-					var page = savedPages[pageKey];
-					listHtml += '<div class="savedPageItem">';
-					listHtml += '<h4>' + page.name + '</h4>';
-					listHtml += '<a href="' + page.url + '" target="_blank">' + page.url + '</a>';
-					listHtml += '<button class="editButton">Edit</button>';
-					listHtml += '<button class="deleteButton">Delete</button>';
-					listHtml += '</div>';
-				}
-			}
+		
 			// 然后将生成的HTML添加到列表中
 			savedPagesList.innerHTML = listHtml;
-// 新增代码：为 "openAllSavedPages" 按钮添加事件监听器
+			// 新增代码：为 "openAllSavedPages" 按钮添加事件监听器
 			var openAllButton = document.getElementById('openAllSavedPages');
 			openAllButton.addEventListener('click', function () {
 				// 发送消息请求 background.js 打开主页和侧边栏的页面
@@ -1746,26 +1735,7 @@ function loadSavedPages() {
 				});
 			});
 
-			// 为每个列表项添加编辑和删除按钮的事件监听器
-			var editButtons = document.querySelectorAll('.editButton');
-			var deleteButtons = document.querySelectorAll('.deleteButton');
-			editButtons.forEach(function (button, index) {
-				button.addEventListener('click', function () {
-					// 实现编辑逻辑
-				});
-			});
-			deleteButtons.forEach(function (button, index) {
-				button.addEventListener('click', function () {
-					// 实现删除逻辑
-				});
-			});
+		
 		}
 	});
-}
-// 假设这是删除按钮的点击事件处理函数
-function deleteSavedPage(pageKey) {
-    chrome.storage.sync.remove('savedPages', function() {
-        console.log('Removed saved page:', pageKey);
-        loadSavedPages(); // 重新加载保存的页面列表
-    });
 }
