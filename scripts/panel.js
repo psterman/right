@@ -780,37 +780,3 @@ function saveCurrentPageAndSidebar(homepageUrl, homepageTitle) {
 		}, 1000); // 3秒后开始淡出效果
 	}
 }
-document.addEventListener('DOMContentLoaded', function () {
-	// 获取按钮的 DOM 引用
-	var btnOpenAllSavedPages = document.getElementById('btnOpenAllSavedPages');
-	// 确保按钮只添加一次事件监听器
-	if (btnOpenAllSavedPages) {
-		// 首先，从存储中获取保存的页面信息
-		chrome.storage.sync.get('savedPages', function (items) {
-			if (items && items.savedPages) {
-				var savedPages = items.savedPages;
-				// 绑定点击事件监听器
-				btnOpenAllSavedPages.addEventListener('click', function () {
-					// 发送包含URL信息的消息给background.js
-					chrome.runtime.sendMessage({
-						action: 'openHomepageAndSidebar',
-						urls: {
-							homepageUrl: savedPages.homepageUrl,
-							sidebarUrl: savedPages.sidebarUrl
-						}
-					}, function (response) {
-						if (chrome.runtime.lastError) {
-							console.error(chrome.runtime.lastError.message);
-						} else {
-							// 处理响应
-							console.log('Message sent successfully');
-						}
-					});
-				});
-			} else {
-				console.error('Saved pages not found in storage.');
-				// 你可能还想给用户一些反馈，告知他们没有找到保存的页面
-			}
-		});
-	}
-});

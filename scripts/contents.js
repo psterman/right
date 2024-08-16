@@ -203,7 +203,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     });
 
     // 读取复选框的状态
-    chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox'], function (checkboxes) {
+    chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox','closesidepanelCheckbox'], function (checkboxes) {
         var showCopy = checkboxes.copyCheckbox;
         var showJump = checkboxes.jumpCheckbox;
         var showClose = checkboxes.closeCheckbox;
@@ -211,6 +211,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         var showPaste = checkboxes.pasteCheckbox;
         var showDownload = checkboxes.downloadCheckbox;
         var showDelete = checkboxes.deleteCheckbox;
+        var showclosesidepanel = checkboxes.closesidepanelCheckbox;
 
         // 添加复制、跳转和关闭选项到搜索链接容器
         if (showCopy) {
@@ -256,25 +257,25 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             searchLinksContainer.appendChild(searchLinkCut);
         }
         if (showJump) {
-            var openBookmarksInSidebar = createActionLink('侧边栏', function () {
-                // 发送消息给后台脚本，指示需要在侧边栏打开书签列表
-                chrome.runtime.sendMessage({
-                    action: 'openBookmarksInSidebar',
-                   
-                    openSidebar: true,
-                }, function (response) {
-                    if (response && response.success) {
-                        console.log("书签已在侧边栏打开");
-                    } else {
-                        console.error("无法在侧边栏打开书签");
-                    }
-                });
-                document.body.removeChild(popup);
-                currentPopup = null;
+            var toggleSidebarLink = createActionLink('切换侧边栏', function () {
+                // 发送消息请求切换侧边栏状态
+                chrome.runtime.sendMessage({ action: 'toggleSidePanel' });
             });
-            searchLinksContainer.appendChild(openBookmarksInSidebar);
+            searchLinksContainer.appendChild(toggleSidebarLink);
         }
+        if (showclosesidepanel) {
+            var searchLinkOpenSidebar = createActionLink('在侧边栏打开', function () {
+                // 获取当前页面的 URL
+                var currentUrl = window.location.href;
 
+                // 发送消息，包含 action 和当前页面的 URL 作为 query
+                chrome.runtime.sendMessage({
+                    action: 'setpage',
+                    query: currentUrl // 使用当前页面的 URL 作为 query
+                });
+            });
+            searchLinksContainer.appendChild(searchLinkOpenSidebar);
+        }
         if (showClose) {
             var searchLinkClose = createActionLink('关闭', function () {
                 chrome.runtime.sendMessage({ action: "closeTab" });

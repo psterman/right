@@ -1306,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	// 读取复选框状态并设置到页面上的复选框
-	chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox'], function (items) {
+	chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox','closesidepanelCheckbox'], function (items) {
 		if (items.copyCheckbox !== undefined) {
 			document.getElementById('copyCheckbox').checked = items.copyCheckbox;
 		}
@@ -1327,6 +1327,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 		if (items.downloadCheckbox !== undefined) {
 			document.getElementById('downloadCheckbox').checked = items.downloadCheckbox;
+		}
+		if (items.closesidepanelCheckbox !== undefined) {
+			document.getElementById('closesidepanelCheckbox').checked = items.closesidepanelCheckbox;
 		}
 	});
 	// 为每个复选框添加 "change" 事件监听器，以保存更改的状态
@@ -1365,6 +1368,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 	document.getElementById('downloadCheckbox').addEventListener('change', function () {
 		chrome.storage.sync.set({ 'downloadCheckbox': this.checked });
+	});
+	document.getElementById('closesidepanelCheckbox').addEventListener('change', function () {
+		chrome.storage.sync.set({ 'closesidepanelCheckbox': this.checked });
 	});
 	// 在contents.js中，适当位置初始化selectedSearchEngines
 	// 加载用户勾选的搜索引擎
@@ -1513,7 +1519,7 @@ var closeCheckbox = document.getElementById('closeCheckbox');
 var refreshCheckbox = document.getElementById('refreshCheckbox');
 var pasteCheckbox = document.getElementById('pasteCheckbox');
 var downloadCheckbox = document.getElementById('downloadCheckbox');
-
+var closesidepanelCheckbox= document.getElementById('closesidepanelCheckbox');
 // 更新搜索引擎选项
 chrome.runtime.sendMessage({
 	action: 'updateSearchEngines',
@@ -1524,7 +1530,8 @@ chrome.runtime.sendMessage({
 	closeOption: closeCheckbox.checked,
 	refreshOption: refreshCheckbox.checked,
 	downloadOption: downloadCheckbox.checked,
-	pasteOption: pasteCheckbox.checked
+	pasteOption: pasteCheckbox.checked,
+	closesidepanelOption:closesidepanelCheckbox.checked
 });
 // 定义搜索引擎数据数组
 var searchEngineData = [

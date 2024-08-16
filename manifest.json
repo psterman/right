@@ -15,8 +15,8 @@
       "toggle-feature-openweb": {
          "description": "__MSG_titelcurrenttab__",
          "suggested_key": {
-            "default": "Ctrl+Shift+N",
-            "mac": "MacCtrl+Shift+N"
+            "default": "Ctrl+Shift+Q",
+            "mac": "MacCtrl+Shift+Q"
          }
       }
    },
