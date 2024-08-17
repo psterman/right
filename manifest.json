@@ -2,9 +2,11 @@
    "action": {
       "default_title": "__MSG_name__"
    },
+
    "background": {
       "service_worker": "scripts/background.js"
    },
+   
    "commands": {
       "_execute_action": {
          "suggested_key": {
@@ -20,24 +22,28 @@
          }
       }
    },
+   
    "content_scripts": [
       {
          "all_frames": true,
          "js": [
             "/scripts/contents.js",
+            "/scripts/options.js",
             "/scripts/communicate.js"
          ],
          "match_about_blank": true,
          "matches": [
             "<all_urls>"
          ],
-         "run_at": "document_start"
+         "run_at": "document_end"
+         
       }
    ],
    "default_locale": "en",
    "description": "__MSG_description__",
    "host_permissions": [
-      "\u003Call_urls>"
+      "http://*/*",
+      "https://*/*"
    ],
    "icons": {
       "128": "images/icon128.png",

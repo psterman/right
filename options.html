@@ -3,6 +3,128 @@
 
 <head>
 	<meta charset="utf-8">
+<style type="text/css">
+	html {
+		font-family: "Helvetica";
+	}
+
+	.caption {
+		font-weight: bold;
+	}
+
+	html {
+		min-width: 200px;
+	}
+
+	body {
+		width: 300px;
+		padding: 8px;
+	}
+
+	.header {
+		display: flex;
+		justify-content: center;
+	}
+
+	.header>button {
+		background-color: #2f4db1;
+		justify-items: center;
+		justify-content: center;
+		border-radius: 8px;
+		color: white;
+		font-size: 24px;
+		line-height: 24px;
+	}
+
+	/*    div:first-of-type {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 5px;
+    }*/
+
+	label {
+		margin-right: 10px;
+		line-height: 32px;
+	}
+
+	input[type="radio"] {
+		-webkit-appearance: none;
+		-moz-appearance: none;
+		appearance: none;
+
+		border-radius: 50%;
+		width: 16px;
+		height: 16px;
+
+		border: 2px solid #999;
+		transition: 0.2s all linear;
+		outline: none;
+		margin-right: 5px;
+
+		position: relative;
+		top: 4px;
+	}
+
+	input:checked {
+		border: 6px solid black;
+	}
+
+	.tabmodecaption {
+		/*      margin-top: 6px;*/
+	}
+
+	#search-engines {
+		width: 120px;
+	}
+
+	.error-tips {
+		color: red;
+	}
+
+	.hidden {
+		display: none;
+	}
+
+	.visible {
+		display: block;
+	}
+
+	.row {
+		margin: .5em;
+		padding-left: .8em;
+	}
+
+	.remove {
+		font-family: Consolas, Monaco, monospace;
+		border-radius: 50%;
+		border: none;
+		margin-right: .2em;
+	}
+
+	.remove:hover {
+		background-color: red;
+		color: white;
+	}
+
+	.header {
+		margin: .3em;
+	}
+
+	.emoji-directions {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		grid-template-rows: repeat(3, 1fr);
+	}
+
+	.emoji-directions>div>label {
+		font-family: Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, Android Emoji, EmojiSymbols, EmojiOne Mozilla, Twemoji Mozilla, Segoe UI Symbol, Noto Color Emoji Compat, emoji, noto-emojipedia-fallback;
+		font-weight: 400;
+	}
+
+	.emoji-directions>div {
+		text-align: center;
+	}
+</style>
 
 	<title data-i18n="optionpagetitle"></title>
 	<link rel="stylesheet" type="text/css" href="styles/options.css">
@@ -12,6 +134,8 @@
 	<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 	<meta name="theme-color" content="#232323" media="(prefers-color-scheme: dark)">
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	
+
 </head>
 
 <body class="light">
@@ -328,7 +452,335 @@
 											class="buttoncolor" src="images/icon38.png"></div>
 									<div class="browserpreview"></div>
 								</div>
+							</div><script>
+								const uppercaseWords = (str) => str.replace(/^(.)|\s+(.)/g, (c) => c.toUpperCase());
+
+								// search engine settings
+								(function () {
+									const searchEngines = document.getElementById('search-engines')
+
+									const searchEngineNames = [
+										'google',
+										'yahoo',
+										'bing',
+										'baidu',
+										'yandex',
+										'duckduckgo',
+										'sogou',
+										'360',
+										'yahoo',
+										'ecosia',
+										'qwant',
+										'findx',
+										'amazon',
+										'you',
+										'bilibili',
+										'youtube',
+										'wikipedia'
+									]
+
+									for (let name of searchEngineNames) {
+										const engine = document.createElement('option')
+										engine.innerText = uppercaseWords(name)
+										searchEngines.appendChild(engine)
+									}
+
+									const component = 'engine'
+									chrome.storage.sync.get(component, function (o) {
+										if (o && o[component]) {
+											const index = searchEngineNames.indexOf(o[component])
+											if (index > -1) {
+												searchEngines.selectedIndex = index
+											}
+										}
+									})
+
+									searchEngines.addEventListener('change', () => {
+										chrome.storage.sync.set({
+											[component]: searchEngineNames[searchEngines.selectedIndex]
+										})
+									})
+
+									document.querySelector('.' + component + 'caption').innerText =
+										chrome.i18n.getMessage(component + 'Title')
+
+									const directions = ['up', 'left', 'right', 'down']
+									// const directions = ['left-up', 'up', 'right-up', 'left', 'right', 'left-down', 'down', 'right-down']
+									const prefix = 'direction-'
+
+									directions.forEach(direction => {
+										const d = document.querySelector(`#${prefix}${direction}`)
+
+										for (let name of searchEngineNames) {
+											const engine = document.createElement('option')
+											engine.innerText = uppercaseWords(name)
+											d.appendChild(engine)
+										}
+
+										d.addEventListener('change', () => {
+											chrome.storage.sync.set({
+												[`#${prefix}${direction}`]: searchEngineNames[d.selectedIndex]
+											})
+										})
+
+										chrome.storage.sync.get([`#${prefix}${direction}`], function (o) {
+											if (o && o[`#${prefix}${direction}`]) {
+												const index = searchEngineNames.indexOf(o[`#${prefix}${direction}`])
+												if (index > -1) {
+													d.selectedIndex = index
+												}
+											}
+										})
+									})
+
+								})();
+
+								// tabmode
+								(function () {
+									const component = 'tabmode'
+
+									var components = document.querySelectorAll('input[name="' + component + '"]')
+									console.log(components)
+
+									chrome.storage.sync.get(component, function (o) {
+										if (o && o[component]) {
+											for (var i = 0; i < components.length; i++) {
+												if (components[i].value === o[component]) {
+													components[i].checked = true
+													break
+												}
+											}
+										} else {
+											var t = {}
+											t[component] = components[0].value
+											chrome.storage.sync.set(t)
+											components[0].checked = true
+										}
+									})
+
+									function clickHandler(e) {
+										var t = {}
+										t[this.name] = this.value
+										chrome.storage.sync.set(t)
+									}
+
+									components.forEach((e) => {
+										e.addEventListener('click', clickHandler, !0)
+									})
+
+									document.querySelector('.' + component + 'caption').innerText =
+										chrome.i18n.getMessage(component + 'Title')
+								})();
+
+
+								(function () {
+									let button = document.querySelector('.toggle');
+									button.addEventListener('click', function () {
+										let controls = document.querySelector('div[id="controls"]');
+
+										chrome.tabs.query({
+											active: true,
+											currentWindow: true
+										}, function (tabs) {
+											if (tabs && tabs.length > 0) {
+												var current = tabs[tabs.length - 1]
+												let url = current.url;
+
+												if (controls.style.display == 'none') {
+													controls.style.display = 'block';
+													button.innerText = 'Disable on this page'
+												} else {
+													controls.style.display = 'none';
+													button.innerText = 'Enable on this page'
+												}
+
+												var o = {};
+												o[url] = controls.style.display === 'none';
+												chrome.storage.sync.set(o);
+
+												chrome.scripting.executeScript(current.tabId, {
+													code: "window['" + url + "']=" + o[url],
+													allFrames: true,
+												})
+											}
+										});
+
+									});
+
+									chrome.tabs.query({
+										active: true,
+										currentWindow: true
+									}, function (tabs) {
+										if (tabs && tabs.length > 0) {
+											var current = tabs[tabs.length - 1]
+											let url = current.url;
+
+											chrome.storage.sync.get(url, function (o) {
+												let controls = document.querySelector('div[id="controls"]');
+												if (o && o[url]) {
+													controls.style.display = 'none';
+													button.innerText = 'Enable on this page'
+												} else {
+													controls.style.display = 'block';
+													button.innerText = 'Disable on this page'
+												}
+											})
+										}
+									})
+
+
+
+									let RenderUI = o => {
+										for (let dw of o["domain-whitelist"]) {
+											UpdateUI(dw)
+										}
+									}
+
+									let UpdateUI = dw => {
+										let domain = document.createElement("label");
+										domain.innerText = dw;
+										let removeButton = document.createElement("button");
+										removeButton.innerText = "x";
+										removeButton.addEventListener("click", () => {
+											chrome.storage.sync.get("domain-whitelist", o => {
+												if (o && o["domain-whitelist"]) {
+													let dwl = o["domain-whitelist"]
+													let i = dwl.indexOf(dw);
+													dwl.splice(i, 1)
+													o["domain-whitelist"] = dwl;
+													chrome.storage.sync.set(o)
+
+													// remove DOM
+													let container = document.querySelector(".domain-whitelist")
+													for (let child of container.children) {
+														if (child.key == dw) {
+															container.removeChild(child);
+															break;
+														}
+													}
+												} else {
+													o["domain-whitelist"] = [url.hostname]
+													chrome.storage.sync.set(o)
+												}
+											})
+										})
+										removeButton.classList.add("remove");
+										let row = document.createElement("div");
+										row.appendChild(removeButton);
+										row.appendChild(domain);
+										row.key = dw;
+										row.classList.add("row")
+										let container = document.querySelector(".domain-whitelist")
+										container.appendChild(row);
+									}
+
+
+									chrome.storage.sync.get("domain-whitelist", o => {
+										if (o && o["domain-whitelist"]) {
+											RenderUI(o)
+										}
+									})
+
+									document.querySelector("#add").addEventListener("click", () => {
+										let domain = document.querySelector("input[name=add]").value
+										try {
+											let url = new URL(domain)
+											chrome.storage.sync.get("domain-whitelist", o => {
+												if (o && o["domain-whitelist"]) {
+													let dwl = o["domain-whitelist"]
+													dwl.push(url.hostname)
+													o["domain-whitelist"] = dwl;
+													chrome.storage.sync.set(o)
+												} else {
+													o["domain-whitelist"] = [url.hostname]
+													chrome.storage.sync.set(o)
+												}
+
+												UpdateUI(url.hostname)
+											})
+										} catch (e) {
+											document.querySelector(".error-tips").classList.add("visible");
+											let st = setTimeout(() => {
+												document.querySelector(".error-tips").classList.remove("visible");
+												clearTimeout(st);
+											}, 2800)
+										}
+									})
+
+								})();</script><div class="header"><button class="toggle">Stop on this site</button></div>
+							<div id="controls">
+								<label for="search-engines" class="enginecaption">Super drag to search by</label>
+								<select id="search-engines"></select>
+							
+								<div><span class="tabmodecaption">Open tabs in</span>
+									<input type="radio" id="background" name="tabmode" value="background">
+									<label for="background">Background</label>
+									<input type="radio" id="foreground" name="tabmode" value="foreground">
+									<label for="foreground">Foreground</label>
+								</div>
+							
+								<div class="emoji-directions">
+									<div>
+										<!--         <label for="direction-left-up">↖️</label>
+							        <select id="direction-left-up"></select> -->
+									</div>
+									<div>
+										<label for="direction-up">⬆️</label>
+										<select id="direction-up"></select>
+									</div>
+									<div>
+										<!--         <label for="direction-right-up">↗️</label>
+							        <select id="direction-right-up"></select> -->
+									</div>
+									<div>
+										<label for="direction-left">⬅️</label>
+										<select id="direction-left"></select>
+									</div>
+									<div>
+										<!-- <label>🖱️</label> -->
+									</div>
+									<div>
+										<label for="direction-right">➡️</label>
+										<select id="direction-right"></select>
+									</div>
+									<div>
+										<!--         <label for="direction-left-down">↙️</label>
+							        <select id="direction-left-down"></select> -->
+									</div>
+									<div>
+										<label for="direction-down">⬇️</label>
+										<select id="direction-down"></select>
+									</div>
+									<div>
+										<!--         <label for="direction-right-down">↘️</label>
+							        <select id="direction-right-down"></select> -->
+									</div>
+							
+								</div>
+							
+								<div>
+									<span>URL blacklist:</span>
+									<input type="text" name="add">
+									<button id="add">Add</button>
+									<div class="error-tips hidden">Invalid! Please use valid URL directly! e.g. https://www.google.com</div>
+									<div class="domain-whitelist"></div>
+								</div>
 							</div>
+							
+							
+							<!-- 
+							  <div class="ctrl-shift-alt">
+							    <input type="checkbox" name="ctrl">
+							    <label for="ctrl">Ctrl</label>
+							
+							    <input type="checkbox" name="shift">
+							    <label for="shift">Shift</label>
+							
+							    <input type="checkbox" name="alt">
+							    <label for="alt">Alt</label>
+							  </div>
+							 -->
+							<script type="text/javascript" src="settings.js"></script>
 						</div>
 					</section>
 				</div>
@@ -660,6 +1112,7 @@
 							<span data-i18n="textfoot"></span> <a
 								href="http://creativecommons.org/licenses/GPL/2.0/">GPL 2.0</a>.
 						</div>
+						
 				</div>
 				</section>
 

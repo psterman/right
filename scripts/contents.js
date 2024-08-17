@@ -258,8 +258,8 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         }
         if (showJump) {
             var toggleSidebarLink = createActionLink('切换侧边栏', function () {
-                // 发送消息请求切换侧边栏状态
-                chrome.runtime.sendMessage({ action: 'toggleSidePanel' });
+                // 发送消息请求切换侧边栏状态，同时交换网址
+                chrome.runtime.sendMessage({ action: 'swapHomepageSidebar' });
             });
             searchLinksContainer.appendChild(toggleSidebarLink);
         }
@@ -548,3 +548,179 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     }
 });
 
+//引入拖拽代码了
+
+(function () {
+
+    function getDirection(x1, y1, x2, y2) {
+        const dx = x2 - x1
+        const dy = y2 - y1
+
+        const vx = Math.abs(dx)
+        const vy = Math.abs(dy)
+
+        const threshold = 4  // 4px to change the direction
+
+        if (vx < threshold && vy < threshold)
+            return
+
+        if (vx > vy) {
+            if (dx > 0) {
+                return 'right'
+            } else {
+                return 'left'
+            }
+        } else {
+            if (dy > 0) {
+                return 'down'
+            } else {
+                return 'up'
+            }
+        }
+    }
+
+    let dragStartPoint = {}
+    let direction
+
+    function dragstart(e) {
+        if (bypass(e.target))
+            return false
+
+        var data = ''
+        if (window.getSelection() && window.getSelection().anchorNode &&
+            window.getSelection().anchorNode.parentNode === e.target.parentNode) {
+            data = window.getSelection().toString()
+        }
+        // data = data || e.target.src || e.target.href || e.target.innerText
+        if (!data) {
+            data = data || e.target.href || (function (element) {
+                while (!element.parentElement.href) {
+                    element = element.parentElement
+                }
+                return element.parentElement.href
+            })(e.target)
+        }
+
+        e.dataTransfer.setData('text/plain', data)
+        e.dataTransfer.effectAllowed = 'move'
+
+        dragStartPoint = { x: e.clientX, y: e.clientY }
+        return false
+    }
+
+    function dragover(e) {
+        if (bypass(e.target))
+            return false
+
+        e.preventDefault()
+        e.stopPropagation()
+        e.dataTransfer.dropEffect = 'move'
+
+        const { x, y } = dragStartPoint
+        const d = getDirection(x, y, e.clientX, e.clientY)
+
+        if (d) {
+            direction = d
+            dragStartPoint = {
+                x: e.clientX,
+                y: e.clientY
+            }
+        }
+
+        return false
+    }
+
+    function drop(e) {
+        if (bypass(e.target))
+            return false
+
+        // drag file into the page, let it go
+        if (e.dataTransfer.files.length)
+            return false
+
+        e.preventDefault()
+        e.stopPropagation()
+        e.dataTransfer.dropEffect = 'move'
+
+        var dropData = (e.dataTransfer.getData('text') === 'undefined' ?
+            e.dataTransfer.getData('text/html') :
+            e.dataTransfer.getData('text/plain'))
+        // fix: https://github.com/universeroc/super-drag/issues/4
+        // dropData = dropData.replace(/(<([^>]+)>)/ig, '')
+
+        chrome.runtime.sendMessage({
+            c: encodeURIComponent(dropData),
+            foreground: e.shiftKey ? e.shiftKey : null,
+            direction: direction
+        })
+        return false
+    }
+
+    function bypass(element) {
+        if (window[location.href])
+            return true
+
+        // if this element is already has event listener bypass it to keep original function work
+        if (element.tagName === 'INPUT')
+            return true
+    }
+
+    function DNDHandler(element) {
+        if (bypass(element))
+            return false
+
+        element.removeEventListener('dragstart', dragstart, true)
+        element.addEventListener('dragstart', dragstart, true)
+        element.removeEventListener('dragover', dragover, true)
+        element.addEventListener('dragover', dragover, true)
+        element.removeEventListener('drop', drop, true)
+        element.addEventListener('drop', drop, true)
+    }
+
+    document.querySelectorAll('*').forEach(node => {
+        DNDHandler(node)
+    })
+
+    const config = { attributes: false, childList: true, subtree: true };
+
+    const callback = function (mutationsList, observer) {
+        for (let mutation of mutationsList) {
+            if (mutation.type === "childList" &&
+                // means visible elements
+                mutation.target.offsetParent !== null &&
+                // means is added not removed
+                mutation.addedNodes.length) {
+                const node = mutation.target
+                DNDHandler(node)
+            }
+        }
+    };
+
+    const observer = new MutationObserver(callback);
+    observer.observe(document.body, config);
+
+    let url = location.href
+    chrome.storage.sync.get(url, function (o) {
+        if (o && o[url]) {
+            window[url] = true
+        }
+    })
+
+    function getHostName(url) {
+        const match = url.match(/:\/\/(www[0-9]?\.)?(.[^/:]+)/i);
+        if (match != null && match.length > 2 && typeof match[2] === 'string' && match[2].length > 0) {
+            return match[2];
+        } else {
+            return null;
+        }
+    }
+
+    chrome.storage.sync.get("domain-whitelist", o => {
+        if (o && o["domain-whitelist"]) {
+            let hostname = getHostName(url)
+            let i = ~o["domain-whitelist"].indexOf(hostname)
+            if (i)
+                window[url] = true
+        }
+    })
+})()

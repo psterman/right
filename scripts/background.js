@@ -635,3 +635,112 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
 	}
 });
+//引入拖拽代码了！
+
+var id2enginemap = {
+	'google': 'https://www.google.com/search?q=',
+	'yahoo': 'https://search.yahoo.com/search?q=',
+	'bing': 'https://bing.com/search?q=',
+	'baidu': 'https://www.baidu.com/s?wd=',
+	'yandex': 'https://yandex.com/search/?text=',
+	'duckduckgo': 'https://duckduckgo.com/?q=',
+	'sogou': 'https://www.sogou.com/web?query=',
+	'360': 'https://www.so.com/s?q=',
+	'yahoo': 'https://search.yahoo.com/search?q=',
+	'ecosia': 'https://www.ecosia.org/search?q=',
+	'qwant': 'https://www.qwant.com/?q=',
+	'findx': 'https://www.findx.com/search?q=',
+	'amazon': 'https://www.amazon.com/s?k=',
+	'you': 'https://you.com/search?q=',
+	'bilibili': 'https://search.bilibili.com/all?keyword=',
+	'youtube': 'https://www.youtube.com/results?search_query=',
+	'wikipedia': 'https://en.wikipedia.org/w/index.php?title=Special:Search&search='
+}
+
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+	const isUrl = isURL(unescape(decodeURIComponent(message.c)))
+	console.log(message.c, isUrl)
+
+	chrome.tabs.query({
+		active: true,
+		currentWindow: true,
+		url: ["http://*/*", "https://*/*"]
+	}, function (tabs) {
+		if (tabs && tabs.length > 0) {
+			var current = tabs[tabs.length - 1]
+			var index = current.index
+
+			chrome.storage.sync.get('tabmode', function (o) {
+				var foreground = false
+				if (o && o.tabmode) {
+					foreground = (o.tabmode === 'foreground')
+				} else {
+					foreground = false
+				}
+
+				if (isUrl) {
+					chrome.tabs.create({
+						url: decodeURIComponent(message.c),
+						index: index + 1,
+						active: message.foreground || foreground
+					})
+				} else {
+					chrome.storage.sync.get('engine', function (o) {
+						// get the direction storage data
+						chrome.storage.sync.get([`#direction-${message.direction}`], function (o1) {
+							if (o1 && o1[`#direction-${message.direction}`]) {
+								const s = id2enginemap[o1[`#direction-${message.direction}`]]
+								chrome.tabs.create({
+									url: s + message.c,
+									index: index + 1,
+									active: message.foreground || foreground
+								})
+							} else {
+								// fallback to use the legacy storage data
+								if (o && o.engine) {
+									chrome.tabs.create({
+										url: id2enginemap[o.engine] + message.c,
+										index: index + 1,
+										active: message.foreground || foreground
+									})
+								} else {
+									chrome.tabs.create({
+										url: id2enginemap['google'] + message.c,
+										index: index + 1,
+										active: message.foreground || foreground
+									})
+								}
+							}
+						})
+					})
+				}
+			})
+		}
+	})
+})
+
+// TODO: upgrade notification new features
+chrome.runtime.onInstalled.addListener(function (details) {
+	if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+		chrome.runtime.setUninstallURL('https://github.com/universeroc/super-drag/issues');
+	}
+
+	chrome.tabs.query({
+		url: ["http://*/*", "https://*/*"]
+	}, function (tabs) {
+		if (tabs) {
+			tabs.forEach(tab => {
+				try {
+					chrome.scripting.executeScript({
+						target: {
+							tabId: tab.id,
+						},
+						'files': ['superdrag.js']
+					})
+				} catch (e) { }
+			})
+		}
+	})
+})
+
+console.log('service worker js working...')
