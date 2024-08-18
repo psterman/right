@@ -1,32 +1,3 @@
-//================================================
-/*
-
-Page Sidebar
-Effortlessly open any website in your web browser's sidebar – streamline your workflow instantly!
-Copyright (C) 2024 Stefan vd
-www.stefanvd.net
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-
-To view a copy of this license, visit http://creativecommons.org/licenses/GPL/2.0/
-
-*/
-//================================================
-
-
 // 获取搜索引擎复选框元素列表
 var checkboxList = document.querySelectorAll(".search-engine-checkbox");
 
@@ -1257,7 +1228,6 @@ document.addEventListener('DOMContentLoaded', function () {
 	// 保存复选框状态
 	function saveCheckboxStatus() {
 		var checkboxes = document.getElementsByClassName("search-engine-checkbox");
-		var selectedEngines = [];
 
 		for (var i = 0; i < checkboxes.length; i++) {
 			var checkbox = checkboxes[i];
@@ -1306,7 +1276,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 	// 读取复选框状态并设置到页面上的复选框
-	chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox','closesidepanelCheckbox'], function (items) {
+	chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox', 'closesidepanelCheckbox'], function (items) {
 		if (items.copyCheckbox !== undefined) {
 			document.getElementById('copyCheckbox').checked = items.copyCheckbox;
 		}
@@ -1519,19 +1489,18 @@ var closeCheckbox = document.getElementById('closeCheckbox');
 var refreshCheckbox = document.getElementById('refreshCheckbox');
 var pasteCheckbox = document.getElementById('pasteCheckbox');
 var downloadCheckbox = document.getElementById('downloadCheckbox');
-var closesidepanelCheckbox= document.getElementById('closesidepanelCheckbox');
+var closesidepanelCheckbox = document.getElementById('closesidepanelCheckbox');
 // 更新搜索引擎选项
 chrome.runtime.sendMessage({
 	action: 'updateSearchEngines',
-	searchEngines: searchEngines,
-	copyOption: copyCheckbox.checked,
+	/* copyOption: copyCheckbox.checked,
 	deleteOption: deleteCheckbox.checked,
 	jumpOption: jumpCheckbox.checked,
 	closeOption: closeCheckbox.checked,
 	refreshOption: refreshCheckbox.checked,
 	downloadOption: downloadCheckbox.checked,
 	pasteOption: pasteCheckbox.checked,
-	closesidepanelOption:closesidepanelCheckbox.checked
+	closesidepanelOption: closesidepanelCheckbox.checked */
 });
 // 定义搜索引擎数据数组
 var searchEngineData = [
@@ -1572,13 +1541,10 @@ for (var i = 0; i < checkboxList.length; i++) {
 }
 // 假设 selectedEngines 已经在全局作用域中声明：
 
-// 定义全局变量selectedEngines，存储用户选择的搜索引擎信息
-var selectedEngines = [];
 
 // 保存选中的搜索引擎到Chrome存储，并更新全局变量selectedEngines
 function saveCheckboxStatus() {
 	var checkboxes = document.getElementsByClassName("search-engine-checkbox");
-	var selectedEngines = [];
 
 	for (var i = 0; i < checkboxes.length; i++) {
 		var checkbox = checkboxes[i];
@@ -1726,7 +1692,7 @@ function loadSavedPages() {
 			// 首先清空现有的列表
 			savedPagesList.innerHTML = '';
 
-		
+
 			// 然后将生成的HTML添加到列表中
 			savedPagesList.innerHTML = listHtml;
 			// 新增代码：为 "openAllSavedPages" 按钮添加事件监听器
@@ -1742,7 +1708,7 @@ function loadSavedPages() {
 				});
 			});
 
-		
+
 		}
 	});
 }

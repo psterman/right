@@ -523,11 +523,15 @@ function createActionLink(text, action) {
 
     return link;
 }
+let inputs = document.querySelectorAll('input, textarea');
 // 在输入框的 focus 事件中触发弹出菜单
-inputElement.addEventListener('focus', function (e) {
-    var x = e.clientX;
-    var y = e.clientY;
-    showInputContextMenu(inputElement, x, y);
+inputs.forEach(input => {
+    input.addEventListener('focus', function (e) {
+        // 'this' 在这里的上下文中引用的是 input 元素
+        var x = e.clientX;
+        var y = e.clientY;
+        showInputContextMenu(this, x, y); // 使用 'this' 代替未定义的 inputElement
+    });
 });
 //粘贴or清空点击后菜单消失
 function hideInputContextMenu() {

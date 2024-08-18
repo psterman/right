@@ -718,29 +718,3 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 		}
 	})
 })
-
-// TODO: upgrade notification new features
-chrome.runtime.onInstalled.addListener(function (details) {
-	if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
-		chrome.runtime.setUninstallURL('https://github.com/universeroc/super-drag/issues');
-	}
-
-	chrome.tabs.query({
-		url: ["http://*/*", "https://*/*"]
-	}, function (tabs) {
-		if (tabs) {
-			tabs.forEach(tab => {
-				try {
-					chrome.scripting.executeScript({
-						target: {
-							tabId: tab.id,
-						},
-						'files': ['superdrag.js']
-					})
-				} catch (e) { }
-			})
-		}
-	})
-})
-
-console.log('service worker js working...')
