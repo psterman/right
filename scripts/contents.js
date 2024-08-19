@@ -635,29 +635,42 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     }
 
     function drop(e) {
-        if (bypass(e.target))
-            return false
+        if (bypass(e.target)) return false;
 
-        // drag file into the page, let it go
-        if (e.dataTransfer.files.length)
-            return false
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'move';
 
-        e.preventDefault()
-        e.stopPropagation()
-        e.dataTransfer.dropEffect = 'move'
+        var dropData = '';
+        var isLink = false;
 
-        var dropData = (e.dataTransfer.getData('text') === 'undefined' ?
-            e.dataTransfer.getData('text/html') :
-            e.dataTransfer.getData('text/plain'))
-        // fix: https://github.com/universeroc/super-drag/issues/4
-        // dropData = dropData.replace(/(<([^>]+)>)/ig, '')
+        // 检查拖拽的数据是否为链接
+        if (e.dataTransfer.types.includes('text/uri-list')) {
+            // 如果是链接，获取链接的 URL
+            dropData = e.dataTransfer.getData('text/uri-list');
+            isLink = true;
+        } else {
+            // 否则，获取选中的文本
+            dropData = window.getSelection().toString();
+        }
 
-        chrome.runtime.sendMessage({
-            c: encodeURIComponent(dropData),
-            foreground: e.shiftKey ? e.shiftKey : null,
-            direction: direction
-        })
-        return false
+        // 发送消息到后台脚本
+        if (isLink) {
+            // 如果是链接，发送 'openUrlInBackground' 动作
+            chrome.runtime.sendMessage({
+                action: 'openUrlInBackground',
+                url: encodeURIComponent(dropData),
+                foreground: e.shiftKey ? true : false, // 如果按下 Shift 键则在前台打开
+            });
+        } else {
+            // 如果是文本，发送 'searchWithDirection' 动作
+            chrome.runtime.sendMessage({
+                action: 'searchWithDirection',
+                text: encodeURIComponent(dropData),
+                direction: direction
+            });
+        }
+        return false;
     }
 
     function bypass(element) {

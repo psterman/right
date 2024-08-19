@@ -718,3 +718,40 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 		}
 	})
 })
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+	if (message.action === 'openUrlInBackground') {
+		// 解码 URL
+		var url = decodeURIComponent(message.url);
+		// 在后台创建新标签页
+		chrome.tabs.create({
+			url: url,
+			active: !message.foreground, // 如果 message.foreground 为 false，则在后台打开
+		}, function (tab) {
+			if (!message.foreground) {
+				// 如果不需要在前台打开，则确保当前激活的标签页不变
+				chrome.tabs.update(sender.tab.id, { active: true });
+			}
+		});
+	}
+});
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+	if (message.action === 'searchWithDirection') {
+		var searchText = decodeURIComponent(message.text);
+		// 根据拖拽方向获取对应的搜索引擎
+		chrome.storage.sync.get([`#direction-${message.direction}`], function (o) {
+			if (o[`#direction-${message.direction}`]) {
+				var engineName = o[`#direction-${message.direction}`];
+				var engineUrl = id2enginemap[engineName]; // 假设 id2enginemap 是包含搜索引擎名称和 URL 的映射
+				if (engineUrl) {
+					// 构造搜索 URL
+					var searchUrl = engineUrl + encodeURIComponent(searchText);
+					// 在后台创建新标签页并打开搜索结果
+					chrome.tabs.create({
+						url: searchUrl,
+						active: false // 在后台打开
+					});
+				}
+			}
+		});
+	}
+});
