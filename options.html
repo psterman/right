@@ -451,11 +451,15 @@
 							</div>
 							<div class="header"><button class="toggle">Stop on this site</button></div>
 							<div id="controls">
+								<!-- 用户自定义搜索引擎的输入和添加按钮 -->
+								<div class="custom-search-engine">
+									<input type="text" id="engine-name" placeholder="搜索引擎名称">
+									<input type="text" id="engine-url" placeholder="搜索URL">
+									<button id="add-custom-engine">添加自定义搜索引擎</button>
+								</div>
 								<label for="search-engines" class="enginecaption">Super drag to search by</label>
 								<select id="search-engines"></select>
 
-								
-							
 									<input type="radio" id="background" name="tabmode" value="background">
 									<label for="background">Background</label>
 									<input type="radio" id="foreground" name="tabmode" value="foreground">

@@ -658,12 +658,14 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         if (isLink) {
             // 如果是链接，发送 'openUrlInBackground' 动作
             chrome.runtime.sendMessage({
-                action: 'openUrlInBackground',
-                url: encodeURIComponent(dropData),
+                action: 'setpage',
+                query: dropData,
                 foreground: e.shiftKey ? true : false, // 如果按下 Shift 键则在前台打开
             });
         } else {
+            var searchText = dropData;
             // 如果是文本，发送 'searchWithDirection' 动作
+
             chrome.runtime.sendMessage({
                 action: 'searchWithDirection',
                 text: encodeURIComponent(dropData),
