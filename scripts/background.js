@@ -746,12 +746,19 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 					// 构造搜索 URL
 					var searchUrl = engineUrl + encodeURIComponent(searchText);
 					// 在后台创建新标签页并打开搜索结果
-					chrome.tabs.create({
-						url: searchUrl,
-						active: false // 在后台打开
+					chrome.sidePanel.open({ windowId: sender.tab.windowId }, function () {
+						setTimeout(function () {
+							chrome.runtime.sendMessage({
+								msg: "setpage",
+								value: searchUrl
+							});
+						});
 					});
 				}
 			}
 		});
+		return true;
 	}
+
 });
+
