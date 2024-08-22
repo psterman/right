@@ -257,9 +257,25 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             searchLinksContainer.appendChild(searchLinkCut);
         }
         if (showJump) {
-            var toggleSidebarLink = createActionLink('切换侧边栏', function () {
-                // 发送消息请求切换侧边栏状态，同时交换网址
-                chrome.runtime.sendMessage({ action: 'swapHomepageSidebar' });
+            
+            chrome.storage.sync.get('savedPages', function (items) {
+                 if (items.savedPages) {
+                    var savedPages = items.savedPages;
+                   
+                     var workmodel = createActionLink('收藏', function () {
+                        // 发送消息请求 background.js 打开主页和侧边栏的页面
+                        chrome.runtime.sendMessage({
+                            action: 'openHomepageAndSidebar',
+                            urls: {
+                                homepageUrl: savedPages.homepageUrl,  // 主页网址
+                                sidebarUrl: savedPages.sidebarUrl    // 侧边栏网址
+                            }
+                        });
+                    });
+
+                     searchLinksContainer.appendChild(workmodel);
+                 
+                }
             });
             searchLinksContainer.appendChild(toggleSidebarLink);
         }

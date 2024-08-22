@@ -586,56 +586,27 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 		return true; // 将返回操作移到异步操作内部
 	}
 });
-// 监听来自 content script 或其他部分的消息
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-	if (request.action === 'openSidebarWithUrl') {
-		// 请求打开侧边栏
-		chrome.sidePanel.open({ url: request.url }, function () {
-			// 侧边栏打开后的回调，可以在这里发送响应或执行其他操作
-			// 例如，可以在这里发送消息告知侧边栏已打开
-			sendResponse({ success: true, message: 'Sidebar opened' });
-		});
-	} else if (request.action === 'openHomepageAndSidebar') {
-		// 请求打开主页和侧边栏
-		var { homepageUrl, sidebarUrl } = request.urls;
-		// 先打开侧边栏
-		chrome.sidePanel.open({ url: sidebarUrl }, function () {
-			// 侧边栏打开后，再打开主页标签页
-			chrome.tabs.create({ url: homepageUrl, active: true }, function (tab) {
-				// 主页标签页创建成功后的回调
-				sendResponse({ success: true, message: 'Homepage and sidebar opened' });
-			});
+
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+	if (message.action === 'openSidebar') {
+      
+		var sidebarUrl = message.sidebarUrl;
+        
+		// 打开侧边栏并直接加载 URL
+		chrome.sidePanel.open({ windowId: sender.tab.windowId }, function () {
+			setTimeout(function () {
+				// 发送消息设置侧边栏页面的 URL
+				chrome.runtime.sendMessage({
+					msg: "setpage",
+					value: sidebarUrl
+				});
+			}, 500);
 		});
 	}
-	// 其他消息处理逻辑...
 });
 
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-	if (request.action === 'openSidebarWithCurrentPage') {
-		var urlToOpen = request.url;
-		var windowId = sender.tab.windowId;
-
-		if (isSidePanelOpen) {
-			// 如果侧边栏是打开的，执行关闭操作
-			// 注意：这里需要实现关闭侧边栏的逻辑，但目前 Chrome API 不直接支持
-			// 下面的代码仅为示例，你需要根据实际情况实现关闭逻辑
-			console.log("尝试关闭侧边栏");
-			isSidePanelOpen = false;
-		} else {
-			// 如果侧边栏是关闭的，打开它
-			chrome.sidePanel.open({ windowId: sender.tab.windowId }, function () {
-				// 侧边栏打开后，发送消息到侧边栏
-				chrome.tabs.sendMessage(sender.tab.id, { action: 'clickBookmarksButton' });
-				sendResponse({ success: true });
-				isSidePanelOpen = true; // 更新状态为打开
-			});
-		}
-		return true; // 保持消息通道开放
-
-	}
-});
-//引入拖拽代码了！
+//引入拖拽代码
 
 var id2enginemap = {
 	'google': 'https://www.google.com/search?q=',

@@ -242,27 +242,22 @@ function init() {
 			});
 		});
 	});
-} function openSavedHomepageAndSidebar() {
+}
+function openSavedHomepageAndSidebar() {
 	// 从 chrome.storage.sync 获取保存的页面信息
 	chrome.storage.sync.get('savedPages', function (items) {
-		if (items.savedPages) {
+		if (items && items.savedPages) {
 			var savedPages = items.savedPages;
+
 			// 创建新的标签页打开主页
 			chrome.tabs.create({
 				url: savedPages.homepageUrl,
 				active: true
-			}, function (homepageTab) {
-				// 主页标签页创建成功后，发送消息到 background.js 请求打开侧边栏
+			}, function (tab) {
+				// 主页标签页创建成功后,发送消息到 background.js 请求打开侧边栏,并传递 sidebarUrl
 				chrome.runtime.sendMessage({
-					action: 'openSidebarWithUrl',
-					url: savedPages.sidebarUrl
-				}, function (response) {
-					if (chrome.runtime.lastError) {
-						console.error(chrome.runtime.lastError.message);
-					} else {
-						// 处理响应，例如给用户反馈
-						console.log('Sidebar opened successfully');
-					}
+					action: 'openSidebar',
+					sidebarUrl: savedPages.sidebarUrl
 				});
 			});
 		}
