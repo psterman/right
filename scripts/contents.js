@@ -5,6 +5,10 @@ let currentPopup = null;
 let selectedEngines = []; // 声明全局变量
 // 当文档加载时从 Chrome 存储中加载 selectedEngines
 document.addEventListener('DOMContentLoaded', function () {
+    var sidebarUrl = document.getElementById('preview') ? document.getElementById('preview').src : '';
+    chrome.storage.sync.set({ 'initialSidebarUrl': sidebarUrl }, function () {
+        console.log('Initial sidebar URL saved to storage.');
+    });
     chrome.storage.sync.get('selectedEngines', function (result) {
         selectedEngines = result.selectedEngines || [];
         // 如果页面加载时有选中文本，可以在这里调用 showSearchLinks
@@ -203,7 +207,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     });
 
     // 读取复选框的状态
-    chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox','closesidepanelCheckbox'], function (checkboxes) {
+    chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox', 'closesidepanelCheckbox'], function (checkboxes) {
         var showCopy = checkboxes.copyCheckbox;
         var showJump = checkboxes.jumpCheckbox;
         var showClose = checkboxes.closeCheckbox;
@@ -257,12 +261,12 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             searchLinksContainer.appendChild(searchLinkCut);
         }
         if (showJump) {
-            
+
             chrome.storage.sync.get('savedPages', function (items) {
-                 if (items.savedPages) {
+                if (items.savedPages) {
                     var savedPages = items.savedPages;
-                   
-                     var workmodel = createActionLink('收藏', function () {
+
+                    var workmodel = createActionLink('收藏', function () {
                         // 发送消息请求 background.js 打开主页和侧边栏的页面
                         chrome.runtime.sendMessage({
                             action: 'openHomepageAndSidebar',
@@ -273,30 +277,39 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                         });
                     });
 
-                     searchLinksContainer.appendChild(workmodel);
-                 
+                    searchLinksContainer.appendChild(workmodel);
+
                 }
             });
             searchLinksContainer.appendChild(toggleSidebarLink);
         }
         if (showclosesidepanel) {
-            var searchLinkOpenSidebar = createActionLink('在侧边栏打开', function () {
-                // 获取当前页面的 URL
+            var searchLinkOpenSidebar = createActionLink('开关', function () {
                 var currentUrl = window.location.href;
+                var sidebarUrl = document.getElementById('preview') ? document.getElementById('preview').src : '';
 
-                // 发送消息，包含 action 和当前页面的 URL 作为 query
+                // 发送当前页面URL和sidebarUrl到侧边栏，等待响应
                 chrome.runtime.sendMessage({
                     action: 'setpage',
-                    query: currentUrl // 使用当前页面的 URL 作为 query
+                    query: currentUrl,
+                    sidebarUrl: sidebarUrl // 将sidebarUrl也发送过去
+                }, function (response) {
+                    if (response && response.ready) {
+                        // 侧边栏已准备好加载新的URL
+                        // 加载存储的previousUrl
+                        chrome.runtime.sendMessage({
+                            action: 'loadSidebarUrl'
+                        });
+                    }
                 });
             });
             searchLinksContainer.appendChild(searchLinkOpenSidebar);
         }
         if (showClose) {
-            var searchLinkClose = createActionLink('关闭', function () {
+            var searchLinkClose1 = createActionLink('关闭', function () {
                 chrome.runtime.sendMessage({ action: "closeTab" });
             });
-            searchLinksContainer.appendChild(searchLinkClose);
+            searchLinksContainer.appendChild(searchLinkClose1);
         }
 
         if (showRefresh) {
@@ -311,16 +324,17 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             searchLinksContainer.appendChild(searchLinkRefresh);
         }
         if (showPaste) {
-            // 创建粘贴链接
-            var searchLinkPaste = createActionLink('刷新1', function () {
-                // 先移除弹出菜单
-                document.body.removeChild(popup);
-                currentPopup = null;
+            var searchLinkOpenSidebar = createActionLink('开关', function () {
+                // 获取当前页面的 URL
+                var currentUrl = window.location.href;
 
-                // 然后刷新当前页面
-                window.location.reload();
+                // 发送消息，包含 action 和当前页面的 URL 作为 query
+                chrome.runtime.sendMessage({
+                    action: 'setpage',
+                    query: currentUrl // 使用当前页面的 URL 作为 query
+                });
             });
-            searchLinksContainer.appendChild(searchLinkPaste);
+            searchLinksContainer.appendChild(searchLinkOpenSidebar);
         }
         if (showDownload) {
             var searchLinkDownload = createActionLink('刷新2', function () {

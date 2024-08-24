@@ -733,3 +733,43 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
 });
 
+// 监听来自背景脚本的消息，以便处理 'openHomepageAndSidebar' 动作
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    if (message.action === 'openSidebarWithURLs') {
+        // 打开侧边栏并加载消息中提供的 URLs
+        chrome.sidePanel.open({
+            url: message.sidebarUrl, // 使用消息中提供的侧边栏 URL
+            windowId: sender.tab.windowId
+        }, function () {
+            // 可以在这里添加打开后要执行的代码，例如发送当前页面 URL 到 panel 中
+            // 这里使用了 setTimeout 来确保侧边栏加载完成
+            setTimeout(function () {
+                chrome.runtime.sendMessage({
+                    action: 'updateMainPage', // 假设这是 panel 中需要执行的动作
+                    value: message.currentUrl // 发送当前页面的 URL
+                });
+            }, 500);
+        });
+    }
+});
+// 使用 chrome.storage 来存储和检索 previousUrl
+let previousUrl = '';
+
+// 监听来自内容脚本的消息
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+	if (message.action === 'setpage') {
+		// 保存当前页面的 URL 并持久化
+		previousUrl = message.query;
+		chrome.storage.sync.set({ 'previousUrl': previousUrl }, function () {
+			// 使用 sendResponse 发送响应，表示 URL 已保存
+			sendResponse({ ready: true });
+		});
+		return true; // 保持消息通道打开，等待 sendResponse
+	} else if (message.action === 'loadSidebarUrl') {
+		// 加载存储的 previousUrl 到侧边栏
+		chrome.storage.sync.get('previousUrl', function (result) {
+			var urlToLoad = result.previousUrl || '';
+			chrome.tabs.update(sender.tab.id, { url: urlToLoad });
+		});
+	}
+});
