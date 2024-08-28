@@ -286,19 +286,20 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         if (showclosesidepanel) {
             var searchLinkOpenSidebar = createActionLink('开关', function () {
                 var currentUrl = window.location.href;
-                var sidebarUrl = document.getElementById('preview') ? document.getElementById('preview').src : '';
+               
 
                 // 发送当前页面URL和sidebarUrl到侧边栏，等待响应
                 chrome.runtime.sendMessage({
                     action: 'setpage',
                     query: currentUrl,
-                    sidebarUrl: sidebarUrl // 将sidebarUrl也发送过去
+                   
                 }, function (response) {
                     if (response && response.ready) {
                         // 侧边栏已准备好加载新的URL
                         // 加载存储的previousUrl
                         chrome.runtime.sendMessage({
-                            action: 'loadSidebarUrl'
+                            action: 'loadSidebarUrl',
+                          
                         });
                     }
                 });
@@ -323,19 +324,19 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             });
             searchLinksContainer.appendChild(searchLinkRefresh);
         }
-        if (showPaste) {
-            var searchLinkOpenSidebar = createActionLink('开关', function () {
-                // 获取当前页面的 URL
-                var currentUrl = window.location.href;
-
-                // 发送消息，包含 action 和当前页面的 URL 作为 query
-                chrome.runtime.sendMessage({
-                    action: 'setpage',
-                    query: currentUrl // 使用当前页面的 URL 作为 query
-                });
-            });
-            searchLinksContainer.appendChild(searchLinkOpenSidebar);
-        }
+        /*   if (showPaste) {
+              var searchLinkOpenSidebar = createActionLink('开关', function () {
+                  // 获取当前页面的 URL
+                  var currentUrl = window.location.href;
+  
+                  // 发送消息，包含 action 和当前页面的 URL 作为 query
+                  chrome.runtime.sendMessage({
+                      action: 'setpage',
+                      query: currentUrl // 使用当前页面的 URL 作为 query
+                  });
+              });
+              searchLinksContainer.appendChild(searchLinkOpenSidebar);
+          } */
         if (showDownload) {
             var searchLinkDownload = createActionLink('刷新2', function () {
                 // 先移除弹出菜单
@@ -570,7 +571,7 @@ function hideInputContextMenu() {
         currentPopup = null;
     }
 }
-// contents.js
+/* // contents.js
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === 'openSidebar') {
@@ -581,7 +582,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         });
     }
 });
-
+ */
 //引入拖拽代码了
 
 (function () {

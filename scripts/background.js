@@ -752,24 +752,26 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         });
     }
 });
-// 使用 chrome.storage 来存储和检索 previousUrl
-let previousUrl = '';
 
-// 监听来自内容脚本的消息
+// 存储的 previousUrl
+var previousUrl;
+
+// 监听 saveSidebarUrl 消息并存储 URL
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+	if (message.action === 'updateSidebarUrl') {
+		previousUrl = message.sidebarUrl;
+	}
+});
+
+// 监听 setpage 和 loadSidebarUrl 消息
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 	if (message.action === 'setpage') {
-		// 保存当前页面的 URL 并持久化
-		previousUrl = message.query;
-		chrome.storage.sync.set({ 'previousUrl': previousUrl }, function () {
-			// 使用 sendResponse 发送响应，表示 URL 已保存
-			sendResponse({ ready: true });
-		});
-		return true; // 保持消息通道打开，等待 sendResponse
+		var currentUrl = message.query;
+		// 响应消息
+		sendResponse({ ready: true });
 	} else if (message.action === 'loadSidebarUrl') {
 		// 加载存储的 previousUrl 到侧边栏
-		chrome.storage.sync.get('previousUrl', function (result) {
-			var urlToLoad = result.previousUrl || '';
-			chrome.tabs.update(sender.tab.id, { url: urlToLoad });
-		});
+		var urlToLoad = previousUrl ;
+		chrome.tabs.update(sender.tab.id, { url: urlToLoad });
 	}
 });

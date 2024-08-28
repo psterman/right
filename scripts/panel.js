@@ -1,8 +1,21 @@
 var selectedsearch, searchgoogle, searchbing, searchduckduckgo, searchbaidu, searchyandex, typepanelzone, typepanelcustom, typepanellasttime, websitezoomname, websitelasttime, navtop, navbottom, navhidden, opentab, opencopy, opennonebookmarks, openbrowserbookmarks, openquickbookmarks, googlesidepanel, zoom, defaultzoom, step;
+
+document.addEventListener('DOMContentLoaded', function () {
+	var preview = document.getElementById('preview');
+	if (preview) {
+		preview.addEventListener('load', function () {
+			chrome.runtime.sendMessage({
+				action: 'updateSidebarUrl',
+				sidebarUrl: preview.src // 确保 iframe 已加载后再获取 src
+			});
+		});
+	}
+});
 document.addEventListener("DOMContentLoaded", init);
 var i18ntitelcopytext = chrome.i18n.getMessage("titlecopytextdone");
 var i18ndescopytext = chrome.i18n.getMessage("descopytextdone");
 var winsend;
+
 // Detect URL to open back in new web browser tab
 var currentSidePanelURL = "";
 window.addEventListener("message", (e) => {
