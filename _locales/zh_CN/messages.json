@@ -51,7 +51,7 @@
       "message": "Start page"
    },
    "designmarquee": {
-      "message": "主题"
+      "message": "拖动搜索"
    },
    "designnavigation": {
       "message": "Navigation bar"
@@ -384,7 +384,10 @@
       "message": "Donate"
    },
    "titleicon": {
-      "message": "Icon"
+      "message": "图标"
+   },
+   "titlecolor": {
+      "message": "主题色"
    },
    "titlelater": {
       "message": "Later"

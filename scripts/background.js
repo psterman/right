@@ -229,10 +229,10 @@ function addwebpagecontext(a, b, c, d) {
 		c.push(menuitems);
 	}
 }
-function checkcontextmenus() {
+function checkcontextmenus() {/* 
 	var baiduSearchTitle = "百度搜索";
 	var contextsSelection = ["selection"];
-	addwebpagecontext(baiduSearchTitle, contextsSelection, contextarrayselection, "totlsearchbaidu");
+	addwebpagecontext(baiduSearchTitle, contextsSelection, contextarrayselection, "totlsearchbaidu"); */
 	if (chrome.contextMenus) {
 		if (contextmenuadded == false) {
 			contextmenuadded = true;

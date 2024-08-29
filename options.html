@@ -227,7 +227,7 @@
 							</g>
 						</svg>
 						<span data-i18n="designmarquee"></span></a></li>
-<li><a id="tabadvan" accesskey="o" data-tab="#tab4" class="navbar-item">
+				<li><a id="tabadvan" accesskey="o" data-tab="#tab4" class="navbar-item">
 						<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16"
 							viewBox="0 0 24 24">
 							<g>
@@ -400,6 +400,7 @@
 								</label>
 							</div>
 						</div>
+
 					</section>
 					<section>
 						<h3 data-i18n="titelzoom"></h3>
@@ -422,101 +423,99 @@
 							</div>
 						</div>
 					</section>
+					<section>
+						<h3 id="head2">
+							<span data-i18n="titleicon"></span>
+						</h3>
+						<div class="md-desbox">
+							<div>
+								<span data-i18n="head2"></span>
+							</div>
+						</div>
+						<div class="columnA">
+							<div class="browserbuttons"><img id="p0" alt="右拐" class="buttoncolor lightbackground"
+									src="images/icon38.png"><img id="p1" alt="右拐" class="buttoncolor darkbackground"
+									src="images/icon38white.png">
+							</div>
+							<div class="columnB">
+								<div class="activebutton"><img id="btnpreview" alt="右拐" name="preview"
+										class="buttoncolor" src="images/icon38.png">
+								</div>
+
+							</div>
+							<br>
+						</div>
+					</section>
+					<section>
+						<span data-i18n="titlecolor"></span>
+						<br>
+						<div>
+							<button id="btnLightTheme">浅色主题</button>
+							<button id="btnDarkTheme">暗色主题</button>
+							<br>
+							<div class="browserpreview"></div>
+
+						</div>
+					</section>
 				</div>
 				<div id="tab2" class="page hidden">
 					<h2 data-i18n="designmarquee"></h2>
 					<section>
-						<h3 id="head2"><span data-i18n="titleicon"></span></h3>
-						<div>
-							<div class="md-desbox">
-								<div><span data-i18n="head2"></span></div>
+						<div id="controls">
+							<!-- 用户自定义搜索引擎的输入和添加按钮 -->
+							<div class="custom-search-engine">
+								<input type="text" id="engine-name" placeholder="搜索引擎名称">
+								<input type="text" id="engine-url" placeholder="搜索URL">
+								<button id="add-custom-engine">添加自定义搜索引擎</button>
 							</div>
-							<br>
-							<div class="minibrowserpreview">
-								<div class="columnA">
-									<div class="browserbuttons"><img id="p0" alt="右拐"
-											class="buttoncolor lightbackground" src="images/icon38.png"><img id="p1"
-											alt="右拐" class="buttoncolor darkbackground" src="images/icon38white.png">
-									</div>
-									<br>
-									<!-- 替换原来的按钮 -->
-									<button id="btnLightTheme">浅色主题</button>
-									<button id="btnDarkTheme">暗色主题</button>
-								</div>
-								<div class="columnB">
-									<div class="activebutton"><img id="btnpreview" alt="右拐" name="preview"
-											class="buttoncolor" src="images/icon38.png"></div>
-									<div class="browserpreview"></div>
-								</div>
-							</div>
-							<div class="header"><button class="toggle">Stop on this site</button></div>
-							<div id="controls">
-								<!-- 用户自定义搜索引擎的输入和添加按钮 -->
-								<div class="custom-search-engine">
-									<input type="text" id="engine-name" placeholder="搜索引擎名称">
-									<input type="text" id="engine-url" placeholder="搜索URL">
-									<button id="add-custom-engine">添加自定义搜索引擎</button>
-								</div>
-								<label for="search-engines" class="enginecaption">Super drag to search by</label>
-								<select id="search-engines"></select>
+							<label for="search-engines" class="enginecaption">Super drag to search by</label>
+							<select id="search-engines"></select>
 
-									<input type="radio" id="background" name="tabmode" value="background">
-									<label for="background">Background</label>
-									<input type="radio" id="foreground" name="tabmode" value="foreground">
-									<label for="foreground">Foreground</label>
-								</div>
+							<input type="radio" id="background" name="tabmode" value="background">
+							<label for="background">Background</label>
+							<input type="radio" id="foreground" name="tabmode" value="foreground">
+							<label for="foreground">Foreground</label>
+						</div>
 
-								<div class="emoji-directions">
-									<div>
-										<!--         <label for="direction-left-up">↖️</label>
+						<div class="emoji-directions">
+							<div>
+								<!--         <label for="direction-left-up">↖️</label>
 							        <select id="direction-left-up"></select> -->
-									</div>
-									<div>
-										<label for="direction-up">⬆️</label>
-										<select id="direction-up"></select>
-									</div>
-									<div>
-										<!--         <label for="direction-right-up">↗️</label>
-							        <select id="direction-right-up"></select> -->
-									</div>
-									<div>
-										<label for="direction-left">⬅️</label>
-										<select id="direction-left"></select>
-									</div>
-									<div>
-										<!-- <label>🖱️</label> -->
-									</div>
-									<div>
-										<label for="direction-right">➡️</label>
-										<select id="direction-right"></select>
-									</div>
-									<div>
-										<!--         <label for="direction-left-down">↙️</label>
-							        <select id="direction-left-down"></select> -->
-									</div>
-									<div>
-										<label for="direction-down">⬇️</label>
-										<select id="direction-down"></select>
-									</div>
-									<div>
-										<!--         <label for="direction-right-down">↘️</label>
-							        <select id="direction-right-down"></select> -->
-									</div>
-
-								</div>
-
-								<div>
-									<span>URL blacklist:</span>
-									<input type="text" name="add">
-									<button id="add">Add</button>
-									<div class="error-tips hidden">Invalid! Please use valid URL directly! e.g.
-										https://www.google.com</div>
-									<div class="domain-whitelist"></div>
-								</div>
 							</div>
-
-
-							<!-- 
+							<div>
+								<label for="direction-up">⬆️</label>
+								<select id="direction-up"></select>
+							</div>
+							<div>
+								<!--         <label for="direction-right-up">↗️</label>
+							        <select id="direction-right-up"></select> -->
+							</div>
+							<div>
+								<label for="direction-left">⬅️</label>
+								<select id="direction-left"></select>
+							</div>
+							<div>
+								<!-- <label>🖱️</label> -->
+							</div>
+							<div>
+								<label for="direction-right">➡️</label>
+								<select id="direction-right"></select>
+							</div>
+							<div>
+								<!--         <label for="direction-left-down">↙️</label>
+							        <select id="direction-left-down"></select> -->
+							</div>
+							<div>
+								<label for="direction-down">⬇️</label>
+								<select id="direction-down"></select>
+							</div>
+							<div>
+								<!--         <label for="direction-right-down">↘️</label>
+							        <select id="direction-right-down"></select> -->
+							</div>
+						</div>
+					</section>
+					<!-- //配合综合按键
 							  <div class="ctrl-shift-alt">
 							    <input type="checkbox" name="ctrl">
 							    <label for="ctrl">Ctrl</label>
@@ -528,10 +527,9 @@
 							    <label for="alt">Alt</label>
 							  </div>
 							 -->
-							<script type="text/javascript" src="settings.js"></script>
-						</div>
-					</section>
+					<script type="text/javascript" src="settings.js"></script>
 				</div>
+
 				<div id="tab4" class="page hidden">
 					<h2 data-i18n="advancedoptions"></h2>
 					<section>
@@ -604,13 +602,17 @@
 					</section>
 					<section>
 						<h3 data-i18n="titelquickbookmarks"></h3>
+							<button id="openAllSavedPages">一键打开所有保存的页面</button>
+							<div id="savedPagesContainer">
+								<ul id="savedPagesList">
+									<!-- 列表项将通过JavaScript动态添加 -->
+								</ul>
+							</div>
+					</section>
+					<section>
+						<h3 data-i18n="titelsearchengines"></h3>
 
-						<button id="openAllSavedPages">一键打开所有保存的页面</button>
-						<div id="savedPagesContainer">
-							<ul id="savedPagesList">
-								<!-- 列表项将通过JavaScript动态添加 -->
-							</ul>
-						</div>
+					
 						<div>
 							<div class="md-radio">
 								<input id="opennonebookmarks" type="radio" name="typebookmark" value="none" role="radio"
@@ -748,7 +750,7 @@
 									aria-label="Bookmark permission"></button></label>
 						</div>
 					</section>
-					<section>
+					<!-- <section>
 						<h3 data-i18n="titelsync"></h3>
 						<div class="grey-text"><span data-i18n="titelsyncbrowser"></span></div>
 					</section>
@@ -758,12 +760,12 @@
 							<label><button id="resetbrowserextension"
 									data-i18n="resetbrowserextension"></button></label>
 						</div>
-					</section>
+					</section> -->
 
 				</div>
-<div id="tab5" class="page hidden">
+				<div id="tab5" class="page hidden">
 					<h2 data-i18n="about"></h2>
-<section>
+					<section>
 						<div>
 							<h2>自定义搜索引擎</h2>
 							<input type="text" id="websiteNameInput" placeholder="Website Name">
@@ -772,11 +774,11 @@
 							<br>
 							<h3>自定义列表</h3>
 							<ul id="websiteListContainer"></ul>
-						</div>	
-						</section>
-<section>
-	<div>
-	<h2>功能列表</h2>
+						</div>
+					</section>
+					<section>
+						<div>
+							<h2>功能列表</h2>
 							<label>
 								<input type="checkbox" id="copyCheckbox" /> 复制
 							</label>
@@ -802,35 +804,38 @@
 							<label>
 								<input type="checkbox" id="closesidepanelCheckbox" /> 开关
 							</label>
-						</div></section>
-<section>
-<div>
-<h2>搜索引擎列表</h2>
-<ul id="searchEngineList"></ul>
-</div></section>
-				
-<section>
-<div>
-<h2>导出搜索引擎列表</h2>
-<button id="export-json-button">导出网站列表为JSON</button>
-<button id="import-json-button">导入JSON文件</button>
-</div></section>
-<section>
+						</div>
+					</section>
+					<section>
+						<div>
+							<h2>搜索引擎列表</h2>
+							<ul id="searchEngineList"></ul>
+						</div>
+					</section>
 
-<h2>说明</h2>
-<div>
-<span data-i18n="version"></span> 
-						<span id="version_number"></span>
-						<br>
-						<span data-i18n="description"></span>
-						<br>
-						<br>
-						<span data-i18n="titelwebsite"></span>: <a
-							href="https://www.stefanvd.net/project/page-sidebar/browser-extension/"
-							target="_blank">www.stefanvd.net/project/page-sidebar/browser-extension/</a>
-						<br>
-						<span data-i18n="titeldeveloper"></span>: <a href="https://www.stefanvd.net"
-							target="_blank">www.stefanvd.net</a>
+					<section>
+						<div>
+							<h2>导出搜索引擎列表</h2>
+							<button id="export-json-button">导出网站列表为JSON</button>
+							<button id="import-json-button">导入JSON文件</button>
+						</div>
+					</section>
+					<section>
+
+						<h2>说明</h2>
+						<div>
+							<span data-i18n="version"></span>
+							<span id="version_number"></span>
+							<br>
+							<span data-i18n="description"></span>
+							<br>
+							<br>
+							<span data-i18n="titelwebsite"></span>: <a
+								href="https://www.stefanvd.net/project/page-sidebar/browser-extension/"
+								target="_blank">www.stefanvd.net/project/page-sidebar/browser-extension/</a>
+							<br>
+							<span data-i18n="titeldeveloper"></span>: <a href="https://www.stefanvd.net"
+								target="_blank">www.stefanvd.net</a>
 						</div>
 						<br>
 						<br>
@@ -840,15 +845,16 @@
 								data-i18n="translateme"></button>
 						</div>
 						<br><br><br><br><br>
-						</section>
-						<section>
+					</section>
+					<section>
 						<div id="permissionlist"></div>
 						<div class="grey-text">
 							右拐<br>
 							<span>&copy; <span id="yearnow"></span> Stefan vd. <span
 									data-i18n="titelrightsreserved"></span></span><br><br><br><br><br><br>
 							<span data-i18n="textfoot"></span> <a
-								href="http://creativecommons.org/licenses/GPL/2.0/">GPL 2.0</a>.
+								href="http://creativecommons.org/licenses/GPL/2.0/">GPL
+								2.0</a>.
 						</div>
 
 				</div>

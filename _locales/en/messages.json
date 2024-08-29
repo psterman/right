@@ -420,8 +420,11 @@
       "message": "Welcome Guide"
    },
    "titelquickbookmarks": {
-      "message": "Quick Bookmarks"
+      "message": "双书签页面"
    },
+   "titelsearchengines": {
+         "message": "搜索选项"
+      },
    "titelrememberpage": {
       "message": "Reminder page"
    },
@@ -450,7 +453,10 @@
       "message": "Welcome and Hello"
    },
    "titelzoom": {
-      "message": "Zoom"
+      "message": "侧边栏缩放"
+   },
+   "subjectcolor": {
+      "message": "主题"
    },
    "titlecancel": {
       "message": "Cancel"
