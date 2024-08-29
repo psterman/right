@@ -227,7 +227,7 @@
 							</g>
 						</svg>
 						<span data-i18n="designmarquee"></span></a></li>
-				<li><a id="tabadvan" accesskey="o" data-tab="#tab4" class="navbar-item">
+<li><a id="tabadvan" accesskey="o" data-tab="#tab4" class="navbar-item">
 						<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16"
 							viewBox="0 0 24 24">
 							<g>
@@ -761,19 +761,22 @@
 					</section>
 
 				</div>
-				<div id="tab5" class="page hidden">
+<div id="tab5" class="page hidden">
 					<h2 data-i18n="about"></h2>
-					<section>
+<section>
 						<div>
-							<h4>右拐</h4>
-							<h2>Add Website</h2>
+							<h2>自定义搜索引擎</h2>
 							<input type="text" id="websiteNameInput" placeholder="Website Name">
 							<input type="text" id="websiteUrlInput" placeholder="Website URL">
-							<button id="addWebsiteButton">Add</button>
-							<br><br><br><br><br>
-							<h2>Website List</h2>
+							<button id="addWebsiteButton">确认添加</button>
+							<br>
+							<h3>自定义列表</h3>
 							<ul id="websiteListContainer"></ul>
-
+						</div>	
+						</section>
+<section>
+	<div>
+	<h2>功能列表</h2>
 							<label>
 								<input type="checkbox" id="copyCheckbox" /> 复制
 							</label>
@@ -799,41 +802,25 @@
 							<label>
 								<input type="checkbox" id="closesidepanelCheckbox" /> 开关
 							</label>
-						</div>
-						<div id="searchEngineList">
-							<!-- 搜索引擎项示例 -->
-							<label><input type="checkbox" class="search-engine-checkbox" value="Google"> Google</label>
-							<!-- 重复此行为其他搜索引擎添加复选框 -->
-							<label><input type="checkbox" class="search-engine-checkbox" value="Bing"> Bing</label>
-							<label><input type="checkbox" class="search-engine-checkbox"
-									value="DuckDuckGo">DuckDuckGo</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Baidu"> Baidu</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Yandex"> Yandex</label>
-							<label><input type="checkbox" class="search-engine-checkbox"
-									value="Deepl">翻译(Deepl引擎）</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Doubao">豆包</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Yandex"> Yandex</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="download">下载</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Kimi">Kimi</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Tongyi">tongyi</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Yuanbao">yuanbao</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Yiyan">Mita</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Yiyan">yiyan</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Poe">Poe</label>
-							<label><input type="checkbox" class="search-engine-checkbox"
-									value="Perplexity">Perplexity</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Chatgpt">chatgpt</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="Gemini">Gemini</label>
-							<label><input type="checkbox" class="search-engine-checkbox"
-									value="bookmarks">bookmarks</label>
-							<!-- <label><input type="checkbox" class="search-engine-checkbox" value="download">下载</label>
-							<label><input type="checkbox" class="search-engine-checkbox" value="download">下载</label> -->
-							<button id="export-json-button">导出网站列表为JSON</button>
-							<button id="import-json-button">导入JSON文件</button>
+						</div></section>
+<section>
+<div>
+<h2>搜索引擎列表</h2>
+<ul id="searchEngineList"></ul>
+</div></section>
+				
+<section>
+<div>
+<h2>导出搜索引擎列表</h2>
+<button id="export-json-button">导出网站列表为JSON</button>
+<button id="import-json-button">导入JSON文件</button>
+</div></section>
+<section>
 
-						</div>
-
-						<span data-i18n="version"></span> <span id="version_number"></span>
+<h2>说明</h2>
+<div>
+<span data-i18n="version"></span> 
+						<span id="version_number"></span>
 						<br>
 						<span data-i18n="description"></span>
 						<br>
@@ -844,6 +831,7 @@
 						<br>
 						<span data-i18n="titeldeveloper"></span>: <a href="https://www.stefanvd.net"
 							target="_blank">www.stefanvd.net</a>
+						</div>
 						<br>
 						<br>
 						<div class="aboutbuttons">
@@ -851,13 +839,14 @@
 								data-i18n="changelog"></button><button id="buttontranslateme"
 								data-i18n="translateme"></button>
 						</div>
-						<br>
-						<div id="permissionlist"></div>
 						<br><br><br><br><br>
+						</section>
+						<section>
+						<div id="permissionlist"></div>
 						<div class="grey-text">
 							右拐<br>
 							<span>&copy; <span id="yearnow"></span> Stefan vd. <span
-									data-i18n="titelrightsreserved"></span></span><br>
+									data-i18n="titelrightsreserved"></span></span><br><br><br><br><br><br>
 							<span data-i18n="textfoot"></span> <a
 								href="http://creativecommons.org/licenses/GPL/2.0/">GPL 2.0</a>.
 						</div>

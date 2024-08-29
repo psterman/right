@@ -163,7 +163,6 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             'Doubao': 'https://www.doubao.com/chat/',
             'download': 'https://9xbuddy.in/process?url=',
             'Tongyi': 'https://tongyi.aliyun.com/qianwen/',
-            'Doubao': 'https://www.doubao.com/chat/',
             'Kimi': 'https://kimi.moonshot.cn/',
             'Yuanbao': 'https://yuanbao.tencent.com/bot/chat',
             'Mita': 'https://metaso.cn/',
@@ -338,12 +337,12 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
               searchLinksContainer.appendChild(searchLinkOpenSidebar);
           } */
         if (showDownload) {
-            var searchLinkDownload = createActionLink('刷新2', function () {
+            var searchLinkDownload = createActionLink('下载', function () {
                 // 先移除弹出菜单
                 document.body.removeChild(popup);
                 currentPopup = null;
 
-                // 然后刷新当前页面
+                // 然后刷新当前页面下载
                 window.location.reload();
             });
             searchLinksContainer.appendChild(searchLinkDownload);
