@@ -7,6 +7,7 @@ const uppercaseWords = (str) => str.replace(/^(.)|\s+(.)/g, (c) => c.toUpperCase
     const searchEngines = document.getElementById('search-engines')
 
     const searchEngineNames = [
+        "", // 添加空字符串作为第一个选项
         'google',
         'yahoo',
         'bing',
@@ -39,6 +40,9 @@ const uppercaseWords = (str) => str.replace(/^(.)|\s+(.)/g, (c) => c.toUpperCase
             if (index > -1) {
                 searchEngines.selectedIndex = index
             }
+        } else {
+            // 如果没有找到匹配项，设置第一个选项（空字符串）为选中状态
+            searchEngines.selectedIndex = 0;
         }
     })
 
@@ -51,7 +55,7 @@ const uppercaseWords = (str) => str.replace(/^(.)|\s+(.)/g, (c) => c.toUpperCase
     document.querySelector('.' + component + 'caption').innerText =
         chrome.i18n.getMessage(component + 'Title')
 
-    // const directions = ['up', 'left', 'right', 'down']
+    //const directions = ['up', 'left', 'right', 'down']
      const directions = ['left-up', 'up', 'right-up', 'left', 'right', 'left-down', 'down', 'right-down']
     const prefix = 'direction-'
 
