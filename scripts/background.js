@@ -775,3 +775,9 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 		chrome.tabs.update(sender.tab.id, { url: urlToLoad });
 	}
 });
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === 'updateDirectionSearchStatus') {
+		console.log('Received direction search status:', request.enabled);
+		chrome.storage.sync.set({ 'directionSearchEnabled': request.enabled });
+	}
+});

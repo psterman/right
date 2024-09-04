@@ -175,7 +175,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
             // 可以根据需要添加更多搜索引擎
         };
 
-        // 确保selectedEngines中的每个引擎都有其对应的urlBase
+         // 确保selectedEngines中的每个引擎都有其对应的urlBase
         selectedEngines.forEach(function (engine) {
             // 使用映射对象获取正确的urlBase，如果找不到则使用一个默认值或空字符串
             const urlBase = engineUrlMap[engine.name] || '';
@@ -202,7 +202,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         allLinks.forEach(function (link) {
             var actionLink = createActionLink(link.name, link.action);
             searchLinksContainer.appendChild(actionLink);
-        });
+        }); 
     });
 
     // 读取复选框的状态
@@ -285,20 +285,20 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         if (showclosesidepanel) {
             var searchLinkOpenSidebar = createActionLink('开关', function () {
                 var currentUrl = window.location.href;
-               
+
 
                 // 发送当前页面URL和sidebarUrl到侧边栏，等待响应
                 chrome.runtime.sendMessage({
                     action: 'setpage',
                     query: currentUrl,
-                   
+
                 }, function (response) {
                     if (response && response.ready) {
                         // 侧边栏已准备好加载新的URL
                         // 加载存储的previousUrl
                         chrome.runtime.sendMessage({
                             action: 'loadSidebarUrl',
-                          
+
                         });
                     }
                 });
@@ -587,32 +587,47 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 (function () {
 
     function getDirection(x1, y1, x2, y2) {
-        const dx = x2 - x1
-        const dy = y2 - y1
+        const dx = x2 - x1;
+        const dy = y2 - y1;
 
-        const vx = Math.abs(dx)
-        const vy = Math.abs(dy)
+        const vx = Math.abs(dx);
+        const vy = Math.abs(dy);
 
-        const threshold = 4  // 4px to change the direction
+        const threshold = 4; // 4px to change the direction
 
-        if (vx < threshold && vy < threshold)
-            return
+        // 检查是否移动距离过短，不足以判断为有效方向
+        if (vx < threshold && vy < threshold) {
+            return null;
+        }
 
+        // 判断对角线方向
+        if (vx >= threshold && vy >= threshold) {
+            if (dx > 0 && dy > 0) {
+                return 'right-down';
+            } else if (dx > 0 && dy < 0) {
+                return 'right-up';
+            } else if (dx < 0 && dy > 0) {
+                return 'left-down';
+            } else if (dx < 0 && dy < 0) {
+                return 'left-up';
+            }
+        }
+
+        // 判断水平或垂直方向
         if (vx > vy) {
             if (dx > 0) {
-                return 'right'
+                return 'right';
             } else {
-                return 'left'
+                return 'left';
             }
         } else {
             if (dy > 0) {
-                return 'down'
+                return 'down';
             } else {
-                return 'up'
+                return 'up';
             }
         }
     }
-
     let dragStartPoint = {}
     let direction
 

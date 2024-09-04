@@ -56,7 +56,7 @@ const uppercaseWords = (str) => str.replace(/^(.)|\s+(.)/g, (c) => c.toUpperCase
         chrome.i18n.getMessage(component + 'Title')
 
     //const directions = ['up', 'left', 'right', 'down']
-     const directions = ['left-up', 'up', 'right-up', 'left', 'right', 'left-down', 'down', 'right-down']
+    const directions = ['left-up', 'up', 'right-up', 'left', 'right', 'left-down', 'down', 'right-down']
     const prefix = 'direction-'
 
     directions.forEach(direction => {

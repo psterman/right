@@ -1160,6 +1160,27 @@ function editWebsite(index) {
 }
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
+	const directionSearchToggle = document.getElementById('directionSearchToggle');
+
+	// 加载时设置开关状态
+	chrome.storage.sync.get('directionSearchEnabled', function (items) {
+		directionSearchToggle.checked = items.directionSearchEnabled || false;
+	});
+
+	// 监听开关状态变化
+	directionSearchToggle.addEventListener('change', function () {
+		let isChecked = this.checked; // 保留对当前状态的引用
+		chrome.storage.sync.set({ 'directionSearchEnabled': isChecked });
+		// 发送消息给所有标签页，通知它们更新方向搜索的状态
+		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+			for (let tab of tabs) {
+				chrome.tabs.sendMessage(tab.id, {
+					action: 'updateDirectionSearchStatus',
+					enabled: isChecked
+                });
+            }
+        });
+    });
 	loadSavedPages();
 	chrome.storage.sync.get('savedPages', function (items) {
 		if (items.savedPages) {

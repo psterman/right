@@ -461,13 +461,15 @@
 				<div id="tab2" class="page hidden">
 					<h2 data-i18n="designmarquee"></h2>
 					<section>
-						<div id="controls">
-							<!-- 用户自定义搜索引擎的输入和添加按钮 -->
-							<div class="custom-search-engine">
-								<input type="text" id="engine-name" placeholder="搜索引擎名称">
-								<input type="text" id="engine-url" placeholder="搜索URL">
-								<button id="add-custom-engine">添加自定义搜索引擎</button>
-							</div>
+						<div id="controls"><!-- 添加搜索引擎的表单 -->
+<div>
+	<label>
+		<input type="checkbox" id="directionSearchToggle"> 启用方向搜索
+	</label>
+    <input type="text" id="addEngineName" placeholder="Engine Name">
+    <input type="text" id="addEngineUrl" placeholder="Engine URL">
+    <button onclick="addEngine()">Add Engine</button>
+</div>
 							<label for="search-engines" class="enginecaption">Super drag to search by</label>
 							<select id="search-engines"></select>
 
@@ -479,16 +481,16 @@
 
 						<div class="emoji-directions">
 							<div>
-								        <label for="direction-left-up">↖️</label>
-							        <select id="direction-left-up"></select> 
+								<label for="direction-left-up">↖️</label>
+								<select id="direction-left-up"></select>
 							</div>
 							<div>
 								<label for="direction-up">⬆️</label>
 								<select id="direction-up"></select>
 							</div>
 							<div>
-								         <label for="direction-right-up">↗️</label>
-							        <select id="direction-right-up"></select> 
+								<label for="direction-right-up">↗️</label>
+								<select id="direction-right-up"></select>
 							</div>
 							<div>
 								<label for="direction-left">⬅️</label>
@@ -502,16 +504,16 @@
 								<select id="direction-right"></select>
 							</div>
 							<div>
-								         <label for="direction-left-down">↙️</label>
-							        <select id="direction-left-down"></select> 
+								<label for="direction-left-down">↙️</label>
+								<select id="direction-left-down"></select>
 							</div>
 							<div>
 								<label for="direction-down">⬇️</label>
 								<select id="direction-down"></select>
 							</div>
 							<div>
-							<label for="direction-right-down">↘️</label>
-							        <select id="direction-right-down"></select> 
+								<label for="direction-right-down">↘️</label>
+								<select id="direction-right-down"></select>
 							</div>
 						</div>
 					</section>
@@ -527,7 +529,7 @@
 							    <label for="alt">Alt</label>
 							  </div>
 							 -->
-					<script type="text/javascript" src="settings.js"></script>
+					
 				</div>
 
 				<div id="tab4" class="page hidden">
@@ -602,17 +604,17 @@
 					</section>
 					<section>
 						<h3 data-i18n="titelquickbookmarks"></h3>
-							<button id="openAllSavedPages">一键打开所有保存的页面</button>
-							<div id="savedPagesContainer">
-								<ul id="savedPagesList">
-									<!-- 列表项将通过JavaScript动态添加 -->
-								</ul>
-							</div>
+						<button id="openAllSavedPages">一键打开所有保存的页面</button>
+						<div id="savedPagesContainer">
+							<ul id="savedPagesList">
+								<!-- 列表项将通过JavaScript动态添加 -->
+							</ul>
+						</div>
 					</section>
 					<section>
 						<h3 data-i18n="titelsearchengines"></h3>
 
-					
+
 						<div>
 							<div class="md-radio">
 								<input id="opennonebookmarks" type="radio" name="typebookmark" value="none" role="radio"
