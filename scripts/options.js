@@ -1,3 +1,11 @@
+// 定义全局变量存储搜索引擎映射
+var globalId2enginemap = {};
+
+// 初始化全局变量
+chrome.storage.sync.get('id2enginemap', function (data) {
+	globalId2enginemap = Object.assign({}, defaultEngines, data.id2enginemap || {});
+	loadEngines(); // 初始化加载列表
+});
 // 获取搜索引擎复选框元素列表
 var checkboxList = document.querySelectorAll(".search-engine-checkbox");
 
@@ -1160,7 +1168,12 @@ function editWebsite(index) {
 }
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
-	const directionSearchToggle = document.getElementById('directionSearchToggle');
+	loadSavedPages();
+	loadEngines();
+	  // 绑定添加搜索引擎按钮的点击事件
+    var addEngineButton = document.getElementById('addEngineButton');
+    addEngineButton.addEventListener('click', addEngine);
+const directionSearchToggle = document.getElementById('directionSearchToggle');
 
 	// 加载时设置开关状态
 	chrome.storage.sync.get('directionSearchEnabled', function (items) {
@@ -1181,7 +1194,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
-	loadSavedPages();
 	chrome.storage.sync.get('savedPages', function (items) {
 		if (items.savedPages) {
 			var savedPages = items.savedPages;
@@ -1731,5 +1743,59 @@ function loadSavedPages() {
 
 
 		}
+	});
+}// 增加方向搜索引擎对应的数组
+function addEngine() {
+	var engineName = document.getElementById('addEngineName').value.trim();
+	var engineUrl = document.getElementById('addEngineUrl').value.trim();
+
+	if (!engineName || !engineUrl) {
+		alert('搜索引擎名称和URL不能为空！');
+		return;
+	}
+
+	if (globalId2enginemap[engineName]) {
+		alert('该搜索引擎名称已存在，请使用其他名称。');
+		return;
+	}
+
+	globalId2enginemap[engineName] = engineUrl;
+	chrome.storage.sync.set({ 'id2enginemap': globalId2enginemap }, function () {
+		if (chrome.runtime.lastError) {
+			console.error('添加搜索引擎时发生错误:', chrome.runtime.lastError);
+			alert('添加搜索引擎时发生错误，请重试。');
+		} else {
+			alert('搜索引擎添加成功！');
+			loadEngines(); // 重新加载列表以显示新添加的项
+		}
+	});
+}
+
+// 加载搜索引擎列表到页面
+function loadEngines() {
+	chrome.storage.sync.get('id2enginemap', function (data) {
+		var id2enginemap = data.id2enginemap || {};
+		var list = document.getElementById('engineList');
+		list.innerHTML = ''; // 清空现有列表
+
+		Object.keys(id2enginemap).forEach(function (engineName) {
+			var item = document.createElement('li');
+			item.textContent = engineName + ': ' + id2enginemap[engineName];
+			var removeButton = document.createElement('button');
+			removeButton.textContent = '删除';
+			removeButton.onclick = function () {
+				delete id2enginemap[engineName];
+				chrome.storage.sync.set({ 'id2enginemap': id2enginemap }, function () {
+					if (chrome.runtime.lastError) {
+						alert('删除搜索引擎时发生错误，请重试。');
+					} else {
+						alert('搜索引擎删除成功！');
+						loadEngines(); // 重新加载列表
+					}
+				});
+			};
+			item.appendChild(removeButton);
+			list.appendChild(item);
+		});
 	});
 }

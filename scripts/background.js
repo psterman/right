@@ -608,7 +608,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
 //引入拖拽代码
 
-var id2enginemap = {
+// 预设的搜索引擎列表
+const defaultEngines = {
 	'google': 'https://www.google.com/search?q=',
 	'yahoo': 'https://search.yahoo.com/search?q=',
 	'bing': 'https://bing.com/search?q=',
@@ -617,7 +618,6 @@ var id2enginemap = {
 	'duckduckgo': 'https://duckduckgo.com/?q=',
 	'sogou': 'https://www.sogou.com/web?query=',
 	'360': 'https://www.so.com/s?q=',
-	'yahoo': 'https://search.yahoo.com/search?q=',
 	'ecosia': 'https://www.ecosia.org/search?q=',
 	'qwant': 'https://www.qwant.com/?q=',
 	'findx': 'https://www.findx.com/search?q=',
@@ -626,7 +626,38 @@ var id2enginemap = {
 	'bilibili': 'https://search.bilibili.com/all?keyword=',
 	'youtube': 'https://www.youtube.com/results?search_query=',
 	'wikipedia': 'https://en.wikipedia.org/w/index.php?title=Special:Search&search='
+};
+
+// 存储的搜索引擎映射
+var id2enginemap = {};
+
+// 初始化搜索引擎映射
+function initEngineMap() {
+	// 从存储中获取现有的搜索引擎列表
+	chrome.storage.sync.get('id2enginemap', function (data) {
+		// 如果存储中没有数据，则使用默认的预设列表
+		id2enginemap = data.id2enginemap || {};
+
+		// 合并预设列表和存储中的列表
+		Object.assign(id2enginemap, defaultEngines);
+
+		// 保存更新后的列表到存储中
+		chrome.storage.sync.set({ id2enginemap: id2enginemap }, function () {
+			console.log('搜索引擎映射已更新');
+		});
+	});
 }
+
+// 监听存储变化
+chrome.storage.onChanged.addListener(function (changes, areaName) {
+	if (areaName === 'sync' && changes.id2enginemap) {
+		id2enginemap = changes.id2enginemap.newValue;
+		console.log('更新后的搜索引擎映射:', id2enginemap);
+	}
+});
+
+// 初始化
+initEngineMap();
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 	const isUrl = isURL(unescape(decodeURIComponent(message.c)))
