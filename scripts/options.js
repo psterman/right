@@ -2,8 +2,19 @@
 var globalId2enginemap = {};
 
 // 初始化全局变量
+// 初始化全局变量
 chrome.storage.sync.get('id2enginemap', function (data) {
-	globalId2enginemap = Object.assign({}, defaultEngines, data.id2enginemap || {});
+	// 如果存储中有数据，则使用存储中的数据，否则使用默认的预设列表
+	globalId2enginemap = data.id2enginemap || {};
+
+	// 合并预设列表和存储中的列表
+	Object.assign(globalId2enginemap, defaultEngines);
+
+	// 保存更新后的列表到存储中
+	chrome.storage.sync.set({ id2enginemap: globalId2enginemap }, function () {
+		console.log('搜索引擎映射已更新');
+	});
+
 	loadEngines(); // 初始化加载列表
 });
 // 获取搜索引擎复选框元素列表
@@ -1745,6 +1756,7 @@ function loadSavedPages() {
 		}
 	});
 }// 增加方向搜索引擎对应的数组
+// 添加新的搜索引擎
 function addEngine() {
 	var engineName = document.getElementById('addEngineName').value.trim();
 	var engineUrl = document.getElementById('addEngineUrl').value.trim();
@@ -1759,6 +1771,7 @@ function addEngine() {
 		return;
 	}
 
+	// 更新全局变量和存储
 	globalId2enginemap[engineName] = engineUrl;
 	chrome.storage.sync.set({ 'id2enginemap': globalId2enginemap }, function () {
 		if (chrome.runtime.lastError) {
@@ -1773,29 +1786,27 @@ function addEngine() {
 
 // 加载搜索引擎列表到页面
 function loadEngines() {
-	chrome.storage.sync.get('id2enginemap', function (data) {
-		var id2enginemap = data.id2enginemap || {};
-		var list = document.getElementById('engineList');
-		list.innerHTML = ''; // 清空现有列表
+	var list = document.getElementById('engineList');
+	list.innerHTML = ''; // 清空现有列表
 
-		Object.keys(id2enginemap).forEach(function (engineName) {
-			var item = document.createElement('li');
-			item.textContent = engineName + ': ' + id2enginemap[engineName];
-			var removeButton = document.createElement('button');
-			removeButton.textContent = '删除';
-			removeButton.onclick = function () {
-				delete id2enginemap[engineName];
-				chrome.storage.sync.set({ 'id2enginemap': id2enginemap }, function () {
-					if (chrome.runtime.lastError) {
-						alert('删除搜索引擎时发生错误，请重试。');
-					} else {
-						alert('搜索引擎删除成功！');
-						loadEngines(); // 重新加载列表
-					}
-				});
-			};
-			item.appendChild(removeButton);
-			list.appendChild(item);
-		});
+	// 遍历全局变量中的所有搜索引擎，并添加到页面列表中
+	Object.keys(globalId2enginemap).forEach(function (engineName) {
+		var item = document.createElement('li');
+		item.textContent = engineName + ': ' + globalId2enginemap[engineName];
+		var removeButton = document.createElement('button');
+		removeButton.textContent = '删除';
+		removeButton.onclick = function () {
+			delete globalId2enginemap[engineName];
+			chrome.storage.sync.set({ 'id2enginemap': globalId2enginemap }, function () {
+				if (chrome.runtime.lastError) {
+					alert('删除搜索引擎时发生错误，请重试。');
+				} else {
+					alert('搜索引擎删除成功！');
+					loadEngines(); // 重新加载列表
+				}
+			});
+		};
+		item.appendChild(removeButton);
+		list.appendChild(item);
 	});
 }
