@@ -1755,8 +1755,19 @@ function loadSavedPages() {
 
 		}
 	});
-}// 增加方向搜索引擎对应的数组
-// 添加新的搜索引擎
+}// 增加方向搜索引擎对应的数组// 更新所有下拉列表的函数
+function updateAllEngineLists() {
+	const lists = document.querySelectorAll('select');
+	lists.forEach(list => {
+		list.innerHTML = ""; // 清空现有选项
+		Object.keys(globalId2enginemap).forEach(engineName => {
+			const option = document.createElement('option');
+			option.textContent = engineName;
+			option.value = engineName;
+			list.appendChild(option);
+		});
+	});
+}// 添加新的搜索引擎// 添加新的搜索引擎
 function addEngine() {
 	var engineName = document.getElementById('addEngineName').value.trim();
 	var engineUrl = document.getElementById('addEngineUrl').value.trim();
@@ -1779,12 +1790,27 @@ function addEngine() {
 			alert('添加搜索引擎时发生错误，请重试。');
 		} else {
 			alert('搜索引擎添加成功！');
-			loadEngines(); // 重新加载列表以显示新添加的项
+			loadEngines(); // 更新列表
 		}
 	});
 }
 
-// 加载搜索引擎列表到页面
+// 删除搜索引擎
+function deleteEngine(engineName) {
+	if (globalId2enginemap[engineName]) {
+		delete globalId2enginemap[engineName];
+		chrome.storage.sync.set({ 'id2enginemap': globalId2enginemap }, function () {
+			if (chrome.runtime.lastError) {
+				alert('删除搜索引擎时发生错误，请重试。');
+			} else {
+				alert('搜索引擎删除成功！');
+				loadEngines(); // 更新列表
+			}
+		});
+	}
+}
+
+// 加载或更新搜索引擎列表
 function loadEngines() {
 	var list = document.getElementById('engineList');
 	list.innerHTML = ''; // 清空现有列表
@@ -1796,17 +1822,12 @@ function loadEngines() {
 		var removeButton = document.createElement('button');
 		removeButton.textContent = '删除';
 		removeButton.onclick = function () {
-			delete globalId2enginemap[engineName];
-			chrome.storage.sync.set({ 'id2enginemap': globalId2enginemap }, function () {
-				if (chrome.runtime.lastError) {
-					alert('删除搜索引擎时发生错误，请重试。');
-				} else {
-					alert('搜索引擎删除成功！');
-					loadEngines(); // 重新加载列表
-				}
-			});
+			deleteEngine(engineName);
 		};
 		item.appendChild(removeButton);
 		list.appendChild(item);
 	});
 }
+
+// 初始化加载列表
+window.addEventListener('load', loadEngines);

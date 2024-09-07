@@ -1,7 +1,58 @@
 
 // 引入拖拽js
 const uppercaseWords = (str) => str.replace(/^(.)|\s+(.)/g, (c) => c.toUpperCase());
+/// 监听存储变化
+chrome.storage.onChanged.addListener(function (changes, areaName) {
+    if (areaName === 'sync' && changes.id2enginemap) {
+        var newEngineMap = changes.id2enginemap.newValue;
+        updateDirectionSelectors(newEngineMap);
+    }
+});
+// 更新方向选择的下拉列表
+function updateDirectionSelectors(newEngineMap) {
+    const directionSelectors = document.querySelectorAll('.emoji-directions select');
+    directionSelectors.forEach(selector => {
+        // 保存当前选择的搜索引擎名称
+        const currentSelection = selector.value;
 
+        // 清空现有选项
+        selector.innerHTML = "";
+
+        // 添加空白选项
+        const blankOption = document.createElement('option');
+        blankOption.value = ''; // 设置值为空字符串
+        blankOption.textContent = '--'; // 显示为 "--" 或其他占位符
+        selector.appendChild(blankOption);
+
+        // 添加新的搜索引擎选项
+        Object.keys(newEngineMap).forEach(engineName => {
+            const option = document.createElement('option');
+            option.textContent = engineName;
+            option.value = engineName;
+            selector.appendChild(option);
+        });
+
+        // 恢复之前的选中状态
+        selector.value = currentSelection || ''; // 如果当前选择为空，则默认选中空白选项
+    });
+}
+
+// 初始化时调用更新函数
+chrome.storage.sync.get('id2enginemap', function (data) {
+    updateDirectionSelectors(data.id2enginemap || {});
+});
+
+// 监听存储变化
+chrome.storage.onChanged.addListener(function (changes, areaName) {
+    if (areaName === 'sync' && changes.id2enginemap) {
+        var newEngineMap = changes.id2enginemap.newValue;
+        updateDirectionSelectors(newEngineMap);
+    }
+});
+// 初始化时调用更新函数
+chrome.storage.sync.get('id2enginemap', function (data) {
+    updateDirectionSelectors(data.id2enginemap || {});
+});
 // search engine settings
 (function () {
     const searchEngines = document.getElementById('search-engines')
