@@ -9,7 +9,7 @@
       "message": "Are you happy about 右拐?"
    },
    "basicsettings": {
-      "message": "主页"
+      "message": "侧边栏"
    },
    "changelog": {
       "message": "Changelog"
@@ -135,13 +135,16 @@
       "message": "Friendly Reminder…"
    },
    "guide": {
-      "message": "教学"
+      "message": "悬浮窗"
+   },
+   "tababout":{
+      "message": "关于"
    },
    "head2": {
       "message": "Choose your favorite icon:"
    },
    "help": {
-      "message": "我的"
+      "message": "弹搜"
    },
    "helptranslate": {
       "message": "Help Translate"
