@@ -788,3 +788,82 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         }
     })
 })()
+//输入框
+// 长按时间阈值（毫秒）
+const longPressDelay = 800;
+let longPressTimer = null;
+
+// 长按事件处理函数
+function onLongPress(e) {
+    if (e.button === 0) { // 确保是左键
+        longPressTimer = setTimeout(() => {
+            if (currentPopup) {
+                document.body.removeChild(currentPopup);
+                currentPopup = null;
+            }
+            createSearchPopup(e.clientX, e.clientY);
+        }, longPressDelay);
+    }
+}
+
+// 鼠标释放事件处理函数
+function onLongPressEnd() {
+    clearTimeout(longPressTimer);
+}
+
+// 创建搜索悬浮窗
+function createSearchPopup(x, y) {
+    const popup = document.createElement('div');
+    popup.style.position = 'fixed';
+    popup.style.left = x + 'px';
+    popup.style.top = y + 'px';
+    popup.style.zIndex = '10000';
+    popup.style.padding = '10px';
+    popup.style.background = 'white';
+    popup.style.borderRadius = '5px';
+    popup.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = '输入搜索词...';
+    popup.appendChild(input);
+
+    const searchButton = document.createElement('button');
+    searchButton.textContent = '搜索';
+    searchButton.onclick = () => {
+        const searchText = input.value.trim();
+        if (searchText) {
+            performSearch(searchText);
+            document.body.removeChild(popup);
+            currentPopup = null;
+        }
+    };
+    popup.appendChild(searchButton);
+
+    document.body.appendChild(popup);
+    currentPopup = popup;
+
+    input.focus();
+}
+
+// 执行搜索
+function performSearch(searchText) {
+    const defaultEngine = 'https://www.google.com/search?q=';
+    const searchUrl = defaultEngine + encodeURIComponent(searchText);
+    chrome.runtime.sendMessage({
+        action: "setpage",
+        query: searchUrl
+    });
+}
+// 添加事件监听器
+document.addEventListener('mousedown', onLongPress);
+document.addEventListener('mouseup', onLongPressEnd);
+document.addEventListener('mouseleave', onLongPressEnd);
+
+// 确保在页面加载时移除之前的悬浮窗
+document.addEventListener('DOMContentLoaded', () => {
+    if (currentPopup) {
+        document.body.removeChild(currentPopup);
+        currentPopup = null;
+    }
+});
