@@ -792,20 +792,21 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 // 长按时间阈值（毫秒）
 const longPressDelay = 800;
 let longPressTimer = null;
-
-// 长按事件处理函数
 function onLongPress(e) {
-    if (e.button === 0) { // 确保是左键
-        longPressTimer = setTimeout(() => {
-            if (currentPopup) {
-                document.body.removeChild(currentPopup);
-                currentPopup = null;
-            }
-            createSearchPopup(e.clientX, e.clientY);
-        }, longPressDelay);
-    }
+    // 获取当前的长按模式
+    chrome.storage.sync.get('longPressMode', function (items) {
+        var mode = items.longPressMode || 'left';
+        if (((mode === 'left' && e.button === 0) || (mode === 'right' && e.button === 2))) {
+            longPressTimer = setTimeout(() => {
+                if (currentPopup) {
+                    document.body.removeChild(currentPopup);
+                    currentPopup = null;
+                }
+                createSearchPopup(e.clientX, e.clientY);
+            }, longPressDelay);
+        }
+    });
 }
-
 // 鼠标释放事件处理函数
 function onLongPressEnd() {
     clearTimeout(longPressTimer);
