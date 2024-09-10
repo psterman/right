@@ -36,10 +36,12 @@
             "/scripts/setting.js"
 
          ],
+         
          "match_about_blank": true,
          "matches": [
             "<all_urls>"
          ],
+         
          "run_at": "document_end"
       }
    ],

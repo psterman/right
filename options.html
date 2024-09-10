@@ -542,6 +542,15 @@
 						</div>
 					</section>
 					<section>
+
+						<div>
+							<p id="keyboardShortcut">
+								侧边栏方位修改（左/右）<a href="javascript:void(0);" id="panellink">配置快捷键</a>
+								<span>
+							</p>
+						</div>
+					</section>
+					<section>
 						<h3 data-i18n="titelquickbookmarks"></h3>
 						<button id="openAllSavedPages">一键打开所有保存的页面</button>
 						<div id="savedPagesContainer">
@@ -771,23 +780,25 @@
 
 				</div>
 
-			<div id="tab3" class="page hidden">
-				<section>
-					<label for="keyboardShortcut">快捷键提示:</label>
-					<p id="keyboardShortcut">
-						您可以在浏览器的扩展管理页面中设置快捷键以激活悬浮窗。
-						<a href="javascript:void(0);" id="shortcutLink">点击这里配置快捷键</a>
-						<span>（如果无法点击，请手动访问 <code>chrome://extensions/shortcuts</code>）</span>
-					</p>
-				</section>
-			</div>
-				
-				<script>
-					document.getElementById('shortcutLink').addEventListener('click', function (event) {
-						event.preventDefault(); // 防止链接默认行为
-						chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
-					});
-				</script>
+				<div id="tab3" class="page hidden">
+					<h3 for="keyboardShortcut">快捷键提示:按ctrl+q，激活悬浮窗</h3>
+					<h3 for="keyboardShortcut">快捷键提示:按esc，退出悬浮窗</h3>
+					<h3 for="keyboardShortcut">快捷键提示:按enter回车，搜索关键词</h3>
+					<section>
+
+						<div>
+							<p id="keyboardShortcut">
+								需要修改请点击<a href="javascript:void(0);" id="shortcutLink">点击这里配置快捷键</a>
+								<span>
+							</p>
+						</div>
+					</section>
+					<section>
+						<h3 for="keyboardShortcut">常用搜索引擎列表</h3>
+
+					</section>
+
+				</div>
 
 
 				<div id="tab4" class="page hidden">

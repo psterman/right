@@ -1185,7 +1185,12 @@ document.addEventListener('DOMContentLoaded', function () {
 	document.getElementById('shortcutLink').addEventListener('click', function () {
 		// 尝试打开 Chrome 扩展快捷键设置页面
 		chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+	}); 
+	document.getElementById('panellink').addEventListener('click', function () {
+		// 尝试打开 Chrome 扩展快捷键设置页面
+		chrome.tabs.create({ url: "chrome://settings/appearance" });
 	});
+
 	// 绑定添加搜索引擎按钮的点击事件
 	var addEngineButton = document.getElementById('addEngineButton');
 	addEngineButton.addEventListener('click', addEngine);

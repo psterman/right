@@ -812,6 +812,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 		chrome.storage.sync.set({ 'directionSearchEnabled': request.enabled });
 	}
 });
+//快捷键打开悬浮窗
 chrome.commands.onCommand.addListener(function (command) {
 	if (command === "toggle-feature") {
 		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
