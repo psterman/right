@@ -1177,10 +1177,15 @@ function editWebsite(index) {
 		displayWebsiteList(); // 刷新页面显示
 	}
 }
+
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
 	loadSavedPages();
 	loadEngines();
+	document.getElementById('shortcutLink').addEventListener('click', function () {
+		// 尝试打开 Chrome 扩展快捷键设置页面
+		chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+	});
 	// 绑定添加搜索引擎按钮的点击事件
 	var addEngineButton = document.getElementById('addEngineButton');
 	addEngineButton.addEventListener('click', addEngine);
