@@ -772,15 +772,24 @@
 				</div>
 
 				<div id="tab3" class="page hidden">
-				<section>
-					<label for="longPressModeSelect">选择长按模式:</label>
-					<select id="longPressModeSelect">
-						<option value="left">左键长按</option>
-						<option value="right">右键长按</option>
-					</select>
-				</section>
+					<section>
+						<section>
+							<label for="keyboardShortcut">快捷键提示:</label>
+							<p id="keyboardShortcut">
+								您可以在浏览器的扩展管理页面中设置快捷键以激活悬浮窗。
+								<a href="#" id="shortcutLink">点击这里配置快捷键</a>
+								<span>（如果无法点击，请手动访问 <code>chrome://extensions/shortcuts</code>）</span>
+							</p>
+						</section>
+					</section>
 				</div>
-
+				
+				<script>
+					document.getElementById('shortcutLink').addEventListener('click', function (event) {
+						event.preventDefault(); // 防止链接默认行为
+						chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+					});
+				</script>
 
 
 				<div id="tab4" class="page hidden">

@@ -18,8 +18,14 @@
             "default": "Ctrl+Shift+Q",
             "mac": "MacCtrl+Shift+Q"
          }
-      }
-   },
+      },
+         "toggle-feature": {
+            "suggested_key": {
+               "default": "Ctrl+Q"
+            },
+            "description": "Toggle search popup"
+         }
+      },   
    "content_scripts": [
       {
          "all_frames": true,

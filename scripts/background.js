@@ -812,3 +812,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 		chrome.storage.sync.set({ 'directionSearchEnabled': request.enabled });
 	}
 });
+chrome.commands.onCommand.addListener(function (command) {
+	if (command === "toggle-feature") {
+		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+			if (tabs.length > 0 && tabs[0].id) {
+				chrome.tabs.sendMessage(tabs[0].id, { action: "showPopup" });
+			}
+		});
+	}
+});

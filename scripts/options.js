@@ -1181,23 +1181,10 @@ function editWebsite(index) {
 document.addEventListener('DOMContentLoaded', function () {
 	loadSavedPages();
 	loadEngines();
-	var longPressModeSelect = document.getElementById('longPressModeSelect');
-	longPressModeSelect.addEventListener('change', function () {
-		var mode = this.value;
-		chrome.storage.sync.set({ 'longPressMode': mode }, function () {
-			console.log('长按模式已更新:', mode);
-		});
-	});
-
-	// 从存储中加载当前的长按模式设置
-	chrome.storage.sync.get('longPressMode', function (items) {
-		var mode = items.longPressMode || 'left'; // 默认为左键长按
-		longPressModeSelect.value = mode;
-	});
-	  // 绑定添加搜索引擎按钮的点击事件
-    var addEngineButton = document.getElementById('addEngineButton');
-    addEngineButton.addEventListener('click', addEngine);
-const directionSearchToggle = document.getElementById('directionSearchToggle');
+	// 绑定添加搜索引擎按钮的点击事件
+	var addEngineButton = document.getElementById('addEngineButton');
+	addEngineButton.addEventListener('click', addEngine);
+	const directionSearchToggle = document.getElementById('directionSearchToggle');
 
 	// 加载时设置开关状态
 	chrome.storage.sync.get('directionSearchEnabled', function (items) {
@@ -1214,10 +1201,10 @@ const directionSearchToggle = document.getElementById('directionSearchToggle');
 				chrome.tabs.sendMessage(tab.id, {
 					action: 'updateDirectionSearchStatus',
 					enabled: isChecked
-                });
-            }
-        });
-    });
+				});
+			}
+		});
+	});
 	chrome.storage.sync.get('savedPages', function (items) {
 		if (items.savedPages) {
 			var savedPages = items.savedPages;
@@ -1807,7 +1794,7 @@ function addEngine() {
 		}
 	});
 	document.getElementById('addEngineName').value = '';
-    document.getElementById('addEngineUrl').value = '';
+	document.getElementById('addEngineUrl').value = '';
 }
 
 // 加载搜索引擎列表到页面

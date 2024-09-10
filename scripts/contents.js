@@ -789,35 +789,16 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     })
 })()
 //输入框
-// 长按时间阈值（毫秒）
-const longPressDelay = 800;
-let longPressTimer = null;
-function onLongPress(e) {
-    // 获取当前的长按模式
-    chrome.storage.sync.get('longPressMode', function (items) {
-        var mode = items.longPressMode || 'left';
-        if (((mode === 'left' && e.button === 0) || (mode === 'right' && e.button === 2))) {
-            longPressTimer = setTimeout(() => {
-                if (currentPopup) {
-                    document.body.removeChild(currentPopup);
-                    currentPopup = null;
-                }
-                createSearchPopup(e.clientX, e.clientY);
-            }, longPressDelay);
-        }
-    });
-}
-// 鼠标释放事件处理函数
-function onLongPressEnd() {
-    clearTimeout(longPressTimer);
-}
 
-// 创建搜索悬浮窗
-function createSearchPopup(x, y) {
+function createSearchPopup() {
+    if (currentPopup) {
+        document.body.removeChild(currentPopup);
+    }
     const popup = document.createElement('div');
     popup.style.position = 'fixed';
-    popup.style.left = x + 'px';
-    popup.style.top = y + 'px';
+    popup.style.left = '50%';
+    popup.style.top = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
     popup.style.zIndex = '10000';
     popup.style.padding = '10px';
     popup.style.background = 'white';
@@ -846,7 +827,6 @@ function createSearchPopup(x, y) {
 
     input.focus();
 }
-
 // 执行搜索
 function performSearch(searchText) {
     const defaultEngine = 'https://www.google.com/search?q=';
@@ -856,10 +836,11 @@ function performSearch(searchText) {
         query: searchUrl
     });
 }
-// 添加事件监听器
-document.addEventListener('mousedown', onLongPress);
-document.addEventListener('mouseup', onLongPressEnd);
-document.addEventListener('mouseleave', onLongPressEnd);
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.action === "showPopup") {
+        createSearchPopup();
+    }
+});
 
 // 确保在页面加载时移除之前的悬浮窗
 document.addEventListener('DOMContentLoaded', () => {
