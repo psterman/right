@@ -1,214 +1,15 @@
-let currentPopup = null;
-let isPinned = false;
-
-function createSearchPopup() {
-    if (currentPopup) {
-        currentPopup.style.display = 'block';
-        centerPopup(currentPopup);
-        return;
-    }
-
-    const popup = document.createElement('div');
-    popup.id = "searchPopup";
-    popup.style.cssText = `
-        position: fixed;
-        z-index: 10000;
-        width: 300px;
-        background: white;
-        border-radius: 5px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    `;
-
-    const toolbar = createToolbar();
-    const searchArea = createSearchArea();
-
-    popup.appendChild(toolbar);
-    popup.appendChild(searchArea);
-
-    document.body.appendChild(popup);
-    currentPopup = popup;
-    centerPopup(popup);
-
-    // 确保只有一个事件监听器
-    document.removeEventListener('mousedown', handleOutsideClick);
-    document.addEventListener('mousedown', handleOutsideClick);
-
-    makeDraggable(popup, toolbar);
-}
-
-function createToolbar() {
-    const toolbar = document.createElement('div');
-    toolbar.style.cssText = `
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0 10px;
-        height: 30px;
-        width: 100%;
-        cursor: move;
-    `;
-
-    const pinButton = createButton('📌', togglePin);
-    const closeButton = createButton('×', closeSearchPopup);
-
-    toolbar.appendChild(pinButton);
-    toolbar.appendChild(closeButton);
-
-    return toolbar;
-}
-
-function createButton(text, onClick) {
-    const button = document.createElement('button');
-    button.textContent = text;
-    button.style.cssText = `
-        cursor: pointer;
-        font-size: 16px;
-        color: #666;
-        border: none;
-        background-color: transparent;
-        height: 30px;
-        width: 30px;
-        line-height: 30px;
-        border-radius: 2px;
-    `;
-    button.onclick = onClick;
-    return button;
-}
-
-function createSearchArea() {
-    const searchArea = document.createElement('div');
-    searchArea.style.cssText = `
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 10px;
-        width: 100%;
-    `;
-
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = '输入搜索词...';
-    input.style.cssText = `
-        flex: 1;
-        height: 30px;
-        font-size: 14px;
-        border: 1px solid #ccc;
-        border-radius: 4px 0 0 4px;
-        padding: 0 10px;
-        box-sizing: border-box;
-        color: black;
-        background-color: white;
-        outline: none;
-    `;
-
-    const searchButton = document.createElement('button');
-    searchButton.textContent = '搜索';
-    searchButton.style.cssText = `
-        height: 30px;
-        width: 80px;
-        font-size: 14px;
-        background-color: #007bff;
-        color: white;
-        border: 1px solid #007bff;
-        border-radius: 0 4px 4px 0;
-        box-sizing: border-box;
-    `;
-    searchButton.onclick = () => {
-        const searchText = input.value.trim();
-        if (searchText) {
-            performSearch(searchText);
-        }
-    };
-
-    input.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            searchButton.click();
-        }
-    });
-
-    searchArea.appendChild(input);
-    searchArea.appendChild(searchButton);
-
-    return searchArea;
-}
-
-function centerPopup(popup) {
-    const rect = popup.getBoundingClientRect();
-    popup.style.left = `${(window.innerWidth - rect.width) / 2}px`;
-    popup.style.top = `${(window.innerHeight - rect.height) / 2}px`;
-}
-
-function togglePin() {
-    isPinned = !isPinned;
-    const pinButton = currentPopup.querySelector('button');
-    pinButton.textContent = isPinned ? '📍' : '📌';
-    pinButton.style.color = isPinned ? '#007bff' : '#666';
-}
-
-function handleOutsideClick(e) {
-    if (currentPopup && !isPinned && !currentPopup.contains(e.target)) {
-        closeSearchPopup();
-    }
-}
-
-function closeSearchPopup() {
-    if (currentPopup) {
-        currentPopup.style.display = 'none';
-        isPinned = false;
-        const pinButton = currentPopup.querySelector('button');
-        pinButton.textContent = '📌';
-        pinButton.style.color = '#666';
-    }
-}
-
-function performSearch(searchText) {
-    console.log('Searching for:', searchText);
-    // 这里添加您的搜索逻辑
-}
-
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    if (request.action === "showPopup") {
-        createSearchPopup();
-    }
-});
-
-function makeDraggable(element, handle) {
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-    
-    handle.onmousedown = dragMouseDown;
-
-    function dragMouseDown(e) {
-        e.stopPropagation();
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        document.onmouseup = closeDragElement;
-        document.onmousemove = elementDrag;
-    }
-
-    function elementDrag(e) {
-        e.preventDefault();
-        pos1 = pos3 - e.clientX;
-        pos2 = pos4 - e.clientY;
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        element.style.top = `${element.offsetTop - pos2}px`;
-        element.style.left = `${element.offsetLeft - pos1}px`;
-    }
-
-    function closeDragElement() {
-        document.onmouseup = null;
-        document.onmousemove = null;
-    }
-}
+let searchPopup = {
+    currentPopup: null,
+    isPinned: false,
+    selectedEngines: []
+};
 //输入框
 function createSearchPopup() {
-    if (currentPopup) {
-        currentPopup.style.display = 'block';
-        centerPopup(currentPopup);
+    if (!searchPopup.isPinned) {
+        document.addEventListener('mousedown', handleOutsideClick);
+    }
+    if (searchPopup.currentPopup) {
+        searchPopup.currentPopup.style.display = 'block';
         return;
     }
     const popup = document.createElement('div');
@@ -263,7 +64,7 @@ function createSearchPopup() {
     closeButton.textContent = '×';
     closeButton.style.cssText = pinButton.style.cssText;
     closeButton.onclick = closeSearchPopup;
-    
+
     // 鼠标悬停效果
     closeButton.addEventListener('mouseover', function () {
         closeButton.style.color = 'red';
@@ -276,22 +77,31 @@ function createSearchPopup() {
     popup.appendChild(toolbar);
 
     function togglePin() {
-        isPinned = !isPinned;
-        const pinButton = currentPopup.querySelector('button');
-        if (isPinned) {
-            pinButton.innerHTML = '📍';
-            pinButton.style.color = '#007bff';
-        } else {
-            pinButton.innerHTML = '📌';
-            pinButton.style.color = '#666';
-        }
-    }
-    function handleOutsideClick(e) {
-        if (currentPopup && !currentPopup.contains(e.target) && !isPinned) {
-            closeSearchPopup();
-        }
-    }
+        searchPopup.isPinned = !searchPopup.isPinned;
+        const pinButton = searchPopup.currentPopup.querySelector('button');
+        pinButton.innerHTML = searchPopup.isPinned ? '📍' : '📌';
+        pinButton.style.color = searchPopup.isPinned ? '#007bff' : '#666';
 
+        chrome.storage.local.set({ 'isPinned': searchPopup.isPinned });
+
+        if (searchPopup.isPinned) {
+            chrome.storage.local.set({
+                'popupPosition': {
+                    top: searchPopup.currentPopup.style.top,
+                    left: searchPopup.currentPopup.style.left
+                }
+            });
+        } else {
+            chrome.storage.local.remove('popupPosition');
+        }
+
+        // 更新事件监听器
+        if (searchPopup.isPinned) {
+            document.removeEventListener('mousedown', handleOutsideClick);
+        } else {
+            document.addEventListener('mousedown', handleOutsideClick);
+        }
+    }
     chrome.storage.local.get('popupPosition', function (result) {
         if (result.popupPosition) {
             popup.style.top = result.popupPosition.top;
@@ -360,14 +170,33 @@ function createSearchPopup() {
             }
         }
     };
-    
+
     searchArea.appendChild(input);
     searchArea.appendChild(searchButton);
     popup.appendChild(searchArea);
 
     document.body.appendChild(popup);
+    searchPopup.currentPopup = popup;
     currentPopup = popup;
     centerPopup(popup);
+
+    // 5. 从存储中恢复固定状态和位置
+    chrome.storage.local.get(['isPinned', 'popupPosition'], function (result) {
+        if (result.isPinned) {
+            searchPopup.isPinned = true;
+            pinButton.innerHTML = '📍';
+            pinButton.style.color = '#007bff';
+            if (result.popupPosition) {
+                popup.style.top = result.popupPosition.top;
+                popup.style.left = result.popupPosition.left;
+            } else {
+                centerPopup(popup);
+            }
+        } else {
+            centerPopup(popup);
+        }
+    });
+    makeDraggable(popup, toolbar);
     input.focus();
     input.addEventListener('keypress', onKeyPress);
     document.addEventListener('keydown', onKeyDown);
@@ -380,8 +209,13 @@ function createSearchPopup() {
         input.style.borderColor = '#ccc';
     });
     // 修改全局点击事件监听器
-    document.removeEventListener('mousedown', handleOutsideClick);
+   
     document.addEventListener('mousedown', handleOutsideClick);
+    function handleOutsideClick(e) {
+        if (searchPopup.currentPopup && !searchPopup.isPinned && !searchPopup.currentPopup.contains(e.target)) {
+            closeSearchPopup();
+        }
+    }
     makeDraggable(popup, toolbar, function () {
         if (isPinned) {
             chrome.storage.local.set({ popupPosition: { top: popup.style.top, left: popup.style.left } });
@@ -393,14 +227,25 @@ function centerPopup(popup) {
     popup.style.left = `${(window.innerWidth - rect.width) / 2}px`;
     popup.style.top = `${(window.innerHeight - rect.height) / 2}px`;
 }
+// 添加一个函数来处理页面加载时的弹窗恢复
+function restorePopupOnLoad() {
+    chrome.storage.local.get(['isPinned', 'popupPosition'], function (result) {
+        if (result.isPinned) {
+            createSearchPopup();
+            if (result.popupPosition) {
+                searchPopup.currentPopup.style.top = result.popupPosition.top;
+                searchPopup.currentPopup.style.left = result.popupPosition.left;
+            }
+        }
+    });
+}
 
+// 8. 修改拖拽功能，确保只应用于悬浮窗
 function makeDraggable(element, handle) {
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-
     handle.onmousedown = dragMouseDown;
 
     function dragMouseDown(e) {
-        e = e || window.event;
         e.preventDefault();
         pos3 = e.clientX;
         pos4 = e.clientY;
@@ -409,7 +254,6 @@ function makeDraggable(element, handle) {
     }
 
     function elementDrag(e) {
-        e = e || window.event;
         e.preventDefault();
         pos1 = pos3 - e.clientX;
         pos2 = pos4 - e.clientY;
@@ -422,7 +266,14 @@ function makeDraggable(element, handle) {
     function closeDragElement() {
         document.onmouseup = null;
         document.onmousemove = null;
-       
+        if (searchPopup.isPinned) {
+            chrome.storage.local.set({
+                'popupPosition': {
+                    top: element.style.top,
+                    left: element.style.left
+                }
+            });
+        }
     }
 }
 // 执行搜索
@@ -449,12 +300,22 @@ function onKeyPress(event) {
     }
 }
 function closeSearchPopup() {
-    if (currentPopup) {
-        currentPopup.style.display = 'none';
-        isPinned = false;
-        const pinButton = currentPopup.querySelector('button');
-        pinButton.innerHTML = '📌';
-        pinButton.style.color = '#666';
+    if (searchPopup.currentPopup) {
+        if (searchPopup.isPinned) {
+            searchPopup.currentPopup.style.display = 'none';
+        } else {
+            document.body.removeChild(searchPopup.currentPopup);
+            searchPopup.currentPopup = null;
+        }
+        searchPopup.isPinned = false;
+        chrome.storage.local.remove(['isPinned', 'popupPosition']);
+    }
+}
+document.addEventListener('keydown', handleKeyDown);
+
+function handleKeyDown(e) {
+    if (e.key === 'Escape' && searchPopup.currentPopup) {
+        closeSearchPopup();
     }
 }
 function onKeyDown(event) {
@@ -470,3 +331,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPopup = null;
     }
 });
+document.addEventListener('DOMContentLoaded', restorePopupOnLoad);
+
+
