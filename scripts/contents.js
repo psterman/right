@@ -1,4 +1,4 @@
-let isPinned = false;
+
 let currentPopup = null;
 // 从存储中检索选中的搜索引擎
 // 假设这是在 contents.js 中的现有代码
@@ -36,8 +36,9 @@ function sendMessageToBackground(selectedText) {
 
 // 监听鼠标按下事件，点击页面任意位置关闭弹出菜单
 document.addEventListener('mousedown', function (e) {
-    if (currentPopup && !currentPopup.contains(e.target) && !isPinned) {
-        currentPopup.style.display = 'none';
+    if (currentPopup && !currentPopup.contains(e.target)) {
+        document.body.removeChild(currentPopup);
+        currentPopup = null;
     }
 });
 
@@ -87,20 +88,16 @@ function handleTextSelection(e) {
     }
 }
 function showSearchLinks(selectedText, x, y, currentEngine) {
-
-    // 修改这部分
-    if (!currentPopup) {
-        currentPopup = document.createElement('div');
-        currentPopup.style.position = 'relative';
-        currentPopup.style.padding = '25px 25px 25px 25px'; // 为关闭按钮留出空间
-        currentPopup.style.zIndex = '9999';
-        currentPopup.style.borderRadius = '20px';
-        currentPopup.style.backgroundColor = 'black';
-        currentPopup.className = 'search-popup flex-container';
-        document.body.appendChild(currentPopup);
+    if (currentPopup) {
+        document.body.removeChild(currentPopup);
+        currentPopup = null; // 更新 currentPopup
     }
-    updatePopupPosition(currentPopup, x, y);
-    currentPopup.innerHTML = '';
+    var popup = document.createElement('div');
+    popup.style.position = 'fixed';
+    popup.style.zIndex = '9999';
+    popup.style.borderRadius = '20px';
+    popup.style.backgroundColor = 'black';
+    popup.className = 'search-popup flex-container';
 
     var style = document.createElement('style');
     style.innerHTML = '.search-popup a { text-decoration: none; }';
@@ -130,6 +127,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     var searchLinksContainer = document.createElement('div');
     searchLinksContainer.style.display = 'flex';
     searchLinksContainer.style.flexWrap = 'wrap'; // 添加这行以允许链接换行
+
     chrome.storage.sync.get(['websiteList', 'selectedEngines'], function (data) {
         var websiteList = data.websiteList || [];
         var selectedEngines = data.selectedEngines || [];
@@ -451,26 +449,6 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                 ];
         }
     }
-    const pinButton = createActionLink('📌', togglePin);
-    searchLinksContainer.appendChild(pinButton);
-
-    currentPopup.appendChild(searchLinksContainer);
-    currentPopup.style.display = 'block';
-}
-function updatePopupPosition(popup, x, y) {
-    var screenWidth = window.innerWidth;
-    var menuWidth = 300;
-    var menuOffset = 10;
-
-    if (x + menuWidth + menuOffset > screenWidth) {
-        popup.style.right = (screenWidth - x + menuOffset) + 'px';
-        popup.style.left = 'auto';
-    } else {
-        popup.style.left = (x + menuOffset) + 'px';
-        popup.style.right = 'auto';
-    }
-
-    popup.style.top = y + 'px';
 }
 // 为所有输入框和文本区域添加事件监听
 document.addEventListener('DOMContentLoaded', () => {
@@ -810,19 +788,18 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         }
     })
 })()
-
 //输入框
 function createSearchPopup() {
     if (currentPopup) {
-        currentPopup.style.display = 'block';
-        centerPopup(currentPopup);
-        return;
-        updatePopupVisibility();
+        document.body.removeChild(currentPopup);
     }
     const popup = document.createElement('div');
     popup.style.position = 'fixed';
+    popup.style.left = '50%';
+    popup.style.top = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
     popup.style.zIndex = '10000';
-    popup.style.width = '300px';
+    popup.style.width = '300px'; // 定义悬浮窗的宽度
     popup.style.background = 'white';
     popup.style.borderRadius = '5px';
     popup.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
@@ -836,44 +813,26 @@ function createSearchPopup() {
     toolbar.style.display = 'flex';
     toolbar.style.justifyContent = 'space-between';
     toolbar.style.alignItems = 'center';
-    toolbar.style.padding = '0';
-    toolbar.style.height = '30px';
-    toolbar.style.width = '100%';
-    toolbar.style.cursor = 'move';
+    toolbar.style.padding = '5px';
+    toolbar.style.height = '30px'; // 工具栏高度
+    toolbar.style.width = '100%'; // 确保工具栏宽度为100%
+    toolbar.style.backgroundColor = 'transparent'; 
+    toolbar.style.borderTopLeftRadius = '5px';
+    toolbar.style.borderTopRightRadius = '5px';
 
-    // 创建置顶按钮
-    const pinButton = document.createElement('button');
-    pinButton.innerHTML = isPinned ? '📍' : '📌';
-    pinButton.style.cssText = `
-        cursor: pointer;
-        font-size: 16px;
-        color: ${isPinned ? '#007bff' : '#666'};
-        border: none;
-        background-color: transparent;
-        height: 30px;
-        width: 30px;
-        line-height: 30px;
-        border-radius: 2px;
-    `;
-    updatePinButtonState(pinButton); // 新函数
-    pinButton.onclick = togglePin;
     // 创建关闭按钮
     const closeButton = document.createElement('button');
-    closeButton.style.position = 'absolute';
     closeButton.style.cursor = 'pointer';
-    closeButton.style.top = '15px';
-    closeButton.style.right = '150px';
     closeButton.style.fontSize = '16px';
     closeButton.style.color = '#666';
     closeButton.style.border = 'none';
     closeButton.style.backgroundColor = 'transparent';
-    closeButton.style.height = '20px';
-    closeButton.style.width = '20px';
-    closeButton.style.lineHeight = '20px';
+    closeButton.style.height = '30px';
+    closeButton.style.width = '30px';
+    closeButton.style.lineHeight = '30px';
     closeButton.style.marginRight = '0'; // 新增这行代码
     closeButton.style.borderRadius = '2px';
-    closeButton.textContent = 'x';
-    closeButton.style.cssText = pinButton.style.cssText;
+    closeButton.textContent = '×';
     closeButton.onclick = closeSearchPopup;
 
     // 鼠标悬停效果
@@ -883,60 +842,46 @@ function createSearchPopup() {
     closeButton.addEventListener('mouseout', function () {
         closeButton.style.color = '#666';
     });
-    toolbar.appendChild(pinButton);
+    popup.style.cursor = 'move'; // 添加移动光标样式
+
+    // 创建工具栏
+    
+
+    // 添加拖拽功能
+    let isDragging = false;
+    let startX, startY;
+
+    toolbar.onmousedown = function (e) {
+        isDragging = true;
+        // 修改 3: 计算鼠标相对于弹窗的位置
+        startX = e.clientX - popup.offsetLeft;
+        startY = e.clientY - popup.offsetTop;
+
+        e.preventDefault();
+    };
+
+    document.onmousemove = function (e) {
+        if (!isDragging) return;
+
+        // 修改 4: 直接计算新位置
+        let newLeft = e.clientX - startX;
+        let newTop = e.clientY - startY;
+
+        // 确保弹窗不会被拖出屏幕
+        newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - popup.offsetWidth));
+        newTop = Math.max(0, Math.min(newTop, window.innerHeight - popup.offsetHeight));
+
+        popup.style.left = newLeft + 'px';
+        popup.style.top = newTop + 'px';
+        popup.style.transform = 'none'; // 移除 transform
+    };
+
+
+    document.onmouseup = function () {
+        isDragging = false;
+    };
     toolbar.appendChild(closeButton);
     popup.appendChild(toolbar);
-
-    function togglePin() {
-        isPinned = !isPinned;
-        const pinButton = currentPopup.querySelector('button');
-        if (isPinned) {
-            pinButton.innerHTML = '📍';
-            pinButton.style.color = '#007bff';
-            currentPopup.style.display = 'block'; // 确保悬浮窗可见
-            chrome.storage.local.set({
-                popupPosition: { top: currentPopup.style.top, left: currentPopup.style.left },
-                isPinned: true
-            });
-        } else {
-            pinButton.innerHTML = '📌';
-            pinButton.style.color = '#666';
-            chrome.storage.local.remove(['popupPosition', 'isPinned']);
-        }
-    }
-
-    function handleOutsideClick(e) {
-        if (currentPopup && !currentPopup.contains(e.target) && !isPinned) {
-            closeSearchPopup();
-        }
-    }
-    chrome.storage.local.get('popupPosition', function (result) {
-        if (result.popupPosition) {
-            popup.style.top = result.popupPosition.top;
-            popup.style.left = result.popupPosition.left;
-            popup.style.transform = 'none';
-            isPinned = true;
-            pinButton.innerHTML = '📍';
-            pinButton.style.color = '#007bff';
-        }
-    });
-
-    // 添加全局点击事件监听器
-    // 修改: 更新全局点击事件监听器
-    document.addEventListener('mousedown', function (e) {
-        if (!popup.contains(e.target)) {
-            if (!isPinned) {
-                closeSearchPopup();
-            }
-        }
-    });
-
-    // 修改: 更新 makeDraggable 函数调用
-    makeDraggable(popup, toolbar, function () {
-        if (isPinned) {
-            chrome.storage.local.set({ popupPosition: { top: popup.style.top, left: popup.style.left } });
-        }
-    });
 
     // 创建搜索区域
     const searchArea = document.createElement('div');
@@ -955,9 +900,6 @@ function createSearchPopup() {
     input.style.borderRadius = '4px 0 0 4px';
     input.style.padding = '0 10px';
     input.style.boxSizing = 'border-box'; // 包括边框在内的宽度和高度
-    input.style.color = 'black'; // 设置文字颜色为黑色
-    input.style.backgroundColor = 'white'; // 设置背景色为白色
-    input.style.outline = 'none'; // 移除焦点时的轮廓
 
     const searchButton = document.createElement('button');
     searchButton.textContent = '搜索';
@@ -973,9 +915,7 @@ function createSearchPopup() {
         const searchText = input.value.trim();
         if (searchText) {
             performSearch(searchText);
-            if (!isPinned) {
-                closeSearchPopup();
-            }
+            closeSearchPopup();
         }
     };
 
@@ -985,8 +925,13 @@ function createSearchPopup() {
 
     document.body.appendChild(popup);
     currentPopup = popup;
-    centerPopup(popup);
-    currentPopup.style.display = 'block';
+    // 修改 5: 添加 setTimeout 来重新计算初始位置
+    setTimeout(() => {
+        const rect = popup.getBoundingClientRect();
+        popup.style.left = rect.left + 'px';
+        popup.style.top = rect.top + 'px';
+        popup.style.transform = 'none';
+    }, 0);
     input.focus();
     input.addEventListener('keypress', onKeyPress);
     document.addEventListener('keydown', onKeyDown);
@@ -998,100 +943,6 @@ function createSearchPopup() {
     input.addEventListener('blur', () => {
         input.style.borderColor = '#ccc';
     });
-    // 修改全局点击事件监听器
-    document.removeEventListener('mousedown', handleOutsideClick);
-    document.addEventListener('mousedown', handleOutsideClick);
-    makeDraggable(popup, toolbar, function () {
-        if (isPinned) {
-            chrome.storage.local.set({ popupPosition: { top: popup.style.top, left: popup.style.left } });
-        }
-    });
-    // 新增: 阻止点击悬浮窗内部导致关闭
-    popup.addEventListener('mousedown', function (e) {
-        e.stopPropagation();
-    });
-}
-// 新增: 更新置顶按钮状态的函数
-function updatePinButtonState(button) {
-    button.innerHTML = isPinned ? '📍' : '📌';
-    button.style.cssText = `
-        cursor: pointer;
-        font-size: 16px;
-        color: ${isPinned ? '#007bff' : '#666'};
-        border: none;
-        background-color: transparent;
-        height: 30px;
-        width: 30px;
-        line-height: 30px;
-        border-radius: 2px;
-    `;
-}
-// 修改: 更新 togglePin 函数
-function togglePin(button) {
-    isPinned = !isPinned;
-    updatePinButtonState(button);
-    savePopupState();
-
-    // 更新事件监听器
-    document.removeEventListener('mousedown', handleOutsideClick);
-    document.addEventListener('mousedown', handleOutsideClick);
-}
-// 新增: 保存悬浮窗位置的函数
-function savePopupPosition() {
-    if (currentPopup && isPinned) {
-        chrome.storage.local.set({
-            popupPosition: { top: currentPopup.style.top, left: currentPopup.style.left }
-        });
-    }
-}
-function updatePopupVisibility() {
-    if (currentPopup) {
-        currentPopup.style.display = 'block';
-    }
-}
-// 新增: 保存悬浮窗状态的函数
-function savePopupState() {
-    chrome.storage.local.set({
-        isPinned: isPinned,
-        popupPosition: currentPopup ? { top: currentPopup.style.top, left: currentPopup.style.left } : null
-    });
-}
-
-function centerPopup(popup) {
-    const rect = popup.getBoundingClientRect();
-    popup.style.left = `${(window.innerWidth - rect.width) / 2}px`;
-    popup.style.top = `${(window.innerHeight - rect.height) / 2}px`;
-}
-function makeDraggable(element, handle, callback) {
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-
-    handle.onmousedown = dragMouseDown;
-
-    function dragMouseDown(e) {
-        e = e || window.event;
-        e.preventDefault();
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        document.onmouseup = closeDragElement;
-        document.onmousemove = elementDrag;
-    }
-
-    function elementDrag(e) {
-        e = e || window.event;
-        e.preventDefault();
-        pos1 = pos3 - e.clientX;
-        pos2 = pos4 - e.clientY;
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        element.style.top = (element.offsetTop - pos2) + "px";
-        element.style.left = (element.offsetLeft - pos1) + "px";
-    }
-
-    function closeDragElement() {
-        document.onmouseup = null;
-        document.onmousemove = null;
-        if (callback) callback();
-    }
 }
 // 执行搜索
 function performSearch(searchText) {
@@ -1109,25 +960,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 });
 function onKeyPress(event) {
     if (event.key === 'Enter') {
-        event.preventDefault();
+        event.preventDefault(); // 阻止默认行为，如表单提交
         const searchText = event.target.value.trim();
         if (searchText) {
             performSearch(searchText);
-            // 修改: 只在未钉住时关闭悬浮窗
-            if (!isPinned) {
-                closeSearchPopup();
-            }
+            closeSearchPopup();
         }
     }
 }
-// 修改: 更新 closeSearchPopup 函数
 function closeSearchPopup() {
     if (currentPopup) {
         document.body.removeChild(currentPopup);
         currentPopup = null;
-        document.removeEventListener('mousedown', handleOutsideClick);
-        isPinned = false; // 重置置顶状态
-        savePopupState();
+        document.removeEventListener('keydown', onKeyDown);
     }
 }
 function onKeyDown(event) {
@@ -1142,19 +987,4 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(currentPopup);
         currentPopup = null;
     }
-});
-// 在页面加载时检查是否有保存的位置和置顶状态
-document.addEventListener('DOMContentLoaded', () => {
-    chrome.storage.local.get(['popupPosition', 'isPinned'], function (result) {
-        isPinned = result.isPinned || false;
-        if (result.popupPosition || isPinned) {
-            createSearchPopup();
-            if (result.popupPosition) {
-                currentPopup.style.top = result.popupPosition.top;
-                currentPopup.style.left = result.popupPosition.left;
-            }
-            const pinButton = currentPopup.querySelector('button');
-            updatePinButtonState(pinButton);
-        }
-    });
 });
