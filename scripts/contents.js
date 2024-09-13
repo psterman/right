@@ -830,7 +830,11 @@ function createSearchPopup() {
     closeButton.style.height = '30px';
     closeButton.style.width = '30px';
     closeButton.style.lineHeight = '30px';
-    closeButton.style.marginRight = '0'; // 新增这行代码
+    closeButton.style.padding = '0'; // 移除内边距
+    closeButton.style.marginLeft = 'auto'; // 将按钮推到最右边
+    closeButton.style.display = 'flex'; // 使用 flex 布局
+    closeButton.style.justifyContent = 'center'; // 水平居中
+    closeButton.style.alignItems = 'center'; // 垂直居中
     closeButton.style.borderRadius = '2px';
     closeButton.textContent = '×';
     closeButton.onclick = closeSearchPopup;
@@ -844,8 +848,49 @@ function createSearchPopup() {
     });
     popup.style.cursor = 'move'; // 添加移动光标样式
 
-    // 创建工具栏
-    
+
+    // 创建搜索引擎列表
+    const engineList = document.createElement('div');
+    engineList.style.marginTop = '10px';
+    engineList.style.padding = '5px';
+    engineList.style.borderTop = '1px solid #ccc';
+
+    // 创建搜索引擎项目的函数
+    function createEngineItem(name, url) {
+        const item = document.createElement('div');
+        item.style.padding = '5px';
+        item.style.cursor = 'pointer';
+        item.textContent = name;
+        item.style.color = '#007bff';
+
+        item.addEventListener('mouseover', () => {
+            item.style.backgroundColor = '#f0f0f0';
+        });
+
+        item.addEventListener('mouseout', () => {
+            item.style.backgroundColor = 'transparent';
+        });
+
+        item.addEventListener('click', () => {
+            const searchText = input.value.trim();
+            if (searchText) {
+                performSearch(searchText, url);
+            }
+        });
+
+        return item;
+    }
+
+    // 添加百度搜索引擎
+    const baiduItem = createEngineItem('百度搜索', 'https://www.baidu.com/s?wd=');
+    engineList.appendChild(baiduItem);
+
+    // 添加 Bing 搜索引擎
+    const bingItem = createEngineItem('Bing 搜索', 'https://www.bing.com/search?q=');
+    engineList.appendChild(bingItem);
+
+    popup.appendChild(engineList);
+
 
     // 添加拖拽功能
     let isDragging = false;
@@ -896,11 +941,15 @@ function createSearchPopup() {
     input.style.flex = '1';
     input.style.height = '30px'; // 与工具栏等高
     input.style.fontSize = '14px';
-    input.style.border = '1px solid #ccc';
+    input.style.border = '1px solid #007bff';
+    input.style.borderRight = 'none'; // 新增: 移除右边框
     input.style.borderRadius = '4px 0 0 4px';
     input.style.padding = '0 10px';
     input.style.boxSizing = 'border-box'; // 包括边框在内的宽度和高度
-
+    input.style.verticalAlign = 'top'; // 新增
+    input.style.position = 'relative'; // 新增
+    
+    
     const searchButton = document.createElement('button');
     searchButton.textContent = '搜索';
     searchButton.style.height = '30px'; // 与工具栏等高
@@ -909,13 +958,27 @@ function createSearchPopup() {
     searchButton.style.backgroundColor = '#007bff';
     searchButton.style.color = 'white';
     searchButton.style.border = '1px solid #007bff';
+    searchButton.style.borderLeft = 'none'; // 新增: 移除左边框
     searchButton.style.borderRadius = '0 4px 4px 0';
     searchButton.style.boxSizing = 'border-box'; // 包括边框在内的宽度和高度
+    searchButton.style.cursor = 'pointer';
+    searchButton.style.verticalAlign = 'top'; // 新增
+    searchButton.style.padding = '0 15px';
+    searchButton.style.position = 'relative'; // 新增
+    searchButton.style.left = '-1px'; // 新增
+
+    // 新增: 添加焦点样式
+    input.addEventListener('focus', () => {
+        input.style.borderColor = '#007bff';
+    });
+
+    input.addEventListener('blur', () => {
+        input.style.borderColor = '#007bff';
+    });
     searchButton.onclick = () => {
         const searchText = input.value.trim();
         if (searchText) {
-            performSearch(searchText);
-            closeSearchPopup();
+            performSearch(searchText, 'https://www.google.com/search?q=');
         }
     };
 
@@ -936,22 +999,16 @@ function createSearchPopup() {
     input.addEventListener('keypress', onKeyPress);
     document.addEventListener('keydown', onKeyDown);
 
-    // 激活输入框时改变颜色
-    input.addEventListener('focus', () => {
-        input.style.borderColor = searchButton.style.backgroundColor;
-    });
-    input.addEventListener('blur', () => {
-        input.style.borderColor = '#ccc';
-    });
+   
 }
 // 执行搜索
-function performSearch(searchText) {
-    const defaultEngine = 'https://www.google.com/search?q=';
-    const searchUrl = defaultEngine + encodeURIComponent(searchText);
+function performSearch(searchText, engineUrl) {
+    const searchUrl = engineUrl + encodeURIComponent(searchText);
     chrome.runtime.sendMessage({
         action: "setpage",
         query: searchUrl
     });
+    closeSearchPopup();
 }
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === "showPopup") {
