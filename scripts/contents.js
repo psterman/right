@@ -851,7 +851,10 @@ function createSearchPopup() {
 
     // 创建搜索引擎列表
     const engineList = document.createElement('div');
-    engineList.style.marginTop = '10px';
+    engineList.style.display = 'flex'; // 新增: 使用flex布局
+    engineList.style.justifyContent = 'center'; // 新增: 居中对齐
+    engineList.style.width = '100%'; // 新增: 设置宽度
+    engineList.style.marginTop = '10px'; // 新增: 添加顶部间距
     engineList.style.padding = '5px';
     engineList.style.borderTop = '1px solid #ccc';
 
@@ -862,6 +865,7 @@ function createSearchPopup() {
         item.style.cursor = 'pointer';
         item.textContent = name;
         item.style.color = '#007bff';
+        item.style.marginRight = '10px'; // 新增: 添加右侧间距
 
         item.addEventListener('mouseover', () => {
             item.style.backgroundColor = '#f0f0f0';
@@ -931,9 +935,16 @@ function createSearchPopup() {
     // 创建搜索区域
     const searchArea = document.createElement('div');
     searchArea.style.display = 'flex';
+    searchArea.style.flexDirection = 'column'; // 修改: 改为纵向排列
     searchArea.style.justifyContent = 'center';
     searchArea.style.alignItems = 'center';
     searchArea.style.padding = '10px';
+
+    // 新增: 创建输入框容器
+    const inputContainer = document.createElement('div');
+    inputContainer.style.display = 'flex';
+    inputContainer.style.width = '100%';
+    inputContainer.style.marginBottom = '10px'; // 新增: 添加底部间距
 
     const input = document.createElement('input');
     input.type = 'text';
@@ -982,9 +993,12 @@ function createSearchPopup() {
         }
     };
 
-    searchArea.appendChild(input);
-    searchArea.appendChild(searchButton);
+    searchArea.appendChild(inputContainer);
+    searchArea.appendChild(engineList);
     popup.appendChild(searchArea);
+    // 修改: 将输入框和搜索按钮添加到新的容器中
+    inputContainer.appendChild(input);
+    inputContainer.appendChild(searchButton);
 
     document.body.appendChild(popup);
     currentPopup = popup;
@@ -1045,3 +1059,56 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPopup = null;
     }
 });
+// 新增: 全局变量
+let mouseDownTimer;
+let isMouseDown = false;
+let startX, startY;
+const LONG_PRESS_DURATION = 500; // 长按时间阈值，单位为毫秒
+const MOVE_THRESHOLD = 5; // 允许的最小移动像素，用于区分静止和移动
+
+// 新增: 事件监听器
+document.addEventListener('mousedown', handleMouseDown);
+document.addEventListener('mouseup', handleMouseUp);
+document.addEventListener('mousemove', handleMouseMove);
+
+// 修改: 保留原有的键盘事件监听器
+document.addEventListener('keydown', handleKeyDown);
+
+// 新增: handleMouseDown 函数
+function handleMouseDown(e) {
+    // 只响应鼠标左键
+    if (e.button !== 0) return;
+
+    isMouseDown = true;
+    startX = e.clientX;
+    startY = e.clientY;
+
+    mouseDownTimer = setTimeout(() => {
+        if (isMouseDown && !hasMovedBeyondThreshold(e)) {
+            // 调用原有的 createSearchPopup 函数
+            createSearchPopup();
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, LONG_PRESS_DURATION);
+}
+
+// 新增: handleMouseUp 函数
+function handleMouseUp() {
+    isMouseDown = false;
+    clearTimeout(mouseDownTimer);
+}
+
+// 新增: handleMouseMove 函数
+function handleMouseMove(e) {
+    if (isMouseDown && hasMovedBeyondThreshold(e)) {
+        clearTimeout(mouseDownTimer);
+    }
+}
+
+// 新增: hasMovedBeyondThreshold 函数
+function hasMovedBeyondThreshold(e) {
+    const deltaX = Math.abs(e.clientX - startX);
+    const deltaY = Math.abs(e.clientY - startY);
+    return deltaX > MOVE_THRESHOLD || deltaY > MOVE_THRESHOLD;
+}
