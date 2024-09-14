@@ -789,7 +789,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     })
 })()
 //输入框
-function createSearchPopup() {
+function createSearchPopup(initialText = '') { 
     if (currentPopup) {
         document.body.removeChild(currentPopup);
     }
@@ -799,7 +799,9 @@ function createSearchPopup() {
     popup.style.top = '50%';
     popup.style.transform = 'translate(-50%, -50%)';
     popup.style.zIndex = '10000';
-    popup.style.width = '300px'; // 定义悬浮窗的宽度
+    popup.style.width = 'auto'; // 改为自适应宽度
+    popup.style.maxWidth = '400px'; // 设置最大宽度
+    popup.style.minWidth = '300px'; // 设置最小宽度
     popup.style.background = 'white';
     popup.style.borderRadius = '5px';
     popup.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
@@ -945,30 +947,65 @@ function createSearchPopup() {
     inputContainer.style.display = 'flex';
     inputContainer.style.width = '100%';
     inputContainer.style.marginBottom = '10px'; // 新增: 添加底部间距
+    inputContainer.style.position = 'relative'; // 新增: 为了定位清空按钮
 
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = '输入搜索词...';
+    input.value = initialText; // 新增: 设置初始文本
     input.style.flex = '1';
+    input.style.width = 'calc(100% - 100px)'; // 修改: 设置宽度为容器宽度减去100px
+    input.style.minWidth = '150px'; // 新增: 设置最小宽度
     input.style.height = '30px'; // 与工具栏等高
     input.style.fontSize = '14px';
     input.style.border = '1px solid #007bff';
     input.style.borderRight = 'none'; // 新增: 移除右边框
     input.style.borderRadius = '4px 0 0 4px';
-    input.style.padding = '0 10px';
+    input.style.padding = '0 30px 0 10px';
     input.style.boxSizing = 'border-box'; // 包括边框在内的宽度和高度
     input.style.verticalAlign = 'top'; // 新增
     input.style.position = 'relative'; // 新增
-    
+    // 新增: 创建清空按钮
+    const clearButton = document.createElement('button');
+    clearButton.innerHTML = '&#x2715;'; // 使用 ✕ 符号作为图标
+    clearButton.style.position = 'absolute';
+    clearButton.style.right = '105px'; // 修改: 调整位置，避免与搜索按钮重叠
+    clearButton.style.top = '50%';
+    clearButton.style.transform = 'translateY(-50%)';
+    clearButton.style.border = 'none';
+    clearButton.style.background = 'none';
+    clearButton.style.cursor = 'pointer';
+    clearButton.style.fontSize = '16px';
+    clearButton.style.color = '#999';
+    clearButton.style.padding = '0';
+    clearButton.style.width = '20px';
+    clearButton.style.height = '20px';
+    clearButton.style.display = 'flex';
+    clearButton.style.justifyContent = 'center';
+    clearButton.style.alignItems = 'center';
+    clearButton.style.visibility = 'hidden'; // 初始状态隐藏
+
+    // 新增: 清空按钮点击事件
+    clearButton.addEventListener('click', () => {
+        input.value = '';
+        input.focus();
+        clearButton.style.visibility = 'hidden';
+    });
+
+    // 新增: 显示/隐藏清空按钮
+    input.addEventListener('input', () => {
+        clearButton.style.visibility = input.value ? 'visible' : 'hidden';
+    });
     
     const searchButton = document.createElement('button');
     searchButton.textContent = '搜索';
     searchButton.style.height = '30px'; // 与工具栏等高
-    searchButton.style.width = '80px'; // 搜索按钮宽度
+    searchButton.style.width = '100px'; // 搜索按钮宽度
     searchButton.style.fontSize = '14px';
     searchButton.style.backgroundColor = '#007bff';
     searchButton.style.color = 'white';
     searchButton.style.border = '1px solid #007bff';
+    
     searchButton.style.borderLeft = 'none'; // 新增: 移除左边框
     searchButton.style.borderRadius = '0 4px 4px 0';
     searchButton.style.boxSizing = 'border-box'; // 包括边框在内的宽度和高度
@@ -998,6 +1035,7 @@ function createSearchPopup() {
     popup.appendChild(searchArea);
     // 修改: 将输入框和搜索按钮添加到新的容器中
     inputContainer.appendChild(input);
+    inputContainer.appendChild(clearButton);
     inputContainer.appendChild(searchButton);
 
     document.body.appendChild(popup);
@@ -1008,8 +1046,11 @@ function createSearchPopup() {
         popup.style.left = rect.left + 'px';
         popup.style.top = rect.top + 'px';
         popup.style.transform = 'none';
+
+        input.focus(); // 新增: 设置输入框焦点
+        input.setSelectionRange(input.value.length, input.value.length); // 新增: 将光标移到文本末尾
     }, 0);
-    input.focus();
+
     input.addEventListener('keypress', onKeyPress);
     document.addEventListener('keydown', onKeyDown);
 
@@ -1070,6 +1111,7 @@ const MOVE_THRESHOLD = 5; // 允许的最小移动像素，用于区分静止和
 document.addEventListener('mousedown', handleMouseDown);
 document.addEventListener('mouseup', handleMouseUp);
 document.addEventListener('mousemove', handleMouseMove);
+document.addEventListener('keydown', handleKeyDown);
 
 // 修改: 保留原有的键盘事件监听器
 document.addEventListener('keydown', handleKeyDown);
@@ -1094,9 +1136,19 @@ function handleMouseDown(e) {
 }
 
 // 新增: handleMouseUp 函数
-function handleMouseUp() {
+function handleMouseUp(e) {
     isMouseDown = false;
     clearTimeout(mouseDownTimer);
+
+    // 新增: 检查是否按住Ctrl键并选中了文本
+    if (e.ctrlKey) {
+        const selectedText = window.getSelection().toString().trim();
+        if (selectedText) {
+            createSearchPopup(selectedText);
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }
 }
 
 // 新增: handleMouseMove 函数
