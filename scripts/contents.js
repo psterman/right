@@ -3,6 +3,20 @@ let currentPopup = null;
 // 从存储中检索选中的搜索引擎
 // 假设这是在 contents.js 中的现有代码
 let selectedEngines = []; // 声明全局变量
+let longPressEnabled = true;
+let ctrlSelectEnabled = true;
+
+// 监听来自 background.js 的消息
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.action === 'updateSearchSettings') {
+        longPressEnabled = request.settings.longPressEnabled;
+        ctrlSelectEnabled = request.settings.ctrlSelectEnabled;
+        console.log('Settings updated:', request.settings);
+    }
+});
+
+// 当内容脚本首次加载时，请求当前设置
+chrome.runtime.sendMessage({ action: 'getSettings' });
 // 当文档加载时从 Chrome 存储中加载 selectedEngines
 document.addEventListener('DOMContentLoaded', function () {
     var sidebarUrl = document.getElementById('preview') ? document.getElementById('preview').src : '';
@@ -1119,7 +1133,7 @@ document.addEventListener('keydown', handleKeyDown);
 // 新增: handleMouseDown 函数
 function handleMouseDown(e) {
     // 只响应鼠标左键
-    if (e.button !== 0) return;
+    if (!longPressEnabled || e.button !== 0) return;
 
     isMouseDown = true;
     startX = e.clientX;
@@ -1140,8 +1154,7 @@ function handleMouseUp(e) {
     isMouseDown = false;
     clearTimeout(mouseDownTimer);
 
-    // 新增: 检查是否按住Ctrl键并选中了文本
-    if (e.ctrlKey) {
+    if (ctrlSelectEnabled && e.ctrlKey) {
         const selectedText = window.getSelection().toString().trim();
         if (selectedText) {
             createSearchPopup(selectedText);

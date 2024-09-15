@@ -1182,6 +1182,34 @@ function editWebsite(index) {
 document.addEventListener('DOMContentLoaded', function () {
 	loadSavedPages();
 	loadEngines();
+	const longPressCheckbox = document.getElementById('longPressCheckbox');
+	const ctrlSelectCheckbox = document.getElementById('ctrlSelectCheckbox');
+
+	// 加载保存的设置
+	chrome.storage.sync.get(['longPressEnabled', 'ctrlSelectEnabled'], function (result) {
+		longPressCheckbox.checked = result.longPressEnabled ?? true;
+		ctrlSelectCheckbox.checked = result.ctrlSelectEnabled ?? true;
+	});
+
+	// 保存设置变更
+	longPressCheckbox.addEventListener('change', function () {
+		saveSettings();
+	});
+
+	ctrlSelectCheckbox.addEventListener('change', function () {
+		saveSettings();
+	});
+
+	function saveSettings() {
+		const settings = {
+			longPressEnabled: longPressCheckbox.checked,
+			ctrlSelectEnabled: ctrlSelectCheckbox.checked
+		};
+		chrome.storage.sync.set(settings, function () {
+			// 通知 background.js 设置已更新
+			chrome.runtime.sendMessage({ action: 'settingsUpdated', settings: settings });
+		});
+	}
 	document.getElementById('shortcutLink').addEventListener('click', function () {
 		// 尝试打开 Chrome 扩展快捷键设置页面
 		chrome.tabs.create({ url: "chrome://extensions/shortcuts" });

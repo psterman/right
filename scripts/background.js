@@ -822,3 +822,30 @@ chrome.commands.onCommand.addListener(function (command) {
 		});
 	}
 });
+
+// 监听来自 options.js 的消息
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === 'settingsUpdated') {
+		// 将更新的设置广播给所有标签页
+		chrome.tabs.query({}, function (tabs) {
+			tabs.forEach(function (tab) {
+				chrome.tabs.sendMessage(tab.id, {
+					action: 'updateSearchSettings',
+					settings: request.settings
+				});
+			});
+		});
+	}
+});
+
+// 当新的标签页加载完成时，发送当前设置
+chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+	if (changeInfo.status === 'complete') {
+		chrome.storage.sync.get(['longPressEnabled', 'ctrlSelectEnabled'], function (settings) {
+			chrome.tabs.sendMessage(tabId, {
+				action: 'updateSearchSettings',
+				settings: settings
+			});
+		});
+	}
+});
