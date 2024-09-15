@@ -803,7 +803,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     })
 })()
 //输入框
-function createSearchPopup(initialText = '') { 
+function createSearchPopup(initialText = '', showMultiMenu = false) { 
     if (currentPopup) {
         document.body.removeChild(currentPopup);
     }
@@ -823,7 +823,9 @@ function createSearchPopup(initialText = '') {
     popup.style.flexDirection = 'column';
     popup.style.alignItems = 'center';
     popup.id = "searchPopup";
-
+    // 创建九宫格多功能菜单
+    const multiMenu = createMultiMenu();
+    multiMenu.style.display = showMultiMenu ? 'grid' : 'none';
     // 创建工具栏
     const toolbar = document.createElement('div');
     toolbar.style.display = 'flex';
@@ -947,7 +949,7 @@ function createSearchPopup(initialText = '') {
     };
     toolbar.appendChild(closeButton);
     popup.appendChild(toolbar);
-
+    popup.appendChild(multiMenu);
     // 创建搜索区域
     const searchArea = document.createElement('div');
     searchArea.style.display = 'flex';
@@ -1069,6 +1071,32 @@ function createSearchPopup(initialText = '') {
     document.addEventListener('keydown', onKeyDown);
 
    
+} function createMultiMenu() {
+    const menu = document.createElement('div');
+    menu.style.display = 'grid';
+    menu.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    menu.style.gap = '5px';
+    menu.style.padding = '10px';
+    menu.style.backgroundColor = '#f0f0f0';
+
+    for (let i = 0; i < 9; i++) {
+        const item = document.createElement('div');
+        item.style.width = '30px';
+        item.style.height = '30px';
+        item.style.backgroundColor = '#ddd';
+        item.style.display = 'flex';
+        item.style.justifyContent = 'center';
+        item.style.alignItems = 'center';
+        item.style.cursor = 'pointer';
+        item.textContent = i + 1;
+        item.onclick = () => {
+            console.log(`功能 ${i + 1} 被点击`);
+            // 这里可以添加具体的功能实现
+        };
+        menu.appendChild(item);
+    }
+
+    return menu;
 }
 // 执行搜索
 function performSearch(searchText, engineUrl) {
@@ -1130,9 +1158,8 @@ document.addEventListener('keydown', handleKeyDown);
 // 修改: 保留原有的键盘事件监听器
 document.addEventListener('keydown', handleKeyDown);
 
-// 新增: handleMouseDown 函数
+// 修改鼠标事件处理函数
 function handleMouseDown(e) {
-    // 只响应鼠标左键
     if (!longPressEnabled || e.button !== 0) return;
 
     isMouseDown = true;
@@ -1141,15 +1168,13 @@ function handleMouseDown(e) {
 
     mouseDownTimer = setTimeout(() => {
         if (isMouseDown && !hasMovedBeyondThreshold(e)) {
-            // 调用原有的 createSearchPopup 函数
-            createSearchPopup();
+            createSearchPopup('', e.shiftKey);
             e.preventDefault();
             e.stopPropagation();
         }
     }, LONG_PRESS_DURATION);
 }
 
-// 新增: handleMouseUp 函数
 function handleMouseUp(e) {
     isMouseDown = false;
     clearTimeout(mouseDownTimer);
@@ -1157,10 +1182,14 @@ function handleMouseUp(e) {
     if (ctrlSelectEnabled && e.ctrlKey) {
         const selectedText = window.getSelection().toString().trim();
         if (selectedText) {
-            createSearchPopup(selectedText);
+            createSearchPopup(selectedText, false);
             e.preventDefault();
             e.stopPropagation();
         }
+    } else if (e.shiftKey) {
+        createSearchPopup('', true);
+        e.preventDefault();
+        e.stopPropagation();
     }
 }
 
