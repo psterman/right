@@ -1,4 +1,116 @@
+// 添加悬浮图标
+function addFloatingIcon() {
+    const floatingIcon = document.createElement('div');
+    floatingIcon.id = 'extension-floating-icon';
+    floatingIcon.innerHTML = '?';
+    floatingIcon.style.cssText = `
+        position: fixed !important;
+        top: 50% !important;
+        right: 0 !important;
+        width: 40px !important;
+        height: 40px !important;
+        background-color: #007bff !important;
+        color: white !important;
+        border-radius: 50% 0 0 50% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        font-size: 20px !important;
+        cursor: pointer !important;
+        z-index: 2147483647 !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+        transform: translateY(-50%) !important;
+    `;
 
+    // 创建命令菜单
+    const menu = document.createElement('div');
+    menu.id = 'extension-floating-menu';
+    menu.style.cssText = `
+        position: fixed !important;
+        right: 0 !important;
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        border-radius: 5px 0 0 5px !important;
+        box-shadow: -2px 0 10px rgba(0,0,0,0.1) !important;
+        display: none !important;
+        z-index: 2147483646 !important;
+        overflow: hidden !important;
+        transition: opacity 0.3s ease !important;
+        opacity: 0 !important;
+        padding: 10px 0 !important;
+    `;
+
+    const menuItems = [
+        { text: '关闭图标', action: () => floatingIcon.style.display = 'none' },
+        { text: '打开设置', action: () => chrome.runtime.sendMessage({ action: 'openOptionsPage' }) },
+        { text: '打开侧边栏', action: () => chrome.runtime.sendMessage({ action: 'toggleSidePanel' }) },
+        { text: '激活搜索', action: () => createSearchPopup() }
+    ];
+
+    menuItems.forEach(item => {
+        const menuItem = document.createElement('div');
+        menuItem.textContent = item.text;
+        menuItem.style.cssText = `
+            padding: 10px 20px !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+            transition: background-color 0.2s ease !important;
+        `;
+        menuItem.addEventListener('mouseover', () => {
+            menuItem.style.backgroundColor = 'rgba(240, 240, 240, 0.8)';
+        });
+        menuItem.addEventListener('mouseout', () => {
+            menuItem.style.backgroundColor = 'transparent';
+        });
+        menuItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            item.action();
+            hideMenu();
+        });
+        menu.appendChild(menuItem);
+    });
+
+    document.body.appendChild(floatingIcon);
+    document.body.appendChild(menu);
+
+    function showMenu() {
+        const iconRect = floatingIcon.getBoundingClientRect();
+        menu.style.top = `${iconRect.bottom + 5}px`; // 添加5px的间隔
+        menu.style.display = 'block';
+        requestAnimationFrame(() => {
+            menu.style.opacity = '1';
+        });
+    }
+
+    function hideMenu() {
+        menu.style.opacity = '0';
+        setTimeout(() => {
+            menu.style.display = 'none';
+        }, 300);
+    }
+
+    floatingIcon.addEventListener('mouseenter', showMenu);
+    menu.addEventListener('mouseleave', hideMenu);
+    floatingIcon.addEventListener('mouseleave', (e) => {
+        if (!menu.contains(e.relatedTarget)) {
+            hideMenu();
+        }
+    });
+}
+
+// 在页面加载完成后添加悬浮图标
+document.addEventListener('DOMContentLoaded', addFloatingIcon);
+
+// 为了确保在动态加载的页面上也能显示悬浮图标，我们可以使用 MutationObserver
+const observer = new MutationObserver((mutations) => {
+    if (!document.getElementById('extension-floating-icon')) {
+        addFloatingIcon();
+    }
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
 let currentPopup = null;
 // 从存储中检索选中的搜索引擎
 // 假设这是在 contents.js 中的现有代码
@@ -953,6 +1065,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     };
     toolbar.appendChild(closeButton);
     popup.appendChild(toolbar);
+    popup.appendChild(multiMenu);
     // 创建搜索区域
     const searchArea = document.createElement('div');
     searchArea.style.display = 'flex';
