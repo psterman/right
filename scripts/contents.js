@@ -490,6 +490,7 @@ function showInputContextMenu(inputElement, x, y) {
     popup.style.borderRadius = '20px';
     popup.style.backgroundColor = 'black';
     popup.className = 'search-popup flex-container';
+    popup.style.padding = '0'; // 修改：移除内边距
 
     const style = document.createElement('style');
     style.innerHTML = '.search-popup a { text-decoration: none; }';
@@ -719,7 +720,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             chrome.runtime.sendMessage({
                 action: 'setpage',
                 query: dropData,
-                foreground: e.shiftKey ? true : false, // 如果按下 Shift 键则在前台打开
+                foreground: e.altKey ? true : false, // 如果按下 alt 键则在前台打开
             });
         } else {
             var searchText = dropData;
@@ -822,7 +823,8 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     popup.style.display = 'flex';
     popup.style.flexDirection = 'column';
     popup.style.alignItems = 'center';
-    popup.id = "searchPopup";
+    popup.style.backgroundColor = 'white'; // 确保背景为白色
+    popup.id = "searchPopup";    
     // 创建九宫格多功能菜单
     const multiMenu = createMultiMenu();
     multiMenu.style.display = showMultiMenu ? 'grid' : 'none';
@@ -832,6 +834,8 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     toolbar.style.justifyContent = 'space-between';
     toolbar.style.alignItems = 'center';
     toolbar.style.padding = '5px';
+    toolbar.style.backgroundColor = 'white'; // 修改：确保背景是白色
+    toolbar.style.borderBottom = 'none'; // 移除底部边框
     toolbar.style.height = '30px'; // 工具栏高度
     toolbar.style.width = '100%'; // 确保工具栏宽度为100%
     toolbar.style.backgroundColor = 'transparent'; 
@@ -874,7 +878,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     engineList.style.width = '100%'; // 新增: 设置宽度
     engineList.style.marginTop = '10px'; // 新增: 添加顶部间距
     engineList.style.padding = '5px';
-    engineList.style.borderTop = '1px solid #ccc';
+    engineList.style.borderTop = 'none'; // 移除顶部边框
 
     // 创建搜索引擎项目的函数
     function createEngineItem(name, url) {
@@ -949,7 +953,6 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     };
     toolbar.appendChild(closeButton);
     popup.appendChild(toolbar);
-    popup.appendChild(multiMenu);
     // 创建搜索区域
     const searchArea = document.createElement('div');
     searchArea.style.display = 'flex';
@@ -957,7 +960,9 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     searchArea.style.justifyContent = 'center';
     searchArea.style.alignItems = 'center';
     searchArea.style.padding = '10px';
-
+    searchArea.style.maxWidth = '400px';
+    searchArea.style.minWidth = '300px';
+    searchArea.style.padding = '0'; // 修改：移除内边距
     // 新增: 创建输入框容器
     const inputContainer = document.createElement('div');
     inputContainer.style.display = 'flex';
@@ -1046,9 +1051,26 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         }
     };
 
+
+    // 创建第一个12宫格菜单（1-12）
+    const multiMenu1 = createMultiMenu(1, 12);
+    multiMenu1.style.display = showMultiMenu ? 'grid' : 'none';
+    multiMenu1.style.width = '100%';
+    multiMenu1.style.maxWidth = '400px';
+    multiMenu1.style.minWidth = '300px';
+    multiMenu1.style.marginTop = '0'; // 修改：确保没有顶部边距
+    // 创建第二个12宫格菜单（13-24）
+    const multiMenu2 = createMultiMenu(13, 24);
+    multiMenu2.style.display = showMultiMenu ? 'grid' : 'none';
+    multiMenu2.style.width = '100%';
+    multiMenu2.style.maxWidth = '400px';
+    multiMenu2.style.minWidth = '300px';
+    multiMenu2.style.marginTop = '10px'; // 添加一些顶部边距
+    searchArea.appendChild(multiMenu1);
     searchArea.appendChild(inputContainer);
     searchArea.appendChild(engineList);
     popup.appendChild(searchArea);
+    searchArea.appendChild(multiMenu2);
     // 修改: 将输入框和搜索按钮添加到新的容器中
     inputContainer.appendChild(input);
     inputContainer.appendChild(clearButton);
@@ -1071,27 +1093,42 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     document.addEventListener('keydown', onKeyDown);
 
    
-} function createMultiMenu() {
+}
+function createMultiMenu(start, end) {
     const menu = document.createElement('div');
     menu.style.display = 'grid';
-    menu.style.gridTemplateColumns = 'repeat(3, 1fr)';
-    menu.style.gap = '5px';
-    menu.style.padding = '10px';
-    menu.style.backgroundColor = '#f0f0f0';
+    menu.style.gridTemplateColumns = 'repeat(4, 1fr)';
+    menu.style.gap = '1px';
+    menu.style.padding = '1px';
+    menu.style.backgroundColor = '#ccc';
+    menu.style.borderRadius = '4px';
+    menu.style.marginBottom = '10px';
+    menu.style.width = '100%';
+    menu.style.aspectRatio = '4 / 3';
 
-    for (let i = 0; i < 9; i++) {
+    for (let i = start; i <= end; i++) {
         const item = document.createElement('div');
-        item.style.width = '30px';
-        item.style.height = '30px';
-        item.style.backgroundColor = '#ddd';
+        item.style.backgroundColor = 'white';
         item.style.display = 'flex';
         item.style.justifyContent = 'center';
         item.style.alignItems = 'center';
         item.style.cursor = 'pointer';
-        item.textContent = i + 1;
+        item.style.fontSize = '14px';
+        item.style.fontWeight = 'bold';
+        item.style.color = '#333';
+        item.style.userSelect = 'none';
+        item.style.boxSizing = 'border-box';
+        item.style.border = '1px solid #ccc';
+        item.textContent = i.toString();
         item.onclick = () => {
-            console.log(`功能 ${i + 1} 被点击`);
+            console.log(`功能 ${i} 被点击`);
             // 这里可以添加具体的功能实现
+        };
+        item.onmouseover = () => {
+            item.style.backgroundColor = '#f0f0f0';
+        };
+        item.onmouseout = () => {
+            item.style.backgroundColor = 'white';
         };
         menu.appendChild(item);
     }
@@ -1168,7 +1205,7 @@ function handleMouseDown(e) {
 
     mouseDownTimer = setTimeout(() => {
         if (isMouseDown && !hasMovedBeyondThreshold(e)) {
-            createSearchPopup('', e.shiftKey);
+            createSearchPopup('', e.altKey);
             e.preventDefault();
             e.stopPropagation();
         }
@@ -1186,7 +1223,7 @@ function handleMouseUp(e) {
             e.preventDefault();
             e.stopPropagation();
         }
-    } else if (e.shiftKey) {
+    } else if (e.altKey) {
         createSearchPopup('', true);
         e.preventDefault();
         e.stopPropagation();
