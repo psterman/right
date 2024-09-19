@@ -1017,22 +1017,26 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         document.body.removeChild(currentPopup);
     }
     const popup = document.createElement('div');
-    popup.style.position = 'fixed';
-    popup.style.left = '50%';
-    popup.style.top = '50%';
-    popup.style.transform = 'translate(-50%, -50%)';
-    popup.style.zIndex = '10000';
-    popup.style.width = 'auto'; // 改为自适应宽度
-    popup.style.maxWidth = '400px'; // 设置最大宽度
-    popup.style.minWidth = '300px'; // 设置最小宽度
-    popup.style.background = 'white';
-    popup.style.borderRadius = '5px';
-    popup.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-    popup.style.display = 'flex';
-    popup.style.flexDirection = 'column';
-    popup.style.alignItems = 'center';
-    popup.style.backgroundColor = 'white'; // 确保背景为白色
-    popup.id = "searchPopup";    
+    // 修改 popup 的样式
+    popup.style.cssText = `
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10000;
+        width: auto;
+        max-width: 400px;
+        min-width: 300px;
+        background: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-height: 80vh; // 限制最大高度为视口高度的80%
+        overflow-y: auto; // 添加垂直滚动
+    `;
+    popup.id = "searchPopup";
     // 创建九宫格多功能菜单
     const multiMenu = createMultiMenu();
     multiMenu.style.display = showMultiMenu ? 'grid' : 'none';
@@ -1299,51 +1303,95 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     //新增一个搜索列表
     const customEngineListContainer = document.createElement('div');
     customEngineListContainer.style.cssText = `
-        position: absolute;
-        top: 100%;
-        left: 0;
         width: 100%;
         background: white;
-        border: 1px solid #ccc;
-        border-top: none;
-        max-height: 200px;
-        overflow-y: auto;
+        border-top: 1px solid #ccc;
+        max-height: none; // 移除最大高度限制
+        overflow-y: visible; // 移除滚动
         display: none;
+        box-sizing: border-box;
     `;
-    inputContainer.appendChild(customEngineListContainer);
-
+    popup.appendChild(customEngineListContainer); // 将列表容器添加到 popup 而不是 inputContainer
+   
     function updateEngineList() {
         const searchText = input.value.trim();
         if (searchText) {
             chrome.storage.sync.get('id2enginemap', function (data) {
                 const engines = data.id2enginemap || {};
                 customEngineListContainer.innerHTML = '';
-                Object.entries(engines).forEach(([name, url]) => {
+                engineItems = [];
+                Object.entries(engines).forEach(([name, url], index) => {
                     const item = document.createElement('div');
                     item.textContent = name;
                     item.style.cssText = `
-                        padding: 5px;
+                        padding: 8px 10px;
                         cursor: pointer;
-                        color: black;  // 设置文字颜色为黑色
-                        font-size: 14px;  // 可选：设置字体大小
+                        color: black;
+                        font-size: 14px;
+                        border-bottom: 1px solid #eee;
                     `;
-                    item.style.padding = '5px';
-                    item.style.cursor = 'pointer';
+                    item.addEventListener('mouseover', function() {
+                        this.style.backgroundColor = '#f0f0f0';
+                    });
+                    item.addEventListener('mouseout', function() {
+                        if (index !== selectedIndex) {
+                            this.style.backgroundColor = 'transparent';
+                        }
+                    });
                     item.addEventListener('click', function () {
-                        console.log('Clicked engine:', name);
-                        console.log('Search text:', searchText);
-                        console.log('Engine URL:', url);
                         performSearch(searchText, url);
                     });
                     customEngineListContainer.appendChild(item);
+                    engineItems.push(item);
                 });
-                customEngineListContainer.style.display = Object.keys(engines).length > 0 ? 'block' : 'none';
+                
+                if (engineItems.length > 0) {
+                    customEngineListContainer.style.display = 'block';
+                } else {
+                    customEngineListContainer.style.display = 'none';
+                }
+                
+                selectedIndex = -1;
             });
         } else {
             customEngineListContainer.style.display = 'none';
+            engineItems = [];
+            selectedIndex = -1;
         }
     }
 
+    function selectEngineItem(index) {
+        if (index >= 0 && index < engineItems.length) {
+            if (selectedIndex !== -1) {
+                engineItems[selectedIndex].style.backgroundColor = 'transparent';
+            }
+            selectedIndex = index;
+            engineItems[selectedIndex].style.backgroundColor = '#f0f0f0';
+            engineItems[selectedIndex].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    input.addEventListener('keydown', function (e) {
+        if (customEngineListContainer.style.display === 'block') {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectEngineItem((selectedIndex + 1) % engineItems.length);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectEngineItem((selectedIndex - 1 + engineItems.length) % engineItems.length);
+            } else if (e.key === 'Enter' && selectedIndex !== -1) {
+                e.preventDefault();
+                const selectedEngine = engineItems[selectedIndex];
+                const engineName = selectedEngine.textContent;
+                chrome.storage.sync.get('id2enginemap', function (data) {
+                    const engineUrl = data.id2enginemap[engineName];
+                    if (engineUrl) {
+                        performSearch(input.value.trim(), engineUrl);
+                    }
+                });
+            }
+        }
+    });
     input.addEventListener('input', updateEngineList);
     updateEngineList(); // 初始化列表
 
