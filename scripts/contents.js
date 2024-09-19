@@ -1,25 +1,28 @@
 // 添加悬浮图标
 function addFloatingIcon() {
+    let isSidebarOpen = false; // 跟踪侧边栏状态
+
     const floatingIcon = document.createElement('div');
     floatingIcon.id = 'extension-floating-icon';
     floatingIcon.innerHTML = '?';
     floatingIcon.style.cssText = `
         position: fixed !important;
         top: 50% !important;
-        right: 0 !important;
+        right: 10px !important;
         width: 40px !important;
         height: 40px !important;
-        background-color: #007bff !important;
+        background-color: rgba(0, 122, 255, 0.8) !important;
         color: white !important;
-        border-radius: 50% 0 0 50% !important;
+        border-radius: 50% !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
         font-size: 20px !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
         cursor: pointer !important;
         z-index: 2147483647 !important;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
-        transform: translateY(-50%) !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+        transition: background-color 0.3s ease !important;
     `;
 
     // 创建命令菜单
@@ -27,36 +30,82 @@ function addFloatingIcon() {
     menu.id = 'extension-floating-menu';
     menu.style.cssText = `
         position: fixed !important;
-        right: 0 !important;
-        background-color: rgba(255, 255, 255, 0.9) !important;
-        border-radius: 5px 0 0 5px !important;
-        box-shadow: -2px 0 10px rgba(0,0,0,0.1) !important;
+        right: 10px !important;
+        background-color: rgba(255, 255, 255, 0.95) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
         display: none !important;
         z-index: 2147483646 !important;
         overflow: hidden !important;
-        transition: opacity 0.3s ease !important;
+        transition: opacity 0.3s ease, transform 0.3s ease !important;
         opacity: 0 !important;
-        padding: 10px 0 !important;
+        transform: scale(0.95) !important;
+        padding: 5px 0 !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
     `;
 
     const menuItems = [
-        { text: '关闭图标', action: () => floatingIcon.style.display = 'none' },
-        { text: '打开设置', action: () => chrome.runtime.sendMessage({ action: 'openOptionsPage' }) },
-        { text: '打开侧边栏', action: () => chrome.runtime.sendMessage({ action: 'toggleSidePanel' }) },
-        { text: '激活搜索', action: () => createSearchPopup() }
+        { 
+            text: '关闭图标', 
+            icon: '✕',
+            action: () => {
+                floatingIcon.style.display = 'none';
+                menu.style.display = 'none';
+            }
+        },
+        { 
+            text: '打开设置', 
+            icon: '⚙️',
+            action: () => {
+                chrome.runtime.sendMessage({ action: 'openOptionsPage' });
+            }
+        }, { text: '打开侧边栏', icon: '◧', action: () => chrome.runtime.sendMessage({ action: 'toggleSidePanel' }) },
+
+        { 
+            text: '激活搜索', 
+            icon: '🔍',
+            action: () => {
+                if (typeof createSearchPopup === 'function') {
+                    createSearchPopup();
+                } else {
+                    console.error('createSearchPopup function is not defined');
+                }
+            }
+        }
     ];
 
     menuItems.forEach(item => {
         const menuItem = document.createElement('div');
-        menuItem.textContent = item.text;
         menuItem.style.cssText = `
-            padding: 10px 20px !important;
+            padding: 10px 15px !important;
             cursor: pointer !important;
             white-space: nowrap !important;
             transition: background-color 0.2s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            font-size: 14px !important;
+            color: #333 !important;
         `;
+        
+        const iconSpan = document.createElement('span');
+        iconSpan.textContent = item.icon;
+        iconSpan.style.cssText = `
+            display: inline-flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            width: 20px !important;
+            margin-right: 10px !important;
+            font-size: 16px !important;
+        `;
+        
+        const textSpan = document.createElement('span');
+        textSpan.textContent = item.text;
+        
+        menuItem.appendChild(iconSpan);
+        menuItem.appendChild(textSpan);
+        
         menuItem.addEventListener('mouseover', () => {
-            menuItem.style.backgroundColor = 'rgba(240, 240, 240, 0.8)';
+            menuItem.style.backgroundColor = 'rgba(0, 122, 255, 0.1)';
         });
         menuItem.addEventListener('mouseout', () => {
             menuItem.style.backgroundColor = 'transparent';
@@ -74,25 +123,72 @@ function addFloatingIcon() {
 
     function showMenu() {
         const iconRect = floatingIcon.getBoundingClientRect();
-        menu.style.top = `${iconRect.bottom + 5}px`; // 添加5px的间隔
+        menu.style.top = `${iconRect.bottom + 10}px`;
         menu.style.display = 'block';
         requestAnimationFrame(() => {
             menu.style.opacity = '1';
+            menu.style.transform = 'scale(1)';
         });
     }
 
     function hideMenu() {
         menu.style.opacity = '0';
+        menu.style.transform = 'scale(0.95)';
         setTimeout(() => {
             menu.style.display = 'none';
         }, 300);
     }
 
+    // 切换侧边栏的函数
+    function toggleSidebar() {
+        if (isSidebarOpen) {
+            chrome.runtime.sendMessage({ action: 'closeSidePanel' });
+        } else {
+            chrome.runtime.sendMessage({ action: 'openSidePanel' });
+        }
+        isSidebarOpen = !isSidebarOpen;
+        updateIconAppearance();
+    }
+
+    // 更新图标外观以反映侧边栏状态
+    function updateIconAppearance() {
+        if (isSidebarOpen) {
+            floatingIcon.style.backgroundColor = 'rgba(255, 59, 48, 0.8)'; // 红色表示打开
+            floatingIcon.innerHTML = 'X';
+        } else {
+            floatingIcon.style.backgroundColor = 'rgba(0, 122, 255, 0.8)'; // 蓝色表示关闭
+            floatingIcon.innerHTML = '?';
+        }
+    }
+
+    // 点击图标时切换侧边栏
+    floatingIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSidebar();
+    });
+
+    // 鼠标划过图标时显示菜单
     floatingIcon.addEventListener('mouseenter', showMenu);
-    menu.addEventListener('mouseleave', hideMenu);
-    floatingIcon.addEventListener('mouseleave', (e) => {
-        if (!menu.contains(e.relatedTarget)) {
+
+    floatingIcon.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+            if (!menu.matches(':hover')) {
+                hideMenu();
+            }
+        }, 50);
+    });
+
+    menu.addEventListener('mouseleave', () => {
+        if (!floatingIcon.matches(':hover')) {
             hideMenu();
+        }
+    });
+
+    // 监听来自背景脚本的消息，以同步侧边栏状态
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.action === 'updateSidebarState') {
+            isSidebarOpen = request.isOpen;
+            updateIconAppearance();
         }
     });
 }
@@ -1065,7 +1161,6 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     };
     toolbar.appendChild(closeButton);
     popup.appendChild(toolbar);
-    popup.appendChild(multiMenu);
     // 创建搜索区域
     const searchArea = document.createElement('div');
     searchArea.style.display = 'flex';
