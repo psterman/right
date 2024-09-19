@@ -1296,6 +1296,71 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         input.focus(); // 新增: 设置输入框焦点
         input.setSelectionRange(input.value.length, input.value.length); // 新增: 将光标移到文本末尾
     }, 0);
+    //新增一个搜索列表
+    const customEngineListContainer = document.createElement('div');
+    customEngineListContainer.style.cssText = `
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: white;
+        border: 1px solid #ccc;
+        border-top: none;
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+    `;
+    inputContainer.appendChild(customEngineListContainer);
+
+    function updateEngineList() {
+        const searchText = input.value.trim();
+        if (searchText) {
+            chrome.storage.sync.get('id2enginemap', function (data) {
+                const engines = data.id2enginemap || {};
+                customEngineListContainer.innerHTML = '';
+                Object.entries(engines).forEach(([name, url]) => {
+                    const item = document.createElement('div');
+                    item.textContent = name;
+                    item.style.cssText = `
+                        padding: 5px;
+                        cursor: pointer;
+                        color: black;  // 设置文字颜色为黑色
+                        font-size: 14px;  // 可选：设置字体大小
+                    `;
+                    item.style.padding = '5px';
+                    item.style.cursor = 'pointer';
+                    item.addEventListener('click', function () {
+                        console.log('Clicked engine:', name);
+                        console.log('Search text:', searchText);
+                        console.log('Engine URL:', url);
+                        performSearch(searchText, url);
+                    });
+                    customEngineListContainer.appendChild(item);
+                });
+                customEngineListContainer.style.display = Object.keys(engines).length > 0 ? 'block' : 'none';
+            });
+        } else {
+            customEngineListContainer.style.display = 'none';
+        }
+    }
+
+    input.addEventListener('input', updateEngineList);
+    updateEngineList(); // 初始化列表
+
+    // ... 其他代码 ...
+}
+
+function performSearch(searchText, engineUrl) {
+    console.log('Performing search:', searchText, 'with engine:', engineUrl);
+    const searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
+    console.log('Search URL:', searchUrl);
+    chrome.runtime.sendMessage({
+        action: "setpage",
+        query: searchUrl
+    }, function (response) {
+        console.log('Response from background:', response);
+    });
+    closeSearchPopup();
 
     input.addEventListener('keypress', onKeyPress);
     document.addEventListener('keydown', onKeyDown);

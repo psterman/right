@@ -1862,3 +1862,72 @@ function loadEngines() {
 	});
 }
 
+// 加载当前搜索引擎列表
+function loadCurrentSearchEngines() {
+	chrome.storage.sync.get('id2enginemap', function (data) {
+		const currentEnginesDiv = document.getElementById('currentSearchEngines');
+		currentEnginesDiv.innerHTML = '';
+		const engines = data.id2enginemap || {};
+
+		Object.entries(engines).forEach(([name, url]) => {
+			const engineDiv = document.createElement('div');
+			engineDiv.innerHTML = `
+                <span>${name}: ${url}</span>
+                <button class="editSearchEngine" data-name="${name}">编辑</button>
+                <button class="deleteSearchEngine" data-name="${name}">删除</button>
+            `;
+			currentEnginesDiv.appendChild(engineDiv);
+		});
+	});
+}
+
+// 编辑搜索引擎
+function editSearchEngine(name) {
+	chrome.storage.sync.get('id2enginemap', function (data) {
+		const engines = data.id2enginemap || {};
+		const url = engines[name];
+		if (url) {
+			document.getElementById('newCustomEngineName').value = name;
+			document.getElementById('newCustomEngineUrl').value = url;
+		}
+	});
+}
+
+// 删除搜索引擎
+function deleteSearchEngine(name) {
+	chrome.storage.sync.get('id2enginemap', function (data) {
+		const engines = data.id2enginemap || {};
+		delete engines[name];
+		chrome.storage.sync.set({ id2enginemap: engines }, loadCurrentSearchEngines);
+	});
+}
+
+// 添加或更新搜索引擎
+function addOrUpdateSearchEngine() {
+	const name = document.getElementById('newCustomEngineName').value.trim();
+	const url = document.getElementById('newCustomEngineUrl').value.trim();
+	if (name && url) {
+		chrome.storage.sync.get('id2enginemap', function (data) {
+			const engines = data.id2enginemap || {};
+			engines[name] = url;
+			chrome.storage.sync.set({ id2enginemap: engines }, function () {
+				loadCurrentSearchEngines();
+				document.getElementById('newCustomEngineName').value = '';
+				document.getElementById('newCustomEngineUrl').value = '';
+			});
+		});
+	}
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', function () {
+	loadCurrentSearchEngines();
+	document.getElementById('addCustomSearchEngine').addEventListener('click', addOrUpdateSearchEngine);
+	document.getElementById('currentSearchEngines').addEventListener('click', function (e) {
+		if (e.target.classList.contains('editSearchEngine')) {
+			editSearchEngine(e.target.dataset.name);
+		} else if (e.target.classList.contains('deleteSearchEngine')) {
+			deleteSearchEngine(e.target.dataset.name);
+		}
+	});
+});
