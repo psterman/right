@@ -1034,9 +1034,22 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         flex-direction: column;
         align-items: center;
         max-height: 80vh; // 限制最大高度为视口高度的80%
-        overflow-y: auto; // 添加垂直滚动
+        overflow: hidden;
     `;
     popup.id = "searchPopup";
+    
+    // 新增：上方搜索引擎列表容器
+    const topEngineListContainer = document.createElement('div');
+    topEngineListContainer.style.cssText = `
+       width: 100%;
+        background: white;
+        border-bottom: 1px solid #ccc;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+    `;
+    popup.appendChild(topEngineListContainer);
+    
     // 创建九宫格多功能菜单
     const multiMenu = createMultiMenu();
     multiMenu.style.display = showMultiMenu ? 'grid' : 'none';
@@ -1095,29 +1108,31 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     // 创建搜索引擎项目的函数
     function createEngineItem(name, url) {
         const item = document.createElement('div');
-        item.style.padding = '5px';
-        item.style.cursor = 'pointer';
         item.textContent = name;
-        item.style.color = '#007bff';
-        item.style.marginRight = '10px'; // 新增: 添加右侧间距
-
-        item.addEventListener('mouseover', () => {
-            item.style.backgroundColor = '#f0f0f0';
+        item.style.cssText = `
+            padding: 5px 10px;
+            cursor: pointer;
+            color: black;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+            height: 20px;
+            line-height: 20px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        `;
+        item.addEventListener('mouseover', function () {
+            this.style.backgroundColor = '#f0f0f0';
         });
-
-        item.addEventListener('mouseout', () => {
-            item.style.backgroundColor = 'transparent';
+        item.addEventListener('mouseout', function () {
+            this.style.backgroundColor = 'transparent';
         });
-
-        item.addEventListener('click', () => {
-            const searchText = input.value.trim();
-            if (searchText) {
-                performSearch(searchText, url);
-            }
+        item.addEventListener('click', function () {
+            performSearch(input.value.trim(), url);
         });
-
         return item;
     }
+
 
     // 添加百度搜索引擎
     const baiduItem = createEngineItem('百度搜索', 'https://www.baidu.com/s?wd=');
@@ -1303,13 +1318,12 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     //新增一个搜索列表
     const customEngineListContainer = document.createElement('div');
     customEngineListContainer.style.cssText = `
-        width: 100%;
+         width: 100%;
         background: white;
         border-top: 1px solid #ccc;
-        max-height: none; // 移除最大高度限制
-        overflow-y: visible; // 移除滚动
+        max-height: 200px;
+        overflow-y: auto;
         display: none;
-        box-sizing: border-box;
     `;
     popup.appendChild(customEngineListContainer); // 将列表容器添加到 popup 而不是 inputContainer
    
@@ -1318,45 +1332,32 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         if (searchText) {
             chrome.storage.sync.get('id2enginemap', function (data) {
                 const engines = data.id2enginemap || {};
+                topEngineListContainer.innerHTML = '';
                 customEngineListContainer.innerHTML = '';
-                engineItems = [];
-                Object.entries(engines).forEach(([name, url], index) => {
-                    const item = document.createElement('div');
-                    item.textContent = name;
-                    item.style.cssText = `
-                        padding: 8px 10px;
-                        cursor: pointer;
-                        color: black;
-                        font-size: 14px;
-                        border-bottom: 1px solid #eee;
-                    `;
-                    item.addEventListener('mouseover', function() {
-                        this.style.backgroundColor = '#f0f0f0';
-                    });
-                    item.addEventListener('mouseout', function() {
-                        if (index !== selectedIndex) {
-                            this.style.backgroundColor = 'transparent';
-                        }
-                    });
-                    item.addEventListener('click', function () {
-                        performSearch(searchText, url);
-                    });
-                    customEngineListContainer.appendChild(item);
-                    engineItems.push(item);
-                });
-                
-                if (engineItems.length > 0) {
-                    customEngineListContainer.style.display = 'block';
-                } else {
-                    customEngineListContainer.style.display = 'none';
+
+                const engineEntries = Object.entries(engines);
+                const displayCount = Math.min(engineEntries.length, 10);
+
+                for (let i = 0; i < displayCount; i++) {
+                    const [name, url] = engineEntries[i];
+                    const topItem = createEngineItem(name, url);
+                    const bottomItem = createEngineItem(name, url);
+                    topEngineListContainer.appendChild(topItem);
+                    customEngineListContainer.appendChild(bottomItem);
                 }
-                
-                selectedIndex = -1;
+
+                topEngineListContainer.style.display = 'block';
+                customEngineListContainer.style.display = 'block';
+
+                // 设置固定高度，确保只显示10个项目
+                const itemHeight = 30; // 假设每个项目高度为30px，根据实际情况调整
+                const listHeight = displayCount * itemHeight;
+                topEngineListContainer.style.height = `${listHeight}px`;
+                customEngineListContainer.style.height = `${listHeight}px`;
             });
         } else {
+            topEngineListContainer.style.display = 'none';
             customEngineListContainer.style.display = 'none';
-            engineItems = [];
-            selectedIndex = -1;
         }
     }
 
