@@ -1020,19 +1020,20 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     const popup = document.createElement('div');
     // 修改 popup 的样式
     popup.style.cssText = `
-       position: fixed;
+        position: fixed;
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
         z-index: 10000;
         width: 400px;
-       max-height: 90vh;
+        max-height: 90vh;
         background: white;
         border-radius: 5px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         display: flex;
         flex-direction: column;
-        overflow: auto;
+        overflow-y: auto;
+        overflow-x: hidden;
     `;
     popup.id = "searchPopup";
 
@@ -1241,10 +1242,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
 
     // 新增: 显示/隐藏清空按钮
     input.addEventListener('input', () => {
-        clearButton.style.display = input.value ? 'block' : 'none';
-        if (!showMultiMenu) { // 只在非24宫格模式下更新搜索引擎列表
-            updateEngineList();
-        }
+        clearButton.style.visibility = input.value ? 'visible' : 'hidden';
     });
 
     const searchButton = document.createElement('button');
@@ -1334,16 +1332,6 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     popup.appendChild(customEngineListContainer); // 将列表容器添加到 popup 而不是 inputContainer
 
     function updateEngineList() {
-        if (showMultiMenu) {
-            listContainer.style.display = 'none';
-            return;
-        }
-        if (showMultiMenu) {
-            multiMenu.style.display = 'grid';
-            listContainer.style.display = 'none';
-        } else {
-            updateEngineList();
-        }
         const searchText = input.value.trim();
         if (searchText) {
             chrome.storage.sync.get('id2enginemap', function (data) {
