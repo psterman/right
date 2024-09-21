@@ -1241,7 +1241,10 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
 
     // 新增: 显示/隐藏清空按钮
     input.addEventListener('input', () => {
-        clearButton.style.visibility = input.value ? 'visible' : 'hidden';
+        clearButton.style.display = input.value ? 'block' : 'none';
+        if (!showMultiMenu) { // 只在非24宫格模式下更新搜索引擎列表
+            updateEngineList();
+        }
     });
 
     const searchButton = document.createElement('button');
@@ -1331,6 +1334,16 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     popup.appendChild(customEngineListContainer); // 将列表容器添加到 popup 而不是 inputContainer
 
     function updateEngineList() {
+        if (showMultiMenu) {
+            listContainer.style.display = 'none';
+            return;
+        }
+        if (showMultiMenu) {
+            multiMenu.style.display = 'grid';
+            listContainer.style.display = 'none';
+        } else {
+            updateEngineList();
+        }
         const searchText = input.value.trim();
         if (searchText) {
             chrome.storage.sync.get('id2enginemap', function (data) {
