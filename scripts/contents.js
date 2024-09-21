@@ -45,24 +45,24 @@ function addFloatingIcon() {
     `;
 
     const menuItems = [
-        { 
-            text: '关闭图标', 
+        {
+            text: '关闭图标',
             icon: '✕',
             action: () => {
                 floatingIcon.style.display = 'none';
                 menu.style.display = 'none';
             }
         },
-        { 
-            text: '打开设置', 
+        {
+            text: '打开设置',
             icon: '⚙️',
             action: () => {
                 chrome.runtime.sendMessage({ action: 'openOptionsPage' });
             }
         }, { text: '打开侧边栏', icon: '◧', action: () => chrome.runtime.sendMessage({ action: 'toggleSidePanel' }) },
 
-        { 
-            text: '激活搜索', 
+        {
+            text: '激活搜索',
             icon: '🔍',
             action: () => {
                 if (typeof createSearchPopup === 'function') {
@@ -86,7 +86,7 @@ function addFloatingIcon() {
             font-size: 14px !important;
             color: #333 !important;
         `;
-        
+
         const iconSpan = document.createElement('span');
         iconSpan.textContent = item.icon;
         iconSpan.style.cssText = `
@@ -97,13 +97,13 @@ function addFloatingIcon() {
             margin-right: 10px !important;
             font-size: 16px !important;
         `;
-        
+
         const textSpan = document.createElement('span');
         textSpan.textContent = item.text;
-        
+
         menuItem.appendChild(iconSpan);
         menuItem.appendChild(textSpan);
-        
+
         menuItem.addEventListener('mouseover', () => {
             menuItem.style.backgroundColor = 'rgba(0, 122, 255, 0.1)';
         });
@@ -692,7 +692,8 @@ function showInputContextMenu(inputElement, x, y) {
         currentPopup = null;
     }
 
-    const popup = document.createElement('div');
+
+
     popup.style.position = 'fixed';
     popup.style.zIndex = '9999';
     popup.style.borderRadius = '20px';
@@ -1012,44 +1013,37 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     })
 })()
 //输入框
-function createSearchPopup(initialText = '', showMultiMenu = false) { 
+function createSearchPopup(initialText = '', showMultiMenu = false) {
     if (currentPopup) {
         document.body.removeChild(currentPopup);
     }
     const popup = document.createElement('div');
     // 修改 popup 的样式
     popup.style.cssText = `
-        position: fixed;
+       position: fixed;
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
         z-index: 10000;
-        width: auto;
-        max-width: 400px;
-        min-width: 300px;
+        width: 400px;
+       max-height: 90vh;
         background: white;
         border-radius: 5px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         display: flex;
         flex-direction: column;
-        align-items: center;
-        max-height: 80vh; // 限制最大高度为视口高度的80%
-        overflow: hidden;
+        overflow: auto;
     `;
     popup.id = "searchPopup";
-    
+
     // 新增：上方搜索引擎列表容器
     const topEngineListContainer = document.createElement('div');
     topEngineListContainer.style.cssText = `
-       width: 100%;
-        background: white;
+        padding: 10px;
         border-bottom: 1px solid #ccc;
-        max-height: 300px;
-        overflow-y: auto;
-        display: none;
     `;
     popup.appendChild(topEngineListContainer);
-    
+
     // 创建九宫格多功能菜单
     const multiMenu = createMultiMenu();
     multiMenu.style.display = showMultiMenu ? 'grid' : 'none';
@@ -1063,7 +1057,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     toolbar.style.borderBottom = 'none'; // 移除底部边框
     toolbar.style.height = '30px'; // 工具栏高度
     toolbar.style.width = '100%'; // 确保工具栏宽度为100%
-    toolbar.style.backgroundColor = 'transparent'; 
+    toolbar.style.backgroundColor = 'transparent';
     toolbar.style.borderTopLeftRadius = '5px';
     toolbar.style.borderTopRightRadius = '5px';
 
@@ -1192,27 +1186,32 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     searchArea.style.padding = '0'; // 修改：移除内边距
     // 新增: 创建输入框容器
     const inputContainer = document.createElement('div');
-    inputContainer.style.display = 'flex';
-    inputContainer.style.width = '100%';
-    inputContainer.style.marginBottom = '10px'; // 新增: 添加底部间距
-    inputContainer.style.position = 'relative'; // 新增: 为了定位清空按钮
+    inputContainer.style.cssText = `
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        // 修改：添加固定定位
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1;
+    `;
 
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = '输入搜索词...';
     input.value = initialText; // 新增: 设置初始文本
-    input.style.flex = '1';
-    input.style.width = 'calc(100% - 100px)'; // 修改: 设置宽度为容器宽度减去100px
-    input.style.minWidth = '150px'; // 新增: 设置最小宽度
-    input.style.height = '30px'; // 与工具栏等高
-    input.style.fontSize = '14px';
-    input.style.border = '1px solid #007bff';
-    input.style.borderRight = 'none'; // 新增: 移除右边框
-    input.style.borderRadius = '4px 0 0 4px';
-    input.style.padding = '0 30px 0 10px';
-    input.style.boxSizing = 'border-box'; // 包括边框在内的宽度和高度
-    input.style.verticalAlign = 'top'; // 新增
-    input.style.position = 'relative'; // 新增
+    input.style.cssText = `
+        flex-grow: 1;
+        height: 30px;
+        border: 1px solid #ccc;
+        border-right: none;
+        border-radius: 4px 0 0 4px;
+        padding: 0 10px;
+        font-size: 14px;
+        outline: none;
+    `;
+    input.value = initialText;
     // 新增: 创建清空按钮
     const clearButton = document.createElement('button');
     clearButton.innerHTML = '&#x2715;'; // 使用 ✕ 符号作为图标
@@ -1244,24 +1243,20 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     input.addEventListener('input', () => {
         clearButton.style.visibility = input.value ? 'visible' : 'hidden';
     });
-    
+
     const searchButton = document.createElement('button');
     searchButton.textContent = '搜索';
-    searchButton.style.height = '30px'; // 与工具栏等高
-    searchButton.style.width = '100px'; // 搜索按钮宽度
-    searchButton.style.fontSize = '14px';
-    searchButton.style.backgroundColor = '#007bff';
-    searchButton.style.color = 'white';
-    searchButton.style.border = '1px solid #007bff';
-    
-    searchButton.style.borderLeft = 'none'; // 新增: 移除左边框
-    searchButton.style.borderRadius = '0 4px 4px 0';
-    searchButton.style.boxSizing = 'border-box'; // 包括边框在内的宽度和高度
-    searchButton.style.cursor = 'pointer';
-    searchButton.style.verticalAlign = 'top'; // 新增
-    searchButton.style.padding = '0 15px';
-    searchButton.style.position = 'relative'; // 新增
-    searchButton.style.left = '-1px'; // 新增
+    searchButton.style.cssText = `
+        height: 30px;
+        width: 100px;
+        font-size: 14px;
+        background-color: #007bff;
+        color: white;
+        border: 1px solid #007bff;
+        border-left: none;
+        border-radius: 0 4px 4px 0;
+        cursor: pointer;
+    `;
 
     // 新增: 添加焦点样式
     input.addEventListener('focus', () => {
@@ -1302,7 +1297,15 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     inputContainer.appendChild(input);
     inputContainer.appendChild(clearButton);
     inputContainer.appendChild(searchButton);
+    popup.appendChild(inputContainer);
 
+    // 下方搜索引擎列表容器
+    const bottomEngineListContainer = document.createElement('div');
+    bottomEngineListContainer.style.cssText = `
+         padding: 10px;
+        border-top: 1px solid #ccc;
+    `;
+    popup.appendChild(bottomEngineListContainer);
     document.body.appendChild(popup);
     currentPopup = popup;
     // 修改 5: 添加 setTimeout 来重新计算初始位置
@@ -1326,14 +1329,14 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         display: none;
     `;
     popup.appendChild(customEngineListContainer); // 将列表容器添加到 popup 而不是 inputContainer
-   
+
     function updateEngineList() {
         const searchText = input.value.trim();
         if (searchText) {
             chrome.storage.sync.get('id2enginemap', function (data) {
                 const engines = data.id2enginemap || {};
                 topEngineListContainer.innerHTML = '';
-                customEngineListContainer.innerHTML = '';
+                bottomEngineListContainer.innerHTML = '';
 
                 const engineEntries = Object.entries(engines);
                 const displayCount = Math.min(engineEntries.length, 10);
@@ -1343,24 +1346,17 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
                     const topItem = createEngineItem(name, url);
                     const bottomItem = createEngineItem(name, url);
                     topEngineListContainer.appendChild(topItem);
-                    customEngineListContainer.appendChild(bottomItem);
+                    bottomEngineListContainer.appendChild(bottomItem);
                 }
 
                 topEngineListContainer.style.display = 'block';
-                customEngineListContainer.style.display = 'block';
-
-                // 设置固定高度，确保只显示10个项目
-                const itemHeight = 30; // 假设每个项目高度为30px，根据实际情况调整
-                const listHeight = displayCount * itemHeight;
-                topEngineListContainer.style.height = `${listHeight}px`;
-                customEngineListContainer.style.height = `${listHeight}px`;
+                bottomEngineListContainer.style.display = 'block';
             });
         } else {
             topEngineListContainer.style.display = 'none';
-            customEngineListContainer.style.display = 'none';
+            bottomEngineListContainer.style.display = 'none';
         }
     }
-
     function selectEngineItem(index) {
         if (index >= 0 && index < engineItems.length) {
             if (selectedIndex !== -1) {
@@ -1394,7 +1390,9 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         }
     });
     input.addEventListener('input', updateEngineList);
-    updateEngineList(); // 初始化列表
+    // 立即更新搜索引擎列表
+    updateEngineList(topEngineListContainer, bottomEngineListContainer);
+
 
     // ... 其他代码 ...
 }
@@ -1414,7 +1412,7 @@ function performSearch(searchText, engineUrl) {
     input.addEventListener('keypress', onKeyPress);
     document.addEventListener('keydown', onKeyDown);
 
-   
+
 }
 function createMultiMenu(start, end) {
     const menu = document.createElement('div');
