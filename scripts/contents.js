@@ -1020,7 +1020,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     const popup = document.createElement('div');
     // 修改 popup 的样式
     popup.style.cssText = `
-        position: fixed;
+       position: fixed;
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
@@ -1033,7 +1033,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         display: flex;
         flex-direction: column;
         overflow-y: auto;
-        overflow-x: hidden;
+        overflow-x: hidden; 
     `;
     popup.id = "searchPopup";
 
@@ -1177,14 +1177,15 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     popup.appendChild(toolbar);
     // 创建搜索区域
     const searchArea = document.createElement('div');
-    searchArea.style.display = 'flex';
-    searchArea.style.flexDirection = 'column'; // 修改: 改为纵向排列
-    searchArea.style.justifyContent = 'center';
-    searchArea.style.alignItems = 'center';
-    searchArea.style.padding = '10px';
-    searchArea.style.maxWidth = '400px';
-    searchArea.style.minWidth = '300px';
-    searchArea.style.padding = '0'; // 修改：移除内边距
+        searchArea.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+        width: 100%; // 确保宽度为100%
+        box-sizing: border-box; // 添加这一行
+    `;
     // 新增: 创建输入框容器
     const inputContainer = document.createElement('div');
     inputContainer.style.cssText = `
