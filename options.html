@@ -847,6 +847,58 @@
 							<!-- 添加更多选项 -->
 						</div>
 					</section>
+					<section >
+				<div id="grid-config-section">
+				<h2>24宫格配置</h2>
+				<div id="grid-container" class="grid-24">
+					<div class="grid-cell" data-index="1">1</div>
+					<div class="grid-cell" data-index="2">2</div>
+					<div class="grid-cell" data-index="3">3</div>
+					<div class="grid-cell" data-index="4">4</div>
+					<div class="grid-cell" data-index="5">5</div>
+					<div class="grid-cell" data-index="6">6</div>
+					<div class="grid-cell" data-index="7">7</div>
+					<div class="grid-cell" data-index="8">8</div>
+					<div class="grid-cell" data-index="9">9</div>
+					<div class="grid-cell" data-index="10">10</div>
+					<div class="grid-cell" data-index="11">11</div>
+					<div class="grid-cell" data-index="12">12</div>
+				</div>
+				
+				<div id="grid-container-bottom" class="grid-24">
+					<div class="grid-cell" data-index="13">13</div>
+					<div class="grid-cell" data-index="14">14</div>
+					<div class="grid-cell" data-index="15">15</div>
+					<div class="grid-cell" data-index="16">16</div>
+					<div class="grid-cell" data-index="17">17</div>
+					<div class="grid-cell" data-index="18">18</div>
+					<div class="grid-cell" data-index="19">19</div>
+					<div class="grid-cell" data-index="20">20</div>
+					<div class="grid-cell" data-index="21">21</div>
+					<div class="grid-cell" data-index="22">22</div>
+					<div class="grid-cell" data-index="23">23</div>
+					<div class="grid-cell" data-index="24">24</div>
+				</div>
+				</div>
+				
+				<!-- 模态框 -->
+				<div id="grid-modal" class="modal">
+					<div class="modal-content">
+						<h3 id="modal-title">编辑格子</h3>
+						<input type="text" id="grid-name" placeholder="格子名称">
+						<select id="grid-type">
+							<option value="function">函数</option>
+							<option value="url">URL</option>
+						</select>
+						<textarea id="grid-action" placeholder="输入命令动作或粘贴JSON"></textarea>
+						<div class="modal-buttons">
+							<button id="modal-save">保存</button>
+							<button id="modal-delete">删除</button>
+							<button id="modal-cancel">取消</button>
+						</div>
+					</div>
+				</div>
+					</section>
 				</div>
 
 

@@ -1569,3 +1569,71 @@ function hasMovedBeyondThreshold(e) {
     const deltaY = Math.abs(e.clientY - startY);
     return deltaX > MOVE_THRESHOLD || deltaY > MOVE_THRESHOLD;
 }
+
+let gridConfig = [];
+
+chrome.storage.sync.get('gridConfig', function (result) {
+    gridConfig = result.gridConfig || [];
+    createGrid();
+});
+
+function createGrid() {
+    const grid = document.createElement('div');
+    grid.id = 'extension-24-grid';
+    grid.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 9999;
+  `;
+
+    gridConfig.forEach((item, index) => {
+        if (index < 24) {
+            const cell = document.createElement('div');
+            cell.textContent = item.name;
+            cell.style.cssText = `
+        width: 50px;
+        height: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f0f0f0;
+        cursor: pointer;
+      `;
+            cell.addEventListener('click', () => executeGridAction(item));
+            grid.appendChild(cell);
+        }
+    });
+
+    // 如果配置项少于24个，用空白格子填充
+    for (let i = gridConfig.length; i < 24; i++) {
+        const cell = document.createElement('div');
+        cell.style.cssText = `
+      width: 50px;
+      height: 50px;
+      background-color: #f0f0f0;
+    `;
+        grid.appendChild(cell);
+    }
+
+    document.body.appendChild(grid);
+}
+
+function executeGridAction(item) {
+    if (item.type === 'function') {
+        try {
+            new Function(item.action)();
+        } catch (error) {
+            console.error('执行函数时出错:', error);
+        }
+    } else if (item.type === 'url') {
+        window.open(item.action, '_blank');
+    }
+}

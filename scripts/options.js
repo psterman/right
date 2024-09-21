@@ -1931,3 +1931,128 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	});
 });
+let gridConfig = new Array(24).fill(null);
+let editingIndex = -1;
+
+function loadGridConfig() {
+  chrome.storage.sync.get('gridConfig', function(result) {
+    gridConfig = result.gridConfig || new Array(24).fill(null);
+    updateGridUI();
+  });
+}
+
+function saveGridConfig() {
+  chrome.storage.sync.set({gridConfig: gridConfig}, function() {
+    console.log('Grid configuration saved');
+    alert('配置已保存');
+    syncToContentScript();
+  });
+}
+
+function updateGridUI() {
+	gridConfig.forEach((item, index) => {
+		const cell = document.querySelector(`.grid-cell[data-index="${index + 1}"]`);
+		if (cell) {
+			cell.textContent = item ? item.name : `${index + 1}`;
+			cell.addEventListener('click', () => showModal(index));
+		}
+	});
+}
+
+function showModal(index) {
+  editingIndex = index;
+  const modal = document.getElementById('grid-modal');
+  const titleEl = document.getElementById('modal-title');
+  const nameEl = document.getElementById('grid-name');
+  const typeEl = document.getElementById('grid-type');
+  const actionEl = document.getElementById('grid-action');
+
+  const item = gridConfig[index];
+  if (item) {
+    titleEl.textContent = '编辑格子';
+    nameEl.value = item.name;
+    typeEl.value = item.type;
+    actionEl.value = item.action;
+  } else {
+    titleEl.textContent = '新增格子';
+    nameEl.value = '';
+    typeEl.value = 'function';
+    actionEl.value = '';
+  }
+
+  modal.style.display = 'block';
+}
+
+function hideModal() {
+  document.getElementById('grid-modal').style.display = 'none';
+}
+
+function saveGridItem() {
+  const name = document.getElementById('grid-name').value;
+  const type = document.getElementById('grid-type').value;
+  const action = document.getElementById('grid-action').value;
+
+  if (name && action) {
+    try {
+      // 尝试解析JSON
+      const jsonAction = JSON.parse(action);
+      gridConfig[editingIndex] = jsonAction;
+    } catch (e) {
+      // 如果不是有效的JSON，则按普通命令处理
+      gridConfig[editingIndex] = { name, type, action };
+    }
+    updateGridUI();
+    hideModal();
+    saveGridConfig();
+  } else {
+    alert('请填写所有字段');
+  }
+}
+
+function importConfig() {
+  const fileInput = document.getElementById('import-file');
+  fileInput.onchange = function(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedConfig = JSON.parse(e.target.result);
+          gridConfig = new Array(24).fill(null).map((_, i) => importedConfig[i] || null);
+          updateGridUI();
+          saveGridConfig();
+          alert('配置导入成功');
+        } catch (error) {
+          alert('导入失败，请检查文件格式');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+  fileInput.click();
+}
+
+function exportConfig() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(gridConfig));
+  const downloadAnchorNode = document.createElement('a');
+  downloadAnchorNode.setAttribute("href", dataStr);
+  downloadAnchorNode.setAttribute("download", "grid_config.json");
+  document.body.appendChild(downloadAnchorNode);
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
+}
+
+function syncToContentScript() {
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, {action: "updateGridConfig", config: gridConfig});
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadGridConfig();
+  document.getElementById('save-config').addEventListener('click', saveGridConfig);
+  document.getElementById('import-config').addEventListener('click', importConfig);
+  document.getElementById('export-config').addEventListener('click', exportConfig);
+  document.getElementById('modal-save').addEventListener('click', saveGridItem);
+  document.getElementById('modal-cancel').addEventListener('click', hideModal);
+});
