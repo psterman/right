@@ -1025,7 +1025,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         top: 50%;
         transform: translate(-50%, -50%);
         z-index: 10000;
-        width: 400px;
+        width: 420px;
         max-height: 90vh;
         background: white;
         border-radius: 5px;
@@ -1033,7 +1033,9 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         display: flex;
         flex-direction: column;
         overflow-y: auto;
-        overflow-x: hidden; 
+        overflow-x: hidden;
+        padding: 10px; // 添加内边距
+        box-sizing: border-box; // 确保内边距不会增加总宽度
     `;
     popup.id = "searchPopup";
 
@@ -1182,7 +1184,6 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        padding: 10px;
         width: 100%; // 确保宽度为100%
         box-sizing: border-box; // 添加这一行
     `;
@@ -1418,15 +1419,18 @@ function performSearch(searchText, engineUrl) {
 }
 function createMultiMenu(start, end) {
     const menu = document.createElement('div');
-    menu.style.display = 'grid';
-    menu.style.gridTemplateColumns = 'repeat(4, 1fr)';
-    menu.style.gap = '1px';
-    menu.style.padding = '1px';
-    menu.style.backgroundColor = '#ccc';
-    menu.style.borderRadius = '4px';
-    menu.style.marginBottom = '10px';
-    menu.style.width = '100%';
-    menu.style.aspectRatio = '4 / 3';
+    menu.style.cssText = `
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            padding: 1px;
+            background-color: #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            box-sizing: border-box;
+        `;
 
     for (let i = start; i <= end; i++) {
         const item = document.createElement('div');
