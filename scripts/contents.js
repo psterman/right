@@ -1201,6 +1201,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     `;
 
     const input = document.createElement('input');
+    const shouldShowEngineList = !showMultiMenu;
     input.type = 'text';
     input.placeholder = '输入搜索词...';
     input.value = initialText; // 新增: 设置初始文本
@@ -1216,6 +1217,16 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         outline: none;
     `;
     input.value = initialText;
+    // 修改 3: 更新输入框的事件监听器
+    input.addEventListener('input', function () {
+        if (shouldShowEngineList) {
+            updateEngineList();
+        } else {
+            // 在 24 宫格界面，不显示搜索引擎列表
+            if (topEngineListContainer) topEngineListContainer.style.display = 'none';
+            if (bottomEngineListContainer) bottomEngineListContainer.style.display = 'none';
+        }
+    });
     // 新增: 创建清空按钮
     const clearButton = document.createElement('button');
     clearButton.innerHTML = '&#x2715;'; // 使用 ✕ 符号作为图标
@@ -1340,7 +1351,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
 
     function updateEngineList() {
         const searchText = input.value.trim();
-        if (searchText) {
+        if (searchText && shouldShowEngineList) {
             chrome.storage.sync.get('id2enginemap', function (data) {
                 const engines = data.id2enginemap || {};
                 topEngineListContainer.innerHTML = '';
@@ -1361,8 +1372,8 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
                 bottomEngineListContainer.style.display = 'block';
             });
         } else {
-            topEngineListContainer.style.display = 'none';
-            bottomEngineListContainer.style.display = 'none';
+            if (topEngineListContainer) topEngineListContainer.style.display = 'none';
+            if (bottomEngineListContainer) bottomEngineListContainer.style.display = 'none';
         }
     }
     function selectEngineItem(index) {
