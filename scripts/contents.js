@@ -1,3 +1,6 @@
+// 在全局范围内添加这些变量
+let selectedIndex = -1;
+let engineItems = [];
 // 添加悬浮图标
 function addFloatingIcon() {
     let isSidebarOpen = false; // 跟踪侧边栏状态
@@ -1022,7 +1025,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     popup.style.cssText = `
        position: fixed;
         left: 50%;
-        top: 50%;
+        top: 43%;
         transform: translate(-50%, -50%);
         z-index: 10000;
         width: 420px;
@@ -1179,7 +1182,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     popup.appendChild(toolbar);
     // 创建搜索区域
     const searchArea = document.createElement('div');
-        searchArea.style.cssText = `
+    searchArea.style.cssText = `
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -1217,6 +1220,29 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         outline: none;
     `;
     input.value = initialText;
+
+    // 修改 1: 更新输入框的键盘事件监听器
+    input.addEventListener('keydown', function (e) {
+        if (topEngineListContainer.style.display === 'block' || bottomEngineListContainer.style.display === 'block') {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectEngineItem((selectedIndex + 1) % engineItems.length);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectEngineItem((selectedIndex - 1 + engineItems.length) % engineItems.length);
+            } else if (e.key === 'Enter' && selectedIndex !== -1) {
+                e.preventDefault();
+                const selectedEngine = engineItems[selectedIndex];
+                const engineName = selectedEngine.textContent;
+                chrome.storage.sync.get('id2enginemap', function (data) {
+                    const engineUrl = data.id2enginemap[engineName];
+                    if (engineUrl) {
+                        performSearch(input.value.trim(), engineUrl);
+                    }
+                });
+            }
+        }
+    });
     // 修改 3: 更新输入框的事件监听器
     input.addEventListener('input', function () {
         if (shouldShowEngineList) {
@@ -1356,6 +1382,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
                 const engines = data.id2enginemap || {};
                 topEngineListContainer.innerHTML = '';
                 bottomEngineListContainer.innerHTML = '';
+                engineItems = []; // 重置 engineItems
 
                 const engineEntries = Object.entries(engines);
                 const displayCount = Math.min(engineEntries.length, 10);
@@ -1366,16 +1393,21 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
                     const bottomItem = createEngineItem(name, url);
                     topEngineListContainer.appendChild(topItem);
                     bottomEngineListContainer.appendChild(bottomItem);
+                    engineItems.push(topItem, bottomItem);
                 }
 
                 topEngineListContainer.style.display = 'block';
                 bottomEngineListContainer.style.display = 'block';
+                selectedIndex = -1; // 重置选中索引
             });
         } else {
-            if (topEngineListContainer) topEngineListContainer.style.display = 'none';
-            if (bottomEngineListContainer) bottomEngineListContainer.style.display = 'none';
+            topEngineListContainer.style.display = 'none';
+            bottomEngineListContainer.style.display = 'none';
+            engineItems = [];
+            selectedIndex = -1;
         }
     }
+
     function selectEngineItem(index) {
         if (index >= 0 && index < engineItems.length) {
             if (selectedIndex !== -1) {
