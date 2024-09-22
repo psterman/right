@@ -1,6 +1,7 @@
 // 在全局范围内添加这些变量
 let selectedIndex = -1;
 let engineItems = [];
+
 // 添加悬浮图标
 function addFloatingIcon() {
     let isSidebarOpen = false; // 跟踪侧边栏状态
@@ -1021,7 +1022,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         document.body.removeChild(currentPopup);
     }
     const popup = document.createElement('div');
-    document.addEventListener('keydown', escListener);
+    document.addEventListener('keydown', escListener); 
     document.addEventListener('keydown', handleKeyNavigation);
 
 
@@ -1121,17 +1122,14 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         const item = document.createElement('div');
         item.textContent = name;
         item.style.cssText = `
-            padding: 5px 10px;
-            cursor: pointer;
-            color: black;
-            font-size: 14px;
-            border-bottom: 1px solid #eee;
-            height: 20px;
-            line-height: 20px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        `;
+        padding: 5px 10px;
+        cursor: pointer;
+        color: black;
+        font-size: 14px;
+        border-bottom: 1px solid #eee;
+    `;
+        item.addEventListener('click', () => performSearch(input.value.trim(), url));
+        return item;
         item.addEventListener('mouseover', function () {
             this.style.backgroundColor = '#f0f0f0';
         });
@@ -1385,7 +1383,21 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         display: none;
     `;
     popup.appendChild(customEngineListContainer); // 将列表容器添加到 popup 而不是 inputContainer
-
+    // 首先，定义 AI 搜索引擎列表（保持不变）
+    const aiSearchEngines = [
+        { name: 'AI搜索', url: 'https://example.com/ai-search?q=%s' },
+        { name: 'Perplexity', url: 'https://www.perplexity.ai/?q=%s' },
+        { name: 'Devy', url: 'https://devy.ai/search?q=%s' },
+        { name: '360AI搜索', url: 'https://ai.360.com/search?q=%s' },
+        { name: 'ThinkAny', url: 'https://www.thinkany.ai/search?q=%s' },
+        { name: '秘塔', url: 'https://metaso.cn/?q=%s' },
+        { name: '开搜AI', url: 'https://kaiso.ai/?q=%s' },
+        { name: 'WebPilot', url: 'https://www.webpilot.ai/search?q=%s' },
+        { name: 'Consensus', url: 'https://consensus.app/search/?q=%s' },
+        { name: 'YOU', url: 'https://you.com/search?q=%s' },
+        { name: 'phind', url: 'https://www.phind.com/search?q=%s' }
+    ];
+    // 修改 updateEngineList 函数
     function updateEngineList() {
         const searchText = input.value.trim();
         if (searchText && shouldShowEngineList) {
@@ -1393,23 +1405,29 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
                 const engines = data.id2enginemap || {};
                 topEngineListContainer.innerHTML = '';
                 bottomEngineListContainer.innerHTML = '';
-                engineItems = []; // 重置 engineItems
+                engineItems = [];
 
+                // 填充普通搜索引擎列表（topEngineListContainer）
                 const engineEntries = Object.entries(engines);
-                const displayCount = Math.min(engineEntries.length, 10);
+                const displayCount = Math.min(engineEntries.length, 10); // 可以调整显示的普通搜索引擎数量
 
                 for (let i = 0; i < displayCount; i++) {
                     const [name, url] = engineEntries[i];
-                    const topItem = createEngineItem(name, url);
-                    const bottomItem = createEngineItem(name, url);
-                    topEngineListContainer.appendChild(topItem);
-                    bottomEngineListContainer.appendChild(bottomItem);
-                    engineItems.push(topItem, bottomItem);
+                    const item = createEngineItem(name, url);
+                    topEngineListContainer.appendChild(item);
+                    engineItems.push(item);
                 }
+
+                // 填充 AI 搜索引擎列表（bottomEngineListContainer）
+                aiSearchEngines.forEach(engine => {
+                    const item = createEngineItem(engine.name, engine.url);
+                    bottomEngineListContainer.appendChild(item);
+                    engineItems.push(item);
+                });
 
                 topEngineListContainer.style.display = 'block';
                 bottomEngineListContainer.style.display = 'block';
-                selectedIndex = -1; // 重置选中索引
+                selectedIndex = -1;
             });
         } else {
             topEngineListContainer.style.display = 'none';
