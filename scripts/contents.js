@@ -75,8 +75,20 @@ function addFloatingIcon() {
             action: () => {
                 chrome.runtime.sendMessage({ action: 'openOptionsPage' });
             }
-        }, { text: '打开侧边栏', icon: '◧', action: () => chrome.runtime.sendMessage({ action: 'toggleSidePanel' }) },
-
+        },
+        {
+            text: '切换侧边栏',
+            icon: '◧',
+            action: () => {
+                chrome.runtime.sendMessage({ action: 'toggleSidePanel' }, (response) => {
+                    if (response && response.success) {
+                        // 更新图标或文本以反映侧边栏的新状态
+                        this.text = response.isOpen ? '关闭侧边栏' : '打开侧边栏';
+                        // 如果你想更新图标,也可以在这里更新
+                    }
+                });
+            }
+        },
         {
             text: '激活搜索',
             icon: '🔍',

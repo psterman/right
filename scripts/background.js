@@ -1,5 +1,6 @@
 // 假设这个变量用于跟踪侧边栏的开关状态
 let isSidePanelOpen = false;
+
 if (typeof browser !== "undefined") {
 	var qtest = browser.sidebarAction;
 	if (typeof qtest !== "undefined") {
@@ -528,23 +529,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		return true; // 这很重要，它告诉Chrome我们将异步发送响应
 	}
 });
+// 添加这个函数来处理打开选项页的请求
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === 'openOptionsPage') {
+		chrome.runtime.openOptionsPage();
+	}
+});
+
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 	if (request.action === 'toggleSidePanel') {
-		// 根据当前状态切换侧边栏
 		if (isSidePanelOpen) {
-			// 如果侧边栏是打开的，执行关闭操作
-			// 注意：这里需要实现关闭侧边栏的逻辑，但目前 Chrome API 不直接支持
-			// 下面的代码仅为示例，你需要根据实际情况实现关闭逻辑
-			console.log("尝试关闭侧边栏");
-			isSidePanelOpen = false;
+			// 如果侧边栏是打开的,尝试关闭它
+			chrome.sidePanel.close({ windowId: sender.tab.windowId })
+				.then(() => {
+					isSidePanelOpen = false;
+					sendResponse({ success: true, isOpen: false });
+				})
+				.catch((error) => {
+					console.error('Failed to close side panel:', error);
+					sendResponse({ success: false, error: error.message });
+				});
 		} else {
-			// 如果侧边栏是关闭的，打开它
-			chrome.sidePanel.open({ windowId: sender.tab.windowId }, function () {
-				// 侧边栏打开后，发送消息到侧边栏
-				chrome.tabs.sendMessage(sender.tab.id, { action: 'clickBookmarksButton' });
-				sendResponse({ success: true });
-				isSidePanelOpen = true; // 更新状态为打开
-			});
+			// 如果侧边栏是关闭的,打开它
+			chrome.sidePanel.open({ windowId: sender.tab.windowId })
+				.then(() => {
+					isSidePanelOpen = true;
+					sendResponse({ success: true, isOpen: true });
+				})
+				.catch((error) => {
+					console.error('Failed to open side panel:', error);
+					sendResponse({ success: false, error: error.message });
+				});
 		}
 		return true; // 保持消息通道开放
 	}
