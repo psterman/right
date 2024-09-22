@@ -1,7 +1,19 @@
 // 在全局范围内添加这些变量
 let selectedIndex = -1;
 let engineItems = [];
-
+const aiSearchEngines = [
+    { name: 'AI搜索', url: 'https://example.com/ai-search?q=%s' },
+    { name: 'Perplexity', url: 'https://www.perplexity.ai/?q=%s' },
+    { name: 'Devy', url: 'https://devy.ai/search?q=%s' },
+    { name: '360AI搜索', url: 'https://ai.360.com/search?q=%s' },
+    { name: 'ThinkAny', url: 'https://www.thinkany.ai/search?q=%s' },
+    { name: '秘塔', url: 'https://metaso.cn/?q=%s' },
+    { name: '开搜AI', url: 'https://kaiso.ai/?q=%s' },
+    { name: 'WebPilot', url: 'https://www.webpilot.ai/search?q=%s' },
+    { name: 'Consensus', url: 'https://consensus.app/search/?q=%s' },
+    { name: 'YOU', url: 'https://you.com/search?q=%s' },
+    { name: 'phind', url: 'https://www.phind.com/search?q=%s' }
+];
 // 添加悬浮图标
 function addFloatingIcon() {
     let isSidebarOpen = false; // 跟踪侧边栏状态
@@ -1384,19 +1396,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     `;
     popup.appendChild(customEngineListContainer); // 将列表容器添加到 popup 而不是 inputContainer
     // 首先，定义 AI 搜索引擎列表（保持不变）
-    const aiSearchEngines = [
-        { name: 'AI搜索', url: 'https://example.com/ai-search?q=%s' },
-        { name: 'Perplexity', url: 'https://www.perplexity.ai/?q=%s' },
-        { name: 'Devy', url: 'https://devy.ai/search?q=%s' },
-        { name: '360AI搜索', url: 'https://ai.360.com/search?q=%s' },
-        { name: 'ThinkAny', url: 'https://www.thinkany.ai/search?q=%s' },
-        { name: '秘塔', url: 'https://metaso.cn/?q=%s' },
-        { name: '开搜AI', url: 'https://kaiso.ai/?q=%s' },
-        { name: 'WebPilot', url: 'https://www.webpilot.ai/search?q=%s' },
-        { name: 'Consensus', url: 'https://consensus.app/search/?q=%s' },
-        { name: 'YOU', url: 'https://you.com/search?q=%s' },
-        { name: 'phind', url: 'https://www.phind.com/search?q=%s' }
-    ];
+   
     // 修改 updateEngineList 函数
     function updateEngineList() {
         const searchText = input.value.trim();
@@ -1547,28 +1547,48 @@ function createMultiMenu(start, end) {
 
 // 修改: 加载搜索引擎到 multiMenu1 和 multiMenu2
 function loadEnginesIntoGrid(multiMenu1, multiMenu2) {
-    chrome.storage.sync.get('id2enginemap', function (data) {
-        const engines = data.id2enginemap || {};
-        const engineEntries = Object.entries(engines);
-
-        const loadIntoMenu = (menu, start, end) => {
+    // 加载普通搜索引擎到 multiMenu1
+    const loadNormalEngines = (menu) => {
+        chrome.storage.sync.get('id2enginemap', function (data) {
+            const engines = data.id2enginemap || {};
+            const engineEntries = Object.entries(engines);
             const gridItems = menu.querySelectorAll('.grid-item');
+
             gridItems.forEach((item, index) => {
-                const engineIndex = start + index - 1;
-                if (engineIndex < engineEntries.length) {
-                    const [name, url] = engineEntries[engineIndex];
+                if (index < engineEntries.length) {
+                    const [name, url] = engineEntries[index];
                     item.textContent = name;
                     item.setAttribute('data-url', url);
+                    item.style.cursor = 'pointer';
                 } else {
                     item.textContent = '';
+                    item.removeAttribute('data-url');
                     item.style.cursor = 'default';
                 }
             });
-        };
+        });
+    };
 
-        loadIntoMenu(multiMenu1, 1, 12);
-        loadIntoMenu(multiMenu2, 13, 24);
-    });
+    // 加载 AI 搜索引擎到 multiMenu2
+    const loadAIEngines = (menu) => {
+        const gridItems = menu.querySelectorAll('.grid-item');
+        gridItems.forEach((item, index) => {
+            if (index < aiSearchEngines.length) {
+                const engine = aiSearchEngines[index];
+                item.textContent = engine.name;
+                item.setAttribute('data-url', engine.url);
+                item.style.cursor = 'pointer';
+            } else {
+                item.textContent = '';
+                item.removeAttribute('data-url');
+                item.style.cursor = 'default';
+                item.style.backgroundColor = 'transparent'; // 设置空格子为透明
+            }
+        });
+    };
+
+    loadNormalEngines(multiMenu1);
+    loadAIEngines(multiMenu2);
 }
 
 function handleSearchClick(event) {
