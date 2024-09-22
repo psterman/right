@@ -1204,6 +1204,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     input.type = 'text';
     input.placeholder = '输入搜索词...';
     input.value = initialText; // 新增: 设置初始文本
+    globalSearchInput = input;
     input.style.cssText = `
         flex-grow: 1;
         height: 30px;
@@ -1291,6 +1292,8 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     multiMenu2.style.maxWidth = '400px';
     multiMenu2.style.minWidth = '300px';
     multiMenu2.style.marginTop = '10px'; // 添加一些顶部边距
+    loadEnginesIntoGrid(multiMenu1, multiMenu2);
+
     searchArea.appendChild(multiMenu1);
     searchArea.appendChild(inputContainer);
     searchArea.appendChild(engineList);
@@ -1417,8 +1420,11 @@ function performSearch(searchText, engineUrl) {
 
 
 }
+let globalSearchInput;
+let currentSelectedIndex = -1;
 function createMultiMenu(start, end) {
     const menu = document.createElement('div');
+    menu.className = 'multi-menu';
     menu.style.cssText = `
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -1434,32 +1440,123 @@ function createMultiMenu(start, end) {
 
     for (let i = start; i <= end; i++) {
         const item = document.createElement('div');
-        item.style.backgroundColor = 'white';
-        item.style.display = 'flex';
-        item.style.justifyContent = 'center';
-        item.style.alignItems = 'center';
-        item.style.cursor = 'pointer';
-        item.style.fontSize = '14px';
-        item.style.fontWeight = 'bold';
-        item.style.color = '#333';
-        item.style.userSelect = 'none';
-        item.style.boxSizing = 'border-box';
-        item.style.border = '1px solid #ccc';
-        item.textContent = i.toString();
-        item.onclick = () => {
-            console.log(`功能 ${i} 被点击`);
-            // 这里可以添加具体的功能实现
-        };
-        item.onmouseover = () => {
-            item.style.backgroundColor = '#f0f0f0';
-        };
-        item.onmouseout = () => {
-            item.style.backgroundColor = 'white';
-        };
+        item.className = 'grid-item';
+        item.style.cssText = `
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            user-select: none;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            padding: 5px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            height: 40px;
+        `;
+        item.setAttribute('data-index', i - 1);
+        item.addEventListener('click', handleSearchClick);
+        item.addEventListener('mouseover', () => {
+            currentSelectedIndex = i - 1;
+            highlightSelectedItem();
+        });
+        item.addEventListener('mouseout', () => {
+            if (currentSelectedIndex !== i - 1) {
+                item.style.backgroundColor = 'white';
+                item.style.border = '1px solid #ccc';
+            }
+        });
         menu.appendChild(item);
     }
 
     return menu;
+}
+
+
+// 修改: 加载搜索引擎到 multiMenu1 和 multiMenu2
+function loadEnginesIntoGrid(multiMenu1, multiMenu2) {
+    chrome.storage.sync.get('id2enginemap', function (data) {
+        const engines = data.id2enginemap || {};
+        const engineEntries = Object.entries(engines);
+
+        const loadIntoMenu = (menu, start, end) => {
+            const gridItems = menu.querySelectorAll('.grid-item');
+            gridItems.forEach((item, index) => {
+                const engineIndex = start + index - 1;
+                if (engineIndex < engineEntries.length) {
+                    const [name, url] = engineEntries[engineIndex];
+                    item.textContent = name;
+                    item.setAttribute('data-url', url);
+                } else {
+                    item.textContent = '';
+                    item.style.cursor = 'default';
+                }
+            });
+        };
+
+        loadIntoMenu(multiMenu1, 1, 12);
+        loadIntoMenu(multiMenu2, 13, 24);
+    });
+}
+
+function handleSearchClick(event) {
+    const searchText = globalSearchInput.value.trim();
+    const engineurl = event.target.getAttribute('data-url');
+    if (searchText && engineurl) {
+        performSearch(searchText, engineurl);
+    } else if (!searchText) {
+        alert('请输入搜索关键词');
+        globalSearchInput.focus();
+    }
+}
+
+function highlightSelectedItem() {
+    const allGridItems = document.querySelectorAll('.grid-item');
+    allGridItems.forEach((item, index) => {
+        if (index === currentSelectedIndex) {
+            item.style.backgroundColor = '#e0e0e0';
+            item.style.border = '2px solid #007bff';
+        } else {
+            item.style.backgroundColor = 'white';
+            item.style.border = '1px solid #ccc';
+        }
+    });
+}
+
+function handleKeyNavigation(event) {
+    const allGridItems = document.querySelectorAll('.grid-item');
+    const totalItems = allGridItems.length;
+    const columns = 4;
+
+    switch (event.key) {
+        case 'ArrowRight':
+            currentSelectedIndex = (currentSelectedIndex + 1) % totalItems;
+            break;
+        case 'ArrowLeft':
+            currentSelectedIndex = (currentSelectedIndex - 1 + totalItems) % totalItems;
+            break;
+        case 'ArrowDown':
+            currentSelectedIndex = (currentSelectedIndex + columns) % totalItems;
+            break;
+        case 'ArrowUp':
+            currentSelectedIndex = (currentSelectedIndex - columns + totalItems) % totalItems;
+            break;
+        case 'Enter':
+            if (currentSelectedIndex !== -1) {
+                allGridItems[currentSelectedIndex].click();
+            }
+            return;
+        default:
+            return;
+    }
+
+    event.preventDefault();
+    highlightSelectedItem();
 }
 // 执行搜索
 function performSearch(searchText, engineUrl) {
@@ -1490,6 +1587,7 @@ function closeSearchPopup() {
         document.body.removeChild(currentPopup);
         currentPopup = null;
         document.removeEventListener('keydown', onKeyDown);
+        document.removeEventListener('keydown', handleKeyNavigation);
     }
 }
 function onKeyDown(event) {
@@ -1517,7 +1615,8 @@ document.addEventListener('mousedown', handleMouseDown);
 document.addEventListener('mouseup', handleMouseUp);
 document.addEventListener('mousemove', handleMouseMove);
 document.addEventListener('keydown', handleKeyDown);
-
+// 添加键盘事件监听
+document.addEventListener('keydown', handleKeyNavigation);
 // 修改: 保留原有的键盘事件监听器
 document.addEventListener('keydown', handleKeyDown);
 
