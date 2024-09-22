@@ -1021,6 +1021,10 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         document.body.removeChild(currentPopup);
     }
     const popup = document.createElement('div');
+    document.addEventListener('keydown', escListener);
+    document.addEventListener('keydown', handleKeyNavigation);
+
+
     // 修改 popup 的样式
     popup.style.cssText = `
        position: fixed;
@@ -1041,7 +1045,14 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         box-sizing: border-box; // 确保内边距不会增加总宽度
     `;
     popup.id = "searchPopup";
-
+    // 修改 1: 添加 ESC 键监听器
+    document.addEventListener('keydown', function escListener(e) {
+        if (e.key === 'Escape') {
+            closeSearchPopup();
+            // 移除事件监听器，避免多次添加
+            document.removeEventListener('keydown', escListener);
+        }
+    });
     // 新增：上方搜索引擎列表容器
     const topEngineListContainer = document.createElement('div');
     topEngineListContainer.style.cssText = `
@@ -1626,6 +1637,15 @@ function closeSearchPopup() {
         currentPopup = null;
         document.removeEventListener('keydown', onKeyDown);
         document.removeEventListener('keydown', handleKeyNavigation);
+        // 新增：移除 ESC 键监听器
+        document.removeEventListener('keydown', escListener);
+    }
+}
+
+// 新增：定义 escListener 函数
+function escListener(e) {
+    if (e.key === 'Escape') {
+        closeSearchPopup();
     }
 }
 function onKeyDown(event) {
