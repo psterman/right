@@ -1017,24 +1017,25 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     if (currentPopup) {
         document.body.removeChild(currentPopup);
     }
-    
     const popup = document.createElement('div');
     // 修改 popup 的样式
     popup.style.cssText = `
-          position: fixed;
+       position: fixed;
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
         z-index: 10000;
         width: 420px;
+        max-height: 90vh;
         background: white;
         border-radius: 5px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         display: flex;
         flex-direction: column;
-        align-items: center;
-        padding: 20px;
-        box-sizing: border-box;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 10px; // 添加内边距
+        box-sizing: border-box; // 确保内边距不会增加总宽度
     `;
     popup.id = "searchPopup";
 
@@ -1101,6 +1102,45 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     engineList.style.padding = '5px';
     engineList.style.borderTop = 'none'; // 移除顶部边框
 
+    // 创建搜索引擎项目的函数
+    function createEngineItem(name, url) {
+        const item = document.createElement('div');
+        item.textContent = name;
+        item.style.cssText = `
+            padding: 5px 10px;
+            cursor: pointer;
+            color: black;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+            height: 20px;
+            line-height: 20px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        `;
+        item.addEventListener('mouseover', function () {
+            this.style.backgroundColor = '#f0f0f0';
+        });
+        item.addEventListener('mouseout', function () {
+            this.style.backgroundColor = 'transparent';
+        });
+        item.addEventListener('click', function () {
+            performSearch(input.value.trim(), url);
+        });
+        return item;
+    }
+
+
+    // 添加百度搜索引擎
+    const baiduItem = createEngineItem('百度搜索', 'https://www.baidu.com/s?wd=');
+    engineList.appendChild(baiduItem);
+
+    // 添加 Bing 搜索引擎
+    const bingItem = createEngineItem('Bing 搜索', 'https://www.bing.com/search?q=');
+    engineList.appendChild(bingItem);
+
+    popup.appendChild(engineList);
+
 
     // 添加拖拽功能
     let isDragging = false;
@@ -1137,7 +1177,16 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     };
     toolbar.appendChild(closeButton);
     popup.appendChild(toolbar);
-  
+    // 创建搜索区域
+    const searchArea = document.createElement('div');
+        searchArea.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%; // 确保宽度为100%
+        box-sizing: border-box; // 添加这一行
+    `;
     // 新增: 创建输入框容器
     const inputContainer = document.createElement('div');
     inputContainer.style.cssText = `
@@ -1151,25 +1200,6 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         z-index: 1;
     `;
 
-  
-
-    // 创建第一个12宫格菜单（1-12）
-    const multiMenu1 = createMultiMenu(1, 12);
-    multiMenu1.style.display = showMultiMenu ? 'grid' : 'none';
-    multiMenu1.style.width = '100%';
-    multiMenu1.style.maxWidth = '400px';
-    multiMenu1.style.minWidth = '300px';
-    multiMenu1.style.marginTop = '0'; // 修改：确保没有顶部边距
-    // 创建搜索区域
-    const searchArea = document.createElement('div');
-    searchArea.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        width: 100%; // 确保宽度为100%
-        box-sizing: border-box; // 添加这一行
-    `;
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = '输入搜索词...';
@@ -1247,15 +1277,25 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         }
     };
 
+
+    // 创建第一个12宫格菜单（1-12）
+    const multiMenu1 = createMultiMenu(1, 12);
+    multiMenu1.style.display = showMultiMenu ? 'grid' : 'none';
+    multiMenu1.style.width = '100%';
+    multiMenu1.style.marginBottom = '10px';
+    multiMenu1.style.maxWidth = '400px';
+    multiMenu1.style.minWidth = '300px';
+    multiMenu1.style.marginTop = '0'; // 修改：确保没有顶部边距
     // 创建第二个12宫格菜单（13-24）
     const multiMenu2 = createMultiMenu(13, 24);
     multiMenu2.style.display = showMultiMenu ? 'grid' : 'none';
     multiMenu2.style.width = '100%';
     multiMenu2.style.maxWidth = '400px';
+    multiMenu2.style.marginTop = '10px';
     multiMenu2.style.minWidth = '300px';
     multiMenu2.style.marginTop = '10px'; // 添加一些顶部边距
     loadEnginesIntoGrid(multiMenu1, multiMenu2);
-    popup.appendChild(multiMenu1);
+
     searchArea.appendChild(multiMenu1);
     searchArea.appendChild(inputContainer);
     searchArea.appendChild(engineList);
@@ -1266,7 +1306,6 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     inputContainer.appendChild(clearButton);
     inputContainer.appendChild(searchButton);
     popup.appendChild(inputContainer);
-     popup.appendChild(multiMenu2);
 
     // 下方搜索引擎列表容器
     const bottomEngineListContainer = document.createElement('div');
@@ -1389,11 +1428,12 @@ function createMultiMenu(start, end) {
     const menu = document.createElement('div');
     menu.className = 'multi-menu';
     menu.style.cssText = `
-          display: grid;
+            display: grid;
+           display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 2px; // 修改: 减小间距
-        padding: 2px; // 修改: 减小内边距
-        background-color: white; // 修改: 移除灰色背景
+        gap: 1px;
+        background-color: #ccc;
+        padding: 1px;
         border-radius: 4px;
         width: 100%;
         box-sizing: border-box;
@@ -1403,7 +1443,7 @@ function createMultiMenu(start, end) {
         const item = document.createElement('div');
         item.className = 'grid-item';
         item.style.cssText = `
-            background-color: white;
+           background-color: white;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -1412,25 +1452,19 @@ function createMultiMenu(start, end) {
             font-weight: bold;
             color: #333;
             user-select: none;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
+            aspect-ratio: 1 / 1;
             padding: 5px;
-            text-align: center;
+            box-sizing: border-box;
             overflow: hidden;
             text-overflow: ellipsis;
-            height: 40px;
         `;
         item.setAttribute('data-index', i - 1);
         item.addEventListener('click', handleSearchClick);
         item.addEventListener('mouseover', () => {
-            currentSelectedIndex = i - 1;
-            highlightSelectedItem();
+            item.style.backgroundColor = '#f0f0f0';
         });
         item.addEventListener('mouseout', () => {
-            if (currentSelectedIndex !== i - 1) {
-                item.style.backgroundColor = 'white';
-                item.style.border = '1px solid #ccc';
-            }
+            item.style.backgroundColor = 'white';
         });
         menu.appendChild(item);
     }
