@@ -1153,16 +1153,21 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         border-bottom: 1px solid #eee;
     `;
         item.addEventListener('click', () => performSearch(input.value.trim(), url));
-        return item;
-        item.addEventListener('mouseover', function () {
-            this.style.backgroundColor = '#f0f0f0';
+        // 添加鼠标悬停效果
+        item.addEventListener('mouseover', () => {
+            item.style.backgroundColor = '#f0f0f0';
         });
-        item.addEventListener('mouseout', function () {
-            this.style.backgroundColor = 'transparent';
+        item.addEventListener('mouseout', () => {
+            item.style.backgroundColor = 'white';
         });
-        item.addEventListener('click', function () {
-            performSearch(input.value.trim(), url);
+
+        item.addEventListener('click', () => {
+            const searchText = globalSearchInput.value.trim();
+            if (searchText) {
+                performSearch(searchText, url);
+            }
         });
+
         return item;
     }
 
