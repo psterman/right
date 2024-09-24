@@ -940,20 +940,33 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
         var dropData = '';
         var isLink = false;
+        var isImage = false;
 
         // 检查拖拽的数据是否为链接
         if (e.dataTransfer.types.includes('text/uri-list')) {
             // 如果是链接，获取链接的 URL
             dropData = e.dataTransfer.getData('text/uri-list');
             isLink = true;
+            // 检查链接是否为图片
+            if (dropData.match(/\.(jpeg|jpg|gif|png)$/) != null) {
+                isImage = true;
+            }
         } else {
             // 否则，获取选中的文本
             dropData = window.getSelection().toString();
         }
 
         // 发送消息到后台脚本
-        if (isLink) {
-            // 如果是链接，发送 'openUrlInBackground' 动作
+        if (isLink && isImage) {
+            // 如果是图片链接，构建Google Lens的URL
+            const googleLensUrl = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(dropData)}`;
+            chrome.runtime.sendMessage({
+                action: 'setpage',
+                query: googleLensUrl,
+                foreground: e.altKey ? true : false, // 如果按下 alt 键则在前台打开
+            });
+        } else if (isLink) {
+            // 如果是普通链接，发送 'setpage' 动作
             chrome.runtime.sendMessage({
                 action: 'setpage',
                 query: dropData,
@@ -962,7 +975,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         } else {
             var searchText = dropData;
             // 如果是文本，发送 'searchWithDirection' 动作
-
             chrome.runtime.sendMessage({
                 action: 'searchWithDirection',
                 text: encodeURIComponent(dropData),
