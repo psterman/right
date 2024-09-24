@@ -812,23 +812,7 @@
 							</label>
 						</div>
 					</section>
-					<section>
-						<div>
-							<h3>自定义搜索引擎列表</h3>
-							<div id="customSearchEngines"></div>
-							<div>
-								<input type="text" id="newEngineName" placeholder="搜索引擎名称">
-								<input type="text" id="newEngineUrl" placeholder="搜索 URL (使用 %s 替代查询词)">
-								<button id="addCustomEngine">添加搜索引擎</button>
-							</div>
-						</div>
-					</section>
-						<section>
-						<div>
-							<h3>当前搜索引擎列表</h3>
-							<ul id="currentSearchEngines"></ul>
-						</div>
-					</section>
+					
 					<section>
 						<h3>多功能菜单设置</h3>
 						<div>
@@ -846,6 +830,16 @@
 							<label><input type="checkbox" name="menuItem" value="screenshot"> 截图</label>
 							<!-- 添加更多选项 -->
 						</div>
+					</section>
+					<section>
+					<h3>新增搜索引擎</h3>
+					<div>
+						<input type="text" id="customSearchEngineName" placeholder="输入搜索名称">
+						<input type="text" id="customSearchEngineUrl" placeholder="输入搜索网址">
+						<button id="addCustomSearchEngineButton">新增搜索引擎</button>
+					</div></section>
+					<section>
+					<ul id="customSearchEngineList"></ul>
 					</section>
 					<section >
 				<div id="grid-config-section">

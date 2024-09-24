@@ -1182,6 +1182,91 @@ function editWebsite(index) {
 document.addEventListener('DOMContentLoaded', function () {
 	loadSavedPages();
 	loadEngines();
+	const customSearchEngineNameInput = document.getElementById('customSearchEngineName');
+	const customSearchEngineUrlInput = document.getElementById('customSearchEngineUrl');
+	const addCustomSearchEngineButton = document.getElementById('addCustomSearchEngineButton');
+	const customSearchEngineList = document.getElementById('customSearchEngineList');
+
+
+	let customSearchEngines = [];
+
+ function renderCustomSearchEngines() {
+        customSearchEngineList.innerHTML = '';
+        customSearchEngines.forEach((engine, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>${engine.name} - ${engine.url}</span>
+                <button class="edit-button" data-index="${index}">编辑</button>
+                <button class="delete-button" data-index="${index}">删除</button>
+            `;
+            customSearchEngineList.appendChild(li);
+        });
+
+        // 绑定编辑和删除按钮的事件处理程序
+        document.querySelectorAll('.edit-button').forEach(button => {
+            button.addEventListener('click', function () {
+                const index = this.getAttribute('data-index');
+                editCustomSearchEngine(index);
+            });
+        });
+
+        document.querySelectorAll('.delete-button').forEach(button => {
+            button.addEventListener('click', function () {
+                const index = this.getAttribute('data-index');
+                deleteCustomSearchEngine(index);
+            });
+        });
+    }
+
+    function addCustomSearchEngine() {
+        const name = customSearchEngineNameInput.value.trim();
+        const url = customSearchEngineUrlInput.value.trim();
+        if (name && url) {
+            customSearchEngines.push({ name, url });
+            customSearchEngineNameInput.value = '';
+            customSearchEngineUrlInput.value = '';
+            saveCustomSearchEngines();
+            renderCustomSearchEngines();
+        }
+    }
+
+    function editCustomSearchEngine(index) {
+        const newName = prompt('编辑搜索名称', customSearchEngines[index].name);
+        const newUrl = prompt('编辑搜索网址', customSearchEngines[index].url);
+        if (newName && newUrl) {
+            customSearchEngines[index] = { name: newName, url: newUrl };
+            saveCustomSearchEngines();
+            renderCustomSearchEngines();
+        }
+    }
+
+    function deleteCustomSearchEngine(index) {
+        customSearchEngines.splice(index, 1);
+        saveCustomSearchEngines();
+        renderCustomSearchEngines();
+    }
+
+    function saveCustomSearchEngines() {
+        chrome.storage.sync.set({ customSearchEngines: customSearchEngines }, function () {
+            console.log('Custom search engines saved.');
+        });
+    }
+
+    function loadCustomSearchEngines() {
+        chrome.storage.sync.get('customSearchEngines', function (data) {
+            if (data.customSearchEngines) {
+                customSearchEngines = data.customSearchEngines;
+                renderCustomSearchEngines();
+            }
+        });
+    }
+
+    addCustomSearchEngineButton.addEventListener('click', addCustomSearchEngine);
+    window.editCustomSearchEngine = editCustomSearchEngine;
+    window.deleteCustomSearchEngine = deleteCustomSearchEngine;
+
+    loadCustomSearchEngines();
+
 	const longPressCheckbox = document.getElementById('longPressCheckbox');
 	const ctrlSelectCheckbox = document.getElementById('ctrlSelectCheckbox');
 
