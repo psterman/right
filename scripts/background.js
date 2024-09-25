@@ -622,7 +622,6 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
 
 //引入拖拽代码
-
 // 预设的搜索引擎列表
 const defaultEngines = {
 	'google': 'https://www.google.com/search?q=',
@@ -640,7 +639,13 @@ const defaultEngines = {
 	'you': 'https://you.com/search?q=',
 	'bilibili': 'https://search.bilibili.com/all?keyword=',
 	'youtube': 'https://www.youtube.com/results?search_query=',
-	'wikipedia': 'https://en.wikipedia.org/w/index.php?title=Special:Search&search='
+	'wikipedia': 'https://en.wikipedia.org/w/index.php?title=Special:Search&search=',
+	// 添加以图搜图选项
+	'google_image': 'https://lens.google.com/uploadbyurl?url=',
+	'baidu_image': 'https://image.baidu.com/n/pc_search?queryImageUrl=',
+	'tineye_image': 'https://tineye.com/search?url=',
+	'yandex_image': 'https://yandex.com/images/search?rpt=imageview&url=',
+	'bing_image': 'https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIHMP&q=imgurl:'
 };
 
 // 存储的搜索引擎映射

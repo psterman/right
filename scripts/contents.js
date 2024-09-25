@@ -958,12 +958,15 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
         // 发送消息到后台脚本
         if (isLink && isImage) {
-            // 如果是图片链接，构建Google Lens的URL
-            const googleLensUrl = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(dropData)}`;
-            chrome.runtime.sendMessage({
-                action: 'setpage',
-                query: googleLensUrl,
-                foreground: e.altKey ? true : false, // 如果按下 alt 键则在前台打开
+            chrome.storage.sync.get('defaultSearchEngine', function (data) {
+                if (!handleImageSearch(dropData, data.defaultSearchEngine)) {
+                    // 如果不是以图搜索引擎，按原来的逻辑处理
+                    chrome.runtime.sendMessage({
+                        action: 'setpage',
+                        query: dropData,
+                        foreground: e.altKey ? true : false,
+                    });
+                }
             });
         } else if (isLink) {
             // 如果是普通链接，发送 'setpage' 动作
@@ -1849,6 +1852,40 @@ function createGrid() {
 
     document.body.appendChild(grid);
 }
+// 以图搜索
+function handleImageSearch(imageUrl, searchEngine) {
+    let searchUrl;
+    const encodedImageUrl = encodeURIComponent(imageUrl);
+
+    switch (searchEngine) {
+        case 'google_image_search':
+            searchUrl = `https://lens.google.com/uploadbyurl?url=${encodedImageUrl}`;
+            break;
+        case 'baidu_image_search':
+            searchUrl = `https://image.baidu.com/n/pc_search?queryImageUrl=${encodedImageUrl}`;
+            break;
+        case 'tineye_image_search':
+            searchUrl = `https://tineye.com/search?url=${encodedImageUrl}`;
+            break;
+        case 'yandex_image_search':
+            searchUrl = `https://yandex.com/images/search?rpt=imageview&url=${encodedImageUrl}`;
+            break;
+        case 'bing_image_search':
+            searchUrl = `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIHMP&q=imgurl:${encodedImageUrl}`;
+            break;
+        default:
+            return false; // 不是以图搜索引擎
+    }
+
+    chrome.runtime.sendMessage({
+        action: 'setpage',
+        query: searchUrl,
+        foreground: true,
+    });
+
+    return true; // 已处理以图搜索
+}
+
 
 function executeGridAction(item) {
     if (item.type === 'function') {

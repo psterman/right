@@ -2140,4 +2140,5 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('export-config').addEventListener('click', exportConfig);
   document.getElementById('modal-save').addEventListener('click', saveGridItem);
   document.getElementById('modal-cancel').addEventListener('click', hideModal);
+  
 });
