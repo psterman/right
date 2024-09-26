@@ -14,6 +14,21 @@ chrome.storage.sync.get('id2enginemap', function (data) {
 	chrome.storage.sync.set({ id2enginemap: globalId2enginemap }, function () {
 		console.log('搜索引擎映射已更新');
 	});
+	const tabs = document.querySelectorAll('.tab');
+	let currentCategory = 'ai'; // 默认分类
+
+	tabs.forEach(tab => {
+		tab.addEventListener('click', function () {
+			tabs.forEach(t => t.classList.remove('active'));
+			this.classList.add('active');
+			currentCategory = this.dataset.category;
+			loadEngines(currentCategory);
+		});
+	});
+
+	document.getElementById('addEngineBtn').addEventListener('click', function () {
+		addEngine(currentCategory);
+	});
 
 	loadEngines(); // 初始化加载列表
 });
@@ -1182,6 +1197,254 @@ function editWebsite(index) {
 document.addEventListener('DOMContentLoaded', function () {
 	loadSavedPages();
 	loadEngines();
+	//四类标签展示
+	const settingsContainer = document.getElementById('searchEngineSettings');
+	const tabs = document.querySelectorAll('.tab');
+	const tabContent = document.getElementById('tabContent');
+
+	// 应用样式
+	applyStyles();
+
+	// 切换标签
+	tabs.forEach(tab => {
+		tab.addEventListener('click', () => {
+			tabs.forEach(t => t.classList.remove('active'));
+			tab.classList.add('active');
+			loadTabContent(tab.dataset.category);
+		});
+	});
+
+	// 加载标签内容
+	function loadTabContent(category) {
+		chrome.storage.sync.get('engineMap', function (data) {
+			const engineMap = data.engineMap || {};
+			const engines = engineMap[category] || {};
+
+			let content = `
+            <h2>${getCategoryName(category)}引擎</h2>
+            <ul class="engine-list">
+                ${Object.entries(engines).map(([name, url]) => `
+                    <li>
+                        ${name}: ${url}
+                        <button class="delete-btn" data-name="${name}" data-category="${category}">删除</button>
+                    </li>
+                `).join('')}
+            </ul>
+            <div class="add-engine-form">
+                <input type="text" id="${category}EngineName" placeholder="搜索引擎名称">
+                <input type="text" id="${category}EngineUrl" placeholder="搜索引擎 URL">
+                <button id="add${capitalize(category)}Engine">添加${getCategoryName(category)}引擎</button>
+            </div>
+        `;
+
+			document.getElementById('tabContent').innerHTML = content;
+
+			// 添加新引擎的事件监听器
+			document.getElementById(`add${capitalize(category)}Engine`).addEventListener('click', () => addEngine(category));
+
+			// 删除引擎的事件监听器
+			document.querySelectorAll('.delete-btn').forEach(btn => {
+				btn.addEventListener('click', function () {
+					deleteEngine(this.dataset.category, this.dataset.name);
+				});
+			});
+		});
+	}
+
+	
+
+	function deleteEngine(category, name) {
+		chrome.storage.sync.get('engineMap', function (data) {
+			let engineMap = data.engineMap || {};
+			if (engineMap[category] && engineMap[category][name]) {
+				delete engineMap[category][name];
+				chrome.storage.sync.set({ engineMap: engineMap }, function () {
+					loadTabContent(category);
+				});
+			}
+		});
+	}
+	// 添加搜索引擎
+	function addEngine(category) {
+		var engineName = document.getElementById('addEngineName').value.trim();
+		var engineUrl = document.getElementById('addEngineUrl').value.trim();
+
+		if (!engineName || !engineUrl) {
+			alert('搜索引擎名称和URL不能为空！');
+			return;
+		}
+
+		chrome.storage.sync.get(['id2enginemap', 'engineMap'], function (data) {
+			let globalId2enginemap = data.id2enginemap || {};
+			let engineMap = data.engineMap || {};
+
+			if (!engineMap[category]) {
+				engineMap[category] = {};
+			}
+
+			const fullEngineName = category + '_' + engineName;
+
+			if (engineMap[category][engineName] || globalId2enginemap[fullEngineName]) {
+				alert('该搜索引擎名称已存在，请使用其他名称。');
+				return;
+			}
+
+			engineMap[category][engineName] = engineUrl;
+			globalId2enginemap[fullEngineName] = engineUrl;
+
+			chrome.storage.sync.set({
+				'id2enginemap': globalId2enginemap,
+				'engineMap': engineMap
+			}, function () {
+				if (chrome.runtime.lastError) {
+					console.error('添加搜索引擎时发生错误:', chrome.runtime.lastError);
+					alert('添加搜索引擎时发生错误，请重试。');
+				} else {
+					alert('搜索引擎添加成功！');
+					loadEngines(category); // 重新加载列表以显示新添加的项
+				}
+			});
+		});
+
+		document.getElementById('addEngineName').value = '';
+		document.getElementById('addEngineUrl').value = '';
+	}
+
+	// 监听存储变化
+	chrome.storage.onChanged.addListener(function (changes, namespace) {
+		if (namespace === 'sync' && changes.engineMap) {
+			loadTabContent(document.querySelector('.tab.active').dataset.category);
+		}
+	});
+
+	// 辅助函数
+	function getCategoryName(category) {
+		const names = {
+			ai: 'AI 搜索',
+			image: '图片搜索',
+			regular: '综合搜索',
+			custom: '自定义搜索'
+		};
+		return names[category] || category;
+	}
+
+	function capitalize(string) {
+		return string.charAt(0).toUpperCase() + string.slice(1);
+	}
+
+	// 应用样式
+	function applyStyles() {
+		const styles = `
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #121212;
+            color: #ffffff;
+        }
+        #searchEngineSettings {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .tabs {
+            display: flex;
+            background-color: #2c2c2c;
+            border-bottom: 1px solid #3a3a3a;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            color: #b0b0b0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        .tab:hover {
+            background-color: #3a3a3a;
+        }
+        .tab.active {
+            border-bottom: 3px solid #4285f4;
+            color: #4285f4;
+        }
+        .tab-content {
+            padding: 20px;
+        }
+        .engine-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .engine-list li {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #2c2c2c;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .engine-list li span {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+        .add-engine-form {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #3a3a3a;
+        }
+        input[type="text"] {
+            width: calc(50% - 10px);
+            padding: 8px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
+            background-color: #2c2c2c;
+            color: #ffffff;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+    `;
+
+		// 创建 style 元素并添加到 head
+		const styleElement = document.createElement('style');
+		styleElement.textContent = styles;
+		document.head.appendChild(styleElement);
+	}
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        loadTabContent(this.dataset.category);
+    });
+});
+
+	// 初始化：加载默认标签内容
+	loadTabContent('ai');
 	const customSearchEngineNameInput = document.getElementById('customSearchEngineName');
 	const customSearchEngineUrlInput = document.getElementById('customSearchEngineUrl');
 	const addCustomSearchEngineButton = document.getElementById('addCustomSearchEngineButton');
@@ -1920,31 +2183,63 @@ function addEngine() {
 	document.getElementById('addEngineUrl').value = '';
 }
 
-// 加载搜索引擎列表到页面
-function loadEngines() {
+// 用这个新函数替换
+function loadEngines(category) {
 	var list = document.getElementById('engineList');
 	list.innerHTML = ''; // 清空现有列表
 
-	// 遍历全局变量中的所有搜索引擎，并添加到页面列表中
-	Object.keys(globalId2enginemap).forEach(function (engineName) {
-		var item = document.createElement('li');
-		item.textContent = engineName + ': ' + globalId2enginemap[engineName];
-		var removeButton = document.createElement('button');
-		removeButton.textContent = '删除';
-		removeButton.onclick = function () {
-			delete globalId2enginemap[engineName];
-			chrome.storage.sync.set({ 'id2enginemap': globalId2enginemap }, function () {
+	chrome.storage.sync.get(['id2enginemap', 'engineMap'], function (data) {
+		const globalId2enginemap = data.id2enginemap || {};
+		const engineMap = data.engineMap || {};
+
+		// 如果存在新的分类结构，使用它
+		if (engineMap[category]) {
+			Object.keys(engineMap[category]).forEach(function (engineName) {
+				addEngineToList(engineName, engineMap[category][engineName], category, list);
+			});
+		} else {
+			// 否则，使用旧的全局结构，但根据名称前缀进行过滤
+			Object.keys(globalId2enginemap).forEach(function (engineName) {
+				if (engineName.startsWith(category + '_')) {
+					addEngineToList(engineName, globalId2enginemap[engineName], category, list);
+				}
+			});
+		}
+	});
+}
+
+// 添加这个新函数
+function addEngineToList(engineName, engineUrl, category, list) {
+	var item = document.createElement('li');
+	item.textContent = engineName + ': ' + engineUrl;
+	var removeButton = document.createElement('button');
+	removeButton.textContent = '删除';
+	removeButton.onclick = function () {
+		chrome.storage.sync.get(['id2enginemap', 'engineMap'], function (data) {
+			let globalId2enginemap = data.id2enginemap || {};
+			let engineMap = data.engineMap || {};
+
+			if (engineMap[category]) {
+				delete engineMap[category][engineName];
+			} else {
+				delete globalId2enginemap[engineName];
+			}
+
+			chrome.storage.sync.set({
+				'id2enginemap': globalId2enginemap,
+				'engineMap': engineMap
+			}, function () {
 				if (chrome.runtime.lastError) {
 					alert('删除搜索引擎时发生错误，请重试。');
 				} else {
 					alert('搜索引擎删除成功！');
-					loadEngines(); // 重新加载列表
+					loadEngines(category); // 重新加载列表
 				}
 			});
-		};
-		item.appendChild(removeButton);
-		list.appendChild(item);
-	});
+		});
+	};
+	item.appendChild(removeButton);
+	list.appendChild(item);
 }
 
 // 加载当前搜索引擎列表
