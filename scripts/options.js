@@ -1703,7 +1703,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 	var btnLightTheme = document.getElementById('btnLightTheme');
 	var btnDarkTheme = document.getElementById('btnDarkTheme');
 
-	btnLightTheme.addEventListener('click', function () {
+	titlecolor.addEventListener('click', function () {
 		// 实现浅色主题的切换逻辑
 		golightmode(); // 切换主题的函数（如果有）
 		chrome.storage.sync.set({ "darkmode": 0 }); // 保存主题设置
