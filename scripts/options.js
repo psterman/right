@@ -1,6 +1,78 @@
 // 定义全局变量存储搜索引擎映射
 var globalId2enginemap = {};
+// 在文件顶部添加或更新以下代码
+// 开始: 搜索引擎数据
+const searchEngines = {
+	ai: [
+		{ name: "ChatGPT", url: "https://chat.openai.com/" },
+		{ name: "Bard", url: "https://bard.google.com/" },
+		// 添加更多AI搜索引擎...
+	],
+	image: [
+		{ name: "Google Images", url: "https://images.google.com/search?q=%s" },
+		{ name: "Bing Images", url: "https://www.bing.com/images/search?q=%s" },
+		// 添加更多图片搜索引擎...
+	],
+	regular: [
+		{ name: "Google", url: "https://www.google.com/search?q=%s" },
+		{ name: "Bing", url: "https://www.bing.com/search?q=%s" },
+		// 添加更多综合搜索引擎...
+	],
+	custom: [
+		// 这里可以是空的，或者包含一些默认的自定义搜索引擎
+	]
+};
+// 结束: 搜索引擎数据
 
+// 添加以下新函数
+// 开始: 初始化自定义下拉菜单函数
+function initCustomSelects() {
+	const customSelects = document.querySelectorAll('.custom-select');
+	customSelects.forEach(select => {
+		const button = select.querySelector('.select-button');
+		const menu = select.querySelector('.select-menu');
+		const categories = select.querySelectorAll('.category');
+
+		// 填充搜索引擎列表
+		categories.forEach(category => {
+			const key = category.classList[1]; // ai, regular, image, or custom
+			const engineList = category.querySelector('.engine-list');
+			searchEngines[key].forEach(engine => {
+				const li = document.createElement('li');
+				li.textContent = engine.name;
+				li.dataset.url = engine.url;
+				li.addEventListener('click', () => {
+					button.textContent = engine.name;
+					button.dataset.url = engine.url;
+					closeAllMenus();
+				});
+				engineList.appendChild(li);
+			});
+		});
+
+		button.addEventListener('click', (e) => {
+			e.stopPropagation();
+			closeAllMenus();
+			menu.classList.add('show');
+		});
+	});
+
+	document.addEventListener('click', closeAllMenus);
+}
+
+function closeAllMenus() {
+	const menus = document.querySelectorAll('.select-menu');
+	menus.forEach(menu => menu.classList.remove('show'));
+}
+// 结束: 初始化自定义下拉菜单函数
+
+// 在 document.addEventListener('DOMContentLoaded', ...) 中添加
+// 开始: 调用初始化函数
+document.addEventListener('DOMContentLoaded', () => {
+	// ... 其他现有的初始化代码 ...
+	initCustomSelects();
+});
+// 结束: 调用初始化函数
 // 初始化全局变量
 // 初始化全局变量
 chrome.storage.sync.get('id2enginemap', function (data) {
@@ -1585,7 +1657,8 @@ document.querySelectorAll('.tab').forEach(tab => {
 	// 绑定添加搜索引擎按钮的点击事件
 	var addEngineButton = document.getElementById('addEngineButton');
 	addEngineButton.addEventListener('click', addEngine);
-	const directionSearchToggle = document.getElementById('directionSearchToggle');
+	const
+		earchToggle = document.getElementById('directionSearchToggle');
 
 	// 加载时设置开关状态
 	chrome.storage.sync.get('directionSearchEnabled', function (items) {
@@ -2156,7 +2229,8 @@ function loadSavedPages() {
 
 		}
 	});
-}// 增加方向搜索引擎对应的数组// 更新所有下拉列表的函数
+}
+// 增加方向搜索引擎对应的数组// 更新所有下拉列表的函数
 function updateAllEngineLists() {
 	const lists = document.querySelectorAll('select');
 	lists.forEach(list => {
@@ -2168,7 +2242,8 @@ function updateAllEngineLists() {
 			list.appendChild(option);
 		});
 	});
-}// 添加新的搜索引擎
+}
+// 添加新的搜索引擎
 function addEngine() {
 	var engineName = document.getElementById('addEngineName').value.trim();
 	var engineUrl = document.getElementById('addEngineUrl').value.trim();

@@ -57,26 +57,7 @@ chrome.storage.sync.get('id2enginemap', function (data) {
 (function () {
     const searchEngines = document.getElementById('search-engines')
 
-    const searchEngineNames = [
-        "", // 添加空字符串作为第一个选项
-        'google',
-        'yahoo',
-        'bing',
-        'baidu',
-        'yandex',
-        'duckduckgo',
-        'sogou',
-        '360',
-        'yahoo',
-        'ecosia',
-        'qwant',
-        'findx',
-        'amazon',
-        'you',
-        'bilibili',
-        'youtube',
-        'wikipedia'
-    ]
+   
 
     for (let name of searchEngineNames) {
         const engine = document.createElement('option')
@@ -310,3 +291,4 @@ chrome.storage.sync.get('id2enginemap', function (data) {
     })
 
 })();
+

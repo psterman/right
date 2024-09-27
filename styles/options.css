@@ -2425,9 +2425,9 @@ button {
   color: var(--totl-primary-font-color);
 }
 
-.saved-pages-list {
-  list-style: none;
-  padding: 0;
+.saved-pages-list li {
+  /* 修改: 更改边框颜色 */
+  border-bottom: 1px solid #444;
 }
 
 .saved-pages-list li {
@@ -2436,28 +2436,18 @@ button {
   border-bottom: 1px solid #ccc;
 }
 .grid-24 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  border: 1px solid #ccc;
+  /* 修改: 更改边框颜色 */
+  border: 1px solid #444;
 }
-
 .grid-cell {
-  aspect-ratio: 1 / 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  background-color: #f0f0f0;
-  font-size: 14px;
-  border: 1px solid #ccc;
+  /* 修改: 更改背景色和边框颜色 */
+  background-color: #2c2c2c;
+  border: 1px solid #444;
+  color: #ffffff;
 }
-
 .grid-cell:hover {
-  background-color: #e0e0e0;
+  /* 修改: 更改悬停背景色 */
+  background-color: #3a3a3a;
 }
 
 .grid-controls {
@@ -2483,12 +2473,10 @@ button {
 }
 
 .modal-content {
-  background-color: #fefefe;
-  margin: 15% auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%;
-  max-width: 500px;
+  /* 修改: 更改背景色、边框颜色和文字颜色 */
+  background-color: #2c2c2c;
+  border: 1px solid #444;
+  color: #ffffff;
 }
 
 #grid-name,
@@ -2505,3 +2493,93 @@ button {
 button {
   margin-right: 10px;
 }
+/* 在文件末尾添加以下样式 */
+/* 开始: 新增的CSS样式 */
+.emoji-directions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.custom-select {
+  position: relative;
+  display: inline-block;
+}
+
+.select-button {
+  padding: 5px 10px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+/* 修改: 更改背景色为黑色，添加过渡效果 */
+.select-menu {
+  display: none;
+  position: absolute;
+  background-color: #1e1e1e;
+    color: #ffffff;
+  max-width: 400px;
+  /* 保持原有的最大宽度 */
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  left: 0;
+  /* 将左边缘对齐到父元素的左边 */
+  top: 100%;
+  /* 将顶部对齐到按钮的底部 */
+  transform: none;
+  /* 移除水平居中的变换 */
+}
+.select-menu.show {
+  display: flex;
+}
+
+.category {
+  padding: 10px;
+  width: 150px;
+border-right: 1px solid #444;
+}
+
+.category:last-child {
+  border-right: none;
+}
+
+.category h4 {
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+
+.engine-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.engine-list li {
+  padding: 5px;
+  cursor: pointer;
+}
+
+.engine-list li:hover {
+  background-color: #3a3a3a;
+}
+
+/* 可以为每个类别设置不同的背景色 */
+.category.ai {
+  background-color: #2a3f5f;
+}
+
+.category.regular {
+  background-color: #2f4f2f;
+}
+
+.category.image {
+  background-color: #4f3f2f;
+}
+
+.category.custom {
+  background-color: #3f2f4f;
+}
+/* 结束: 新增的CSS样式 */
