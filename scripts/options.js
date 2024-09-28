@@ -1271,9 +1271,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	loadEngines();
 	//四类标签展示
 	const settingsContainer = document.getElementById('searchEngineSettings');
-	const tabs = document.querySelectorAll('.tab');
 	const tabContent = document.getElementById('tabContent');
-
+	const tabContent2 = document.getElementById('tabContent2');
+	const tabs = document.querySelectorAll('.tab');
 	// 应用样式
 	applyStyles();
 
@@ -1322,8 +1322,87 @@ document.addEventListener('DOMContentLoaded', function () {
 			});
 		});
 	}
+	function displayEngines(category) {
+		// 更新 tabContent
+		tabContent.innerHTML = '';
+		const engines = searchEngines[category];
 
-	
+		if (engines && engines.length > 0) {
+			const ul = document.createElement('ul');
+			ul.className = 'engine-list';
+
+			engines.forEach(engine => {
+				const li = document.createElement('li');
+				li.textContent = `${engine.name}: ${engine.url}`;
+				ul.appendChild(li);
+			});
+
+			tabContent.appendChild(ul);
+		} else {
+			tabContent.textContent = '该分类没有预设的搜索引擎。';
+		}
+
+		// 更新 tabContent2
+		tabContent2.innerHTML = '';
+		const categoryDiv = document.createElement('div');
+		categoryDiv.className = 'engine-category';
+
+		const title = document.createElement('h4');
+		title.textContent = getCategoryTitle(category);
+		categoryDiv.appendChild(title);
+
+		const ul2 = document.createElement('ul');
+		ul2.className = 'engine-list';
+
+		if (engines && engines.length > 0) {
+			engines.forEach(engine => {
+				const li = document.createElement('li');
+				li.textContent = `${engine.name}: ${engine.url}`;
+				ul2.appendChild(li);
+			});
+		} else {
+			const li = document.createElement('li');
+			li.textContent = '该分类没有预设的搜索引擎。';
+			ul2.appendChild(li);
+		}
+
+		categoryDiv.appendChild(ul2);
+		tabContent2.appendChild(categoryDiv);
+	}
+	function displayPresetEngines() {
+		tabContent2.innerHTML = ''; // 清空现有内容
+
+		Object.keys(searchEngines).forEach(category => {
+			const categoryDiv = document.createElement('div');
+			categoryDiv.className = 'engine-category';
+
+			const title = document.createElement('h4');
+			title.textContent = getCategoryTitle(category);
+			categoryDiv.appendChild(title);
+
+			const ul = document.createElement('ul');
+			ul.className = 'engine-list';
+
+			searchEngines[category].forEach(engine => {
+				const li = document.createElement('li');
+				li.textContent = `${engine.name}: ${engine.url}`;
+				ul.appendChild(li);
+			});
+
+			categoryDiv.appendChild(ul);
+			tabContent2.appendChild(categoryDiv);
+		});
+	}
+
+	function getCategoryTitle(category) {
+		const titles = {
+			ai: 'AI 搜索',
+			image: '图片搜索',
+			regular: '综合搜索',
+			custom: '自定义搜索'
+		};
+		return titles[category] || '未知分类';
+	}
 
 	function deleteEngine(category, name) {
 		chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
@@ -1522,12 +1601,26 @@ document.addEventListener('DOMContentLoaded', function () {
 		styleElement.textContent = styles;
 		document.head.appendChild(styleElement);
 	}
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', function() {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-        loadTabContent(this.dataset.category);
-    });
+	// 新增: 添加初始化函数
+	function initializePage() {
+		// 设置默认激活的标签
+		const defaultTab = document.querySelector('.tab[data-category="ai"]');
+		defaultTab.classList.add('active');
+
+		// 显示 AI 搜索引擎
+		displayEngines('ai');
+	}
+
+	// 新增: 调用初始化函数
+	initializePage();
+	// 为每个标签添加点击事件
+	tabs.forEach(tab => {
+		tab.addEventListener('click', function () {
+			tabs.forEach(t => t.classList.remove('active'));
+			this.classList.add('active');
+			displayEngines(this.dataset.category);
+		});
+	
 });
 
 	// 初始化：加载默认标签内容
