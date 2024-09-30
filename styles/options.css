@@ -2583,3 +2583,41 @@ border-right: 1px solid #444;
   background-color: #3f2f4f;
 }
 /* 结束: 新增的CSS样式 */
+.engine-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.engine-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.delete-engine {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.delete-engine:hover {
+    background-color: #ff1a1a;
+}
+
+.add-engine-form {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.add-engine-form input,
+.add-engine-form button {
+    margin-bottom: 10px;
+}

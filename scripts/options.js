@@ -1291,17 +1291,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	// 加载标签内容
 	function loadTabContent(category) {
-		chrome.storage.sync.get('engineMap', function (data) {
+		chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
 			const engineMap = data.engineMap || {};
-			const engines = engineMap[category] || {};
+			const globalId2enginemap = data.id2enginemap || {};
+			let engines = {};
 
-			let content = `
+			// 合并预设和自定义搜索引擎
+			if (engineMap[category]) {
+				engines = { ...engines, ...engineMap[category] };
+			}
+			Object.keys(globalId2enginemap).forEach(key => {
+				if (key.startsWith(category + '_')) {
+					engines[key.replace(category + '_', '')] = globalId2enginemap[key];
+				}
+			});
+
+        let content = `
             <h2>${getCategoryName(category)}引擎</h2>
-            <ul class="engine-list">
+            <ul id="${category}EngineList" class="engine-list">
                 ${Object.entries(engines).map(([name, url]) => `
                     <li>
-                        ${name}: ${url}
-                        <button class="delete-btn" data-name="${name}" data-category="${category}">删除</button>
+                        <span>${name}: ${url}</span>
+                        <button class="delete-engine" data-category="${category}" data-name="${name}">删除</button>
                     </li>
                 `).join('')}
             </ul>
@@ -1312,31 +1323,63 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `;
 
-			document.getElementById('tabContent').innerHTML = content;
+        document.getElementById('tabContent').innerHTML = content;
 
-			// 添加新引擎的事件监听器
-			document.getElementById(`add${capitalize(category)}Engine`).addEventListener('click', () => addEngine(category));
+        // 添加新引擎的事件监听器
+        document.getElementById(`add${capitalize(category)}Engine`).addEventListener('click', () => addEngine(category));
 
-			// 删除引擎的事件监听器
-			document.querySelectorAll('.delete-btn').forEach(btn => {
-				btn.addEventListener('click', function () {
-					deleteEngine(this.dataset.category, this.dataset.name);
-				});
+        // 使用事件委托处理删除按钮的点击事件
+        document.getElementById(`${category}EngineList`).addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-engine')) {
+                deleteEngine(e.target.dataset.category, e.target.dataset.name);
+            }
+        });
+    });
+}
+	function loadSelectedEngines(category) {
+		chrome.storage.sync.get(`selectedEngines_${category}`, function (result) {
+			const selectedEngines = result[`selectedEngines_${category}`] || [];
+			const select = document.getElementById(`${category}EngineSelect`);
+
+			for (let option of select.options) {
+				option.selected = selectedEngines.includes(option.value);
+			}
+
+			// 添加change事件监听器来保存选择
+			select.addEventListener('change', function () {
+				const selectedOptions = Array.from(this.selectedOptions).map(option => option.value);
+				chrome.storage.sync.set({ [`selectedEngines_${category}`]: selectedOptions });
 			});
 		});
 	}
 
-	
-
 	function deleteEngine(category, name) {
+		console.log(`Attempting to delete engine: ${name} from category: ${category}`);
 		chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
 			let engineMap = data.engineMap || {};
 			let globalId2enginemap = data.id2enginemap || {};
 			const fullEngineName = `${category}_${name}`;
 
+			console.log('Current engineMap:', engineMap);
+			console.log('Current globalId2enginemap:', globalId2enginemap);
+
+			let deleted = false;
+
+			// 检查并删除 engineMap 中的引擎
 			if (engineMap[category] && engineMap[category][name]) {
 				delete engineMap[category][name];
+				deleted = true;
+			}
+
+			// 检查并删除 globalId2enginemap 中的引擎
+			if (globalId2enginemap[fullEngineName]) {
 				delete globalId2enginemap[fullEngineName];
+				deleted = true;
+			}
+
+			if (deleted) {
+				console.log('Updated engineMap:', engineMap);
+				console.log('Updated globalId2enginemap:', globalId2enginemap);
 
 				chrome.storage.sync.set({
 					'engineMap': engineMap,
@@ -1346,64 +1389,64 @@ document.addEventListener('DOMContentLoaded', function () {
 						console.error('删除搜索引擎时发生错误:', chrome.runtime.lastError);
 						alert('删除搜索引擎时发生错误，请重试。');
 					} else {
+						console.log('搜索引擎删除成功');
 						alert('搜索引擎删除成功！');
-						loadEngines(category); // 重新加载当前分类的内容
+						loadTabContent(category); // 重新加载当前分类的内容
 					}
 				});
+			} else {
+				console.log(`Engine ${name} not found in category ${category}`);
+				alert('找不到要删除的搜索引擎，可能已经被删除。');
 			}
-			chrome.storage.sync.set({ engineMap: engineMap }, function () {
-				updateTabContent(engineMap);
-				updateSelectMenus();
-			});
 		});
 	}
+
 	// 添加搜索引擎
-	function addEngine(category) {
-		const engineName = document.getElementById(`${category}EngineName`).value.trim();
-		const engineUrl = document.getElementById(`${category}EngineUrl`).value.trim();
+function addEngine(category) {
+    const engineName = document.getElementById(`${category}EngineName`).value.trim();
+    const engineUrl = document.getElementById(`${category}EngineUrl`).value.trim();
 
-		if (!engineName || !engineUrl) {
-			alert('搜索引擎名称和URL不能为空！');
-			return;
-		}
+    if (!engineName || !engineUrl) {
+        alert('搜索引擎名称和URL不能为空！');
+        return;
+    }
 
-		chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
-			let engineMap = data.engineMap || {};
-			let globalId2enginemap = data.id2enginemap || {};
+    chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
+        let engineMap = data.engineMap || {};
+        let globalId2enginemap = data.id2enginemap || {};
 
-			if (!engineMap[category]) {
-				engineMap[category] = {};
-			}
+        if (!engineMap[category]) {
+            engineMap[category] = {};
+        }
 
-			const fullEngineName = `${category}_${engineName}`;
+        const fullEngineName = `${category}_${engineName}`;
 
-			if (engineMap[category][engineName] || globalId2enginemap[fullEngineName]) {
-				alert('该搜索引擎名称已存在，请使用其他名称。');
-				return;
-			}
+        if (engineMap[category][engineName] || globalId2enginemap[fullEngineName]) {
+            alert('该搜索引擎名称已存在，请使用其他名称。');
+            return;
+        }
 
-			engineMap[category][engineName] = engineUrl;
-			globalId2enginemap[fullEngineName] = engineUrl;
+        engineMap[category][engineName] = engineUrl;
+        globalId2enginemap[fullEngineName] = engineUrl;
 
-			chrome.storage.sync.set({
-				'id2enginemap': globalId2enginemap,
-				'engineMap': engineMap
-			}, function () {
-				if (chrome.runtime.lastError) {
-					console.error('添加搜索引擎时发生错误:', chrome.runtime.lastError);
-					alert('添加搜索引擎时发生错误，请重试。');
-				} else {
-					alert(`${getCategoryName(category)}引擎添加成功！`);
-					loadEngines(category); // 重新加载列表以显示新添加的项
-				}
-			});
+        chrome.storage.sync.set({
+            'engineMap': engineMap,
+            'id2enginemap': globalId2enginemap
+        }, function () {
+            if (chrome.runtime.lastError) {
+                console.error('添加搜索引擎时发生错误:', chrome.runtime.lastError);
+                alert('添加搜索引擎时发生错误，请重试。');
+            } else {
+                alert(`${getCategoryName(category)}引擎添加成功！`);
+                loadTabContent(category); // 重新加载当前标签内容
+            }
+        });
 
-			// 清空输入框
-			document.getElementById(`${category}EngineName`).value = '';
-			document.getElementById(`${category}EngineUrl`).value = '';
-		});
-	}
-
+        // 清空输入框
+        document.getElementById(`${category}EngineName`).value = '';
+        document.getElementById(`${category}EngineUrl`).value = '';
+    });
+}
 	// 监听存储变化
 	chrome.storage.onChanged.addListener(function (changes, namespace) {
 		if (namespace === 'sync' && changes.engineMap) {
@@ -2367,6 +2410,10 @@ function addOrUpdateSearchEngine() {
 document.addEventListener('DOMContentLoaded', function () {
 	loadCurrentSearchEngines();
 	initCustomSelects();
+	const firstTab = document.querySelector('.tab');
+	if (firstTab) {
+		loadTabContent(firstTab.dataset.category);
+	}
 	document.getElementById('addCustomSearchEngine').addEventListener('click', addOrUpdateSearchEngine);
 	document.getElementById('currentSearchEngines').addEventListener('click', function (e) {
 		if (e.target.classList.contains('editSearchEngine')) {
