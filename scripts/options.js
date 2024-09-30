@@ -27,38 +27,70 @@ const searchEngines = {
 // 添加以下新函数
 // 开始: 初始化自定义下拉菜单函数
 function initCustomSelects() {
-	const customSelects = document.querySelectorAll('.custom-select');
-	customSelects.forEach(select => {
-		const button = select.querySelector('.select-button');
-		const menu = select.querySelector('.select-menu');
-		const categories = select.querySelectorAll('.category');
+	chrome.storage.sync.get('engineMap', function (data) {
+		const engineMap = data.engineMap || {};
+		const customSelects = document.querySelectorAll('.custom-select');
 
-		// 填充搜索引擎列表
-		categories.forEach(category => {
-			const key = category.classList[1]; // ai, regular, image, or custom
-			const engineList = category.querySelector('.engine-list');
-			searchEngines[key].forEach(engine => {
-				const li = document.createElement('li');
-				li.textContent = engine.name;
-				li.dataset.url = engine.url;
-				li.addEventListener('click', () => {
-					button.textContent = engine.name;
-					button.dataset.url = engine.url;
-					closeAllMenus();
-				});
-				engineList.appendChild(li);
+		customSelects.forEach(select => {
+			const button = select.querySelector('.select-button');
+			const menu = select.querySelector('.select-menu');
+			const categories = select.querySelectorAll('.category');
+
+			categories.forEach(category => {
+				const key = category.classList[1]; // ai, regular, image, or custom
+				const engineList = category.querySelector('.engine-list');
+				engineList.innerHTML = ''; // Clear existing items
+
+				// Add predefined search engines
+				if (searchEngines[key]) {
+					searchEngines[key].forEach(engine => {
+						addEngineToList(engine.name, engine.url, engineList);
+					});
+				}
+
+				// Add custom search engines
+				if (engineMap[key]) {
+					Object.entries(engineMap[key]).forEach(([name, url]) => {
+						addEngineToList(name, url, engineList);
+					});
+				}
+			});
+
+			button.addEventListener('click', (e) => {
+				e.stopPropagation();
+				closeAllMenus();
+				menu.classList.add('show');
 			});
 		});
 
-		button.addEventListener('click', (e) => {
-			e.stopPropagation();
-			closeAllMenus();
-			menu.classList.add('show');
-		});
+		document.addEventListener('click', closeAllMenus);
 	});
-
-	document.addEventListener('click', closeAllMenus);
 }
+function addEngineToList(name, url, list) {
+	const li = document.createElement('li');
+	li.textContent = name;
+	li.dataset.url = url;
+	li.addEventListener('click', () => {
+		const button = li.closest('.custom-select').querySelector('.select-button');
+		button.textContent = name;
+		button.dataset.url = url;
+		closeAllMenus();
+	});
+	list.appendChild(li);
+}
+function updateSelectMenus() {
+	initCustomSelects();
+}
+
+// 在添加、编辑或删除搜索引擎的函数中调用 updateSelectMenus
+function addNewSearchEngine() {
+	// ... 现有代码 ...
+	chrome.storage.sync.set({ engineMap: engineMap }, function () {
+		updateTabContent(engineMap);
+		updateSelectMenus();
+	});
+}
+
 
 function closeAllMenus() {
 	const menus = document.querySelectorAll('.select-menu');
@@ -75,35 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // 结束: 调用初始化函数
 // 初始化全局变量
 // 初始化全局变量
-chrome.storage.sync.get('id2enginemap', function (data) {
-	// 如果存储中有数据，则使用存储中的数据，否则使用默认的预设列表
-	globalId2enginemap = data.id2enginemap || {};
 
-	// 合并预设列表和存储中的列表
-	Object.assign(globalId2enginemap, defaultEngines);
-
-	// 保存更新后的列表到存储中
-	chrome.storage.sync.set({ id2enginemap: globalId2enginemap }, function () {
-		console.log('搜索引擎映射已更新');
-	});
-	const tabs = document.querySelectorAll('.tab');
-	let currentCategory = 'ai'; // 默认分类
-
-	tabs.forEach(tab => {
-		tab.addEventListener('click', function () {
-			tabs.forEach(t => t.classList.remove('active'));
-			this.classList.add('active');
-			currentCategory = this.dataset.category;
-			loadEngines(currentCategory);
-		});
-	});
-
-	document.getElementById('addEngineBtn').addEventListener('click', function () {
-		addEngine(currentCategory);
-	});
-
-	loadEngines(); // 初始化加载列表
-});
 // 获取搜索引擎复选框元素列表
 var checkboxList = document.querySelectorAll(".search-engine-checkbox");
 
@@ -1268,12 +1272,11 @@ function editWebsite(index) {
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
 	loadSavedPages();
-	loadEngines();
 	//四类标签展示
 	const settingsContainer = document.getElementById('searchEngineSettings');
-	const tabContent = document.getElementById('tabContent');
-	const tabContent2 = document.getElementById('tabContent2');
 	const tabs = document.querySelectorAll('.tab');
+	const tabContent = document.getElementById('tabContent');
+
 	// 应用样式
 	applyStyles();
 
@@ -1322,87 +1325,8 @@ document.addEventListener('DOMContentLoaded', function () {
 			});
 		});
 	}
-	function displayEngines(category) {
-		// 更新 tabContent
-		tabContent.innerHTML = '';
-		const engines = searchEngines[category];
 
-		if (engines && engines.length > 0) {
-			const ul = document.createElement('ul');
-			ul.className = 'engine-list';
-
-			engines.forEach(engine => {
-				const li = document.createElement('li');
-				li.textContent = `${engine.name}: ${engine.url}`;
-				ul.appendChild(li);
-			});
-
-			tabContent.appendChild(ul);
-		} else {
-			tabContent.textContent = '该分类没有预设的搜索引擎。';
-		}
-
-		// 更新 tabContent2
-		tabContent2.innerHTML = '';
-		const categoryDiv = document.createElement('div');
-		categoryDiv.className = 'engine-category';
-
-		const title = document.createElement('h4');
-		title.textContent = getCategoryTitle(category);
-		categoryDiv.appendChild(title);
-
-		const ul2 = document.createElement('ul');
-		ul2.className = 'engine-list';
-
-		if (engines && engines.length > 0) {
-			engines.forEach(engine => {
-				const li = document.createElement('li');
-				li.textContent = `${engine.name}: ${engine.url}`;
-				ul2.appendChild(li);
-			});
-		} else {
-			const li = document.createElement('li');
-			li.textContent = '该分类没有预设的搜索引擎。';
-			ul2.appendChild(li);
-		}
-
-		categoryDiv.appendChild(ul2);
-		tabContent2.appendChild(categoryDiv);
-	}
-	function displayPresetEngines() {
-		tabContent2.innerHTML = ''; // 清空现有内容
-
-		Object.keys(searchEngines).forEach(category => {
-			const categoryDiv = document.createElement('div');
-			categoryDiv.className = 'engine-category';
-
-			const title = document.createElement('h4');
-			title.textContent = getCategoryTitle(category);
-			categoryDiv.appendChild(title);
-
-			const ul = document.createElement('ul');
-			ul.className = 'engine-list';
-
-			searchEngines[category].forEach(engine => {
-				const li = document.createElement('li');
-				li.textContent = `${engine.name}: ${engine.url}`;
-				ul.appendChild(li);
-			});
-
-			categoryDiv.appendChild(ul);
-			tabContent2.appendChild(categoryDiv);
-		});
-	}
-
-	function getCategoryTitle(category) {
-		const titles = {
-			ai: 'AI 搜索',
-			image: '图片搜索',
-			regular: '综合搜索',
-			custom: '自定义搜索'
-		};
-		return titles[category] || '未知分类';
-	}
+	
 
 	function deleteEngine(category, name) {
 		chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
@@ -1427,6 +1351,10 @@ document.addEventListener('DOMContentLoaded', function () {
 					}
 				});
 			}
+			chrome.storage.sync.set({ engineMap: engineMap }, function () {
+				updateTabContent(engineMap);
+				updateSelectMenus();
+			});
 		});
 	}
 	// 添加搜索引擎
@@ -1601,26 +1529,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		styleElement.textContent = styles;
 		document.head.appendChild(styleElement);
 	}
-	// 新增: 添加初始化函数
-	function initializePage() {
-		// 设置默认激活的标签
-		const defaultTab = document.querySelector('.tab[data-category="ai"]');
-		defaultTab.classList.add('active');
-
-		// 显示 AI 搜索引擎
-		displayEngines('ai');
-	}
-
-	// 新增: 调用初始化函数
-	initializePage();
-	// 为每个标签添加点击事件
-	tabs.forEach(tab => {
-		tab.addEventListener('click', function () {
-			tabs.forEach(t => t.classList.remove('active'));
-			this.classList.add('active');
-			displayEngines(this.dataset.category);
-		});
-	
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        loadTabContent(this.dataset.category);
+    });
 });
 
 	// 初始化：加载默认标签内容
@@ -2391,39 +2305,6 @@ function loadEngines(category) {
 	});
 }
 
-// 添加这个新函数
-function addEngineToList(engineName, engineUrl, category, list) {
-	var item = document.createElement('li');
-	item.textContent = engineName + ': ' + engineUrl;
-	var removeButton = document.createElement('button');
-	removeButton.textContent = '删除';
-	removeButton.onclick = function () {
-		chrome.storage.sync.get(['id2enginemap', 'engineMap'], function (data) {
-			let globalId2enginemap = data.id2enginemap || {};
-			let engineMap = data.engineMap || {};
-
-			if (engineMap[category]) {
-				delete engineMap[category][engineName];
-			} else {
-				delete globalId2enginemap[engineName];
-			}
-
-			chrome.storage.sync.set({
-				'id2enginemap': globalId2enginemap,
-				'engineMap': engineMap
-			}, function () {
-				if (chrome.runtime.lastError) {
-					alert('删除搜索引擎时发生错误，请重试。');
-				} else {
-					alert('搜索引擎删除成功！');
-					loadEngines(category); // 重新加载列表
-				}
-			});
-		});
-	};
-	item.appendChild(removeButton);
-	list.appendChild(item);
-}
 
 // 加载当前搜索引擎列表
 function loadCurrentSearchEngines() {
@@ -2469,30 +2350,12 @@ function deleteSearchEngine(name) {
 function addOrUpdateSearchEngine() {
 	const name = document.getElementById('newCustomEngineName').value.trim();
 	const url = document.getElementById('newCustomEngineUrl').value.trim();
-	// 新增: 获取当前激活的标签类别
-	const category = document.querySelector('.tab.active').dataset.category;
-
 	if (name && url) {
-		// 修改: 同时获取 id2enginemap 和 engineMap
-		chrome.storage.sync.get(['id2enginemap', 'engineMap'], function (data) {
-			let engines = data.id2enginemap || {};
-			// 新增: 获取 engineMap
-			let engineMap = data.engineMap || {};
-
-			// 更新 id2enginemap (保持不变)
+		chrome.storage.sync.get('id2enginemap', function (data) {
+			const engines = data.id2enginemap || {};
 			engines[name] = url;
-
-			// 新增: 更新 engineMap
-			if (!engineMap[category]) {
-				engineMap[category] = {};
-			}
-			engineMap[category][name] = url;
-
-			// 修改: 同时保存 id2enginemap 和 engineMap
-			chrome.storage.sync.set({ id2enginemap: engines, engineMap: engineMap }, function () {
+			chrome.storage.sync.set({ id2enginemap: engines }, function () {
 				loadCurrentSearchEngines();
-				// 新增: 更新 tabContent2
-				updateTabContent2(category);
 				document.getElementById('newCustomEngineName').value = '';
 				document.getElementById('newCustomEngineUrl').value = '';
 			});
@@ -2500,41 +2363,10 @@ function addOrUpdateSearchEngine() {
 	}
 }
 
-// 新增: 更新 tabContent2 的函数
-function updateTabContent2(category) {
-	chrome.storage.sync.get('engineMap', function (data) {
-		const engineMap = data.engineMap || {};
-		const engines = engineMap[category] || {};
-		const tabContent2 = document.getElementById('tabContent2');
-
-		// 清空当前内容
-		tabContent2.innerHTML = '';
-
-		// 创建新的内容
-		const categoryDiv = document.createElement('div');
-		categoryDiv.className = 'engine-category';
-
-		const title = document.createElement('h4');
-		title.textContent = getCategoryTitle(category);
-		categoryDiv.appendChild(title);
-
-		const ul = document.createElement('ul');
-		ul.className = 'engine-list';
-
-		Object.entries(engines).forEach(([name, url]) => {
-			const li = document.createElement('li');
-			li.textContent = `${name}: ${url}`;
-			ul.appendChild(li);
-		});
-
-		categoryDiv.appendChild(ul);
-		tabContent2.appendChild(categoryDiv);
-	});
-}
 // 初始化
-// 修改: 初始化函数
 document.addEventListener('DOMContentLoaded', function () {
 	loadCurrentSearchEngines();
+	initCustomSelects();
 	document.getElementById('addCustomSearchEngine').addEventListener('click', addOrUpdateSearchEngine);
 	document.getElementById('currentSearchEngines').addEventListener('click', function (e) {
 		if (e.target.classList.contains('editSearchEngine')) {
@@ -2543,31 +2375,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			deleteSearchEngine(e.target.dataset.name);
 		}
 	});
-
-	// 新增: 为标签添加点击事件，更新 tabContent2
-	const tabs = document.querySelectorAll('.tab');
-	tabs.forEach(tab => {
-		tab.addEventListener('click', function () {
-			tabs.forEach(t => t.classList.remove('active'));
-			this.classList.add('active');
-			updateTabContent2(this.dataset.category);
-		});
-	});
-
-	// 新增: 初始显示 AI 类别的搜索引擎
-	updateTabContent2('ai');
 });
-
-// 新增: getCategoryTitle 函数
-function getCategoryTitle(category) {
-	const titles = {
-		ai: 'AI 搜索',
-		image: '图片搜索',
-		regular: '综合搜索',
-		custom: '自定义搜索'
-	};
-	return titles[category] || '未知分类';
-}
 let gridConfig = new Array(24).fill(null);
 let editingIndex = -1;
 
