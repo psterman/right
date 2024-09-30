@@ -1,9 +1,9 @@
 // 定义全局变量存储搜索引擎映射
 var globalId2enginemap = {};
-let globalEngineData = {
-	engineMap: {},
-	id2enginemap: {}
-};
+function updateGlobalId2enginemap(newData) {
+	globalId2enginemap = newData;
+	updateAllEngineLists();
+}
 // 在文件顶部添加或更新以下代码
 // 开始: 搜索引擎数据
 const searchEngines = {
@@ -84,6 +84,37 @@ function addEngineToList(name, url, list) {
 }
 function updateSelectMenus() {
 	initCustomSelects();
+}
+
+// 创建一个新函数用于更新 select-menu 的内容
+function refreshSelectMenusContent(latestData) {
+	const selectMenus = document.querySelectorAll('select.engine-select');
+
+	selectMenus.forEach(select => {
+		const category = select.dataset.category;
+		select.innerHTML = ''; // 清空现有选项
+
+		Object.keys(latestData).forEach(engineName => {
+			if (engineName.startsWith(category + '_')) {
+				const option = document.createElement('option');
+				option.textContent = engineName.replace(category + '_', '');
+				option.value = engineName;
+				select.appendChild(option);
+			}
+		});
+	});
+
+	console.log('Select menus content updated successfully');
+}
+// 新增函数：更新特定类别的 select-menu
+function updateSelectMenu(category, engineName, engineUrl) {
+	const selectElement = document.querySelector(`select.engine-select[data-category="${category}"]`);
+	if (selectElement) {
+		const option = document.createElement('option');
+		option.value = `${category}_${engineName}`;
+		option.textContent = engineName;
+		selectElement.appendChild(option);
+	}
 }
 
 // 在添加、编辑或删除搜索引擎的函数中调用 updateSelectMenus
@@ -1276,6 +1307,10 @@ function editWebsite(index) {
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
 	loadSavedPages();
+	chrome.storage.sync.get('id2enginemap', function (data) {
+		const globalId2enginemap = data.id2enginemap || {};
+		updateAllEngineLists(globalId2enginemap);
+	});
 	//四类标签展示
 	const settingsContainer = document.getElementById('searchEngineSettings');
 	const tabs = document.querySelectorAll('.tab');
@@ -1369,76 +1404,26 @@ document.addEventListener('DOMContentLoaded', function () {
 				delete globalId2enginemap[fullEngineName];
 			}
 
-			chrome.storage.sync.set({
-				'engineMap': engineMap,
-				'id2enginemap': globalId2enginemap
-			}, function () {
-				if (chrome.runtime.lastError) {
-					console.error('删除搜索引擎时发生错误:', chrome.runtime.lastError);
-					alert('删除搜索引擎时发生错误，请重试。');
-				} else {
-					console.log('搜索引擎删除成功');
-					alert('搜索引擎删除成功！');
-					loadTabContent(category); // 重新加载当前分类的内容
-					updateAllEngineLists(); // 立即更新所有 select-menu
-				}
-			});
+			 chrome.storage.sync.set({
+        'engineMap': engineMap,
+        'id2enginemap': globalId2enginemap
+    }, function () {
+        if (chrome.runtime.lastError) {
+            console.error('删除搜索引擎时发生错误:', chrome.runtime.lastError);
+            alert('删除搜索引擎时发生错误，请重试。');
+        } else {
+            alert('搜索引擎删除成功！');
+            // 修改: 更改函数调用顺序,并传入最新数据
+			updateAllEngineLists(globalId2enginemap);
+			updateSelectMenus();
+			loadTabContent(category); // 重新加载当前标签内容
+        }
+    });
 		});
 	}
 
 	// 添加搜索引擎
-	function addEngine(category) {
-		const engineName = document.getElementById(`${category}EngineName`).value.trim();
-		const engineUrl = document.getElementById(`${category}EngineUrl`).value.trim();
-
-		if (!engineName || !engineUrl) {
-			alert('搜索引擎名称和URL不能为空！');
-			return;
-		}
-
-		chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
-			let engineMap = data.engineMap || {};
-			let globalId2enginemap = data.id2enginemap || {};
-
-			if (!engineMap[category]) {
-				engineMap[category] = {};
-			}
-
-			const fullEngineName = `${category}_${engineName}`;
-
-			if (engineMap[category][engineName] || globalId2enginemap[fullEngineName]) {
-				alert('该搜索引擎名称已存在，请使用其他名称。');
-				return;
-			}
-
-			engineMap[category][engineName] = engineUrl;
-			globalId2enginemap[fullEngineName] = engineUrl;
-
-			chrome.storage.sync.set({
-				'engineMap': engineMap,
-				'id2enginemap': globalId2enginemap
-			}, function () {
-				if (chrome.runtime.lastError) {
-					console.error('添加搜索引擎时发生错误:', chrome.runtime.lastError);
-					alert('添加搜索引擎时发生错误，请重试。');
-				} else {
-					alert('搜索引擎添加成功！');
-					loadTabContent(category); // 重新加载当前分类的内容
-					updateAllEngineLists(); // 立即更新所有 select-menu
-				}
-			});
-
-			// 清空输入框
-			document.getElementById(`${category}EngineName`).value = '';
-			document.getElementById(`${category}EngineUrl`).value = '';
-		});
-	}
-	// 监听存储变化
-	chrome.storage.onChanged.addListener(function (changes, namespace) {
-		if (namespace === 'sync' && changes.engineMap) {
-			loadTabContent(document.querySelector('.tab.active').dataset.category);
-		}
-	});
+	
 
 	// 辅助函数
 	function getCategoryName(category) {
@@ -2267,70 +2252,126 @@ function loadSavedPages() {
 	});
 }
 // 增加方向搜索引擎对应的数组// 更新所有下拉列表的函数
-function updateAllEngineLists() {
-	chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
-		const engineMap = data.engineMap || {};
-		const globalId2enginemap = data.id2enginemap || {};
-		const lists = document.querySelectorAll('select.engine-select');
+function updateAllEngineLists(latestData) {
+	const lists = document.querySelectorAll('select.engine-select');
 
-		lists.forEach(list => {
-			const category = list.dataset.category;
-			list.innerHTML = ""; // 清空现有选项
+	lists.forEach(list => {
+		const category = list.dataset.category;
+		list.innerHTML = ""; // 清空现有选项
 
-			// 添加分类特定的引擎
-			if (engineMap[category]) {
-				Object.keys(engineMap[category]).forEach(engineName => {
-					const option = document.createElement('option');
-					option.textContent = engineName;
-					option.value = engineName;
-					list.appendChild(option);
-				});
+		// 使用传入的最新数据
+		Object.keys(latestData).forEach(engineName => {
+			if (engineName.startsWith(category + '_')) {
+				const option = document.createElement('option');
+				option.textContent = engineName.replace(category + '_', '');
+				option.value = engineName;
+				list.appendChild(option);
 			}
-
-			// 添加全局引擎
-			Object.keys(globalId2enginemap).forEach(engineName => {
-				if (engineName.startsWith(category + '_')) {
-					const option = document.createElement('option');
-					option.textContent = engineName.replace(category + '_', '');
-					option.value = engineName;
-					list.appendChild(option);
-				}
-			});
 		});
-
-		console.log('Select menus updated successfully');
 	});
+
+	console.log('Select menus updated successfully');
+}
+// 新增或修改整个函数
+function updateTabContentUI(category, engineMap, globalId2enginemap) {
+    let engines = {};
+
+    // 合并预设和自定义搜索引擎
+    if (engineMap[category]) {
+        engines = { ...engines, ...engineMap[category] };
+    }
+    Object.keys(globalId2enginemap).forEach(key => {
+        if (key.startsWith(category + '_')) {
+            engines[key.replace(category + '_', '')] = globalId2enginemap[key];
+        }
+    });
+
+    let content = `
+        <h2>${getCategoryName(category)}引擎</h2>
+        <ul id="${category}EngineList" class="engine-list">
+            ${Object.entries(engines).map(([name, url]) => `
+                <li>
+                    <span>${name}: ${url}</span>
+                    <button class="delete-engine" data-category="${category}" data-name="${name}">删除</button>
+                </li>
+            `).join('')}
+        </ul>
+        <div class="add-engine-form">
+            <input type="text" id="${category}EngineName" placeholder="搜索引擎名称">
+            <input type="text" id="${category}EngineUrl" placeholder="搜索引擎 URL">
+            <button id="add${capitalize(category)}Engine">添加${getCategoryName(category)}引擎</button>
+        </div>
+    `;
+
+    document.getElementById('tabContent').innerHTML = content;
+
+    // 重新添加事件监听器
+    document.getElementById(`add${capitalize(category)}Engine`).addEventListener('click', () => addEngine(category));
+    document.getElementById(`${category}EngineList`).addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-engine')) {
+            deleteEngine(e.target.dataset.category, e.target.dataset.name);
+        }
+    });
 }
 // 添加新的搜索引擎
-function addEngine() {
-	var engineName = document.getElementById('addEngineName').value.trim();
-	var engineUrl = document.getElementById('addEngineUrl').value.trim();
+function addEngine(category) {
+	const engineName = document.getElementById(`${category}EngineName`).value.trim();
+	const engineUrl = document.getElementById(`${category}EngineUrl`).value.trim();
 
 	if (!engineName || !engineUrl) {
 		alert('搜索引擎名称和URL不能为空！');
 		return;
 	}
 
-	if (globalId2enginemap[engineName]) {
-		alert('该搜索引擎名称已存在，请使用其他名称。');
-		return;
-	}
+	const fullEngineName = `${category}_${engineName}`;
 
-	// 更新全局变量和存储
-	globalId2enginemap[engineName] = engineUrl;
-	chrome.storage.sync.set({ 'id2enginemap': globalId2enginemap }, function () {
-		if (chrome.runtime.lastError) {
-			console.error('添加搜索引擎时发生错误:', chrome.runtime.lastError);
-			alert('添加搜索引擎时发生错误，请重试。');
-		} else {
-			alert('搜索引擎添加成功！');
-			loadEngines(); // 重新加载列表以显示新添加的项
+	chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
+		let engineMap = data.engineMap || {};
+		let globalId2enginemap = data.id2enginemap || {};
+
+		if (!engineMap[category]) {
+			engineMap[category] = {};
 		}
-	});
-	document.getElementById('addEngineName').value = '';
-	document.getElementById('addEngineUrl').value = '';
-}
 
+		if (engineMap[category][engineName] || globalId2enginemap[fullEngineName]) {
+			alert('该搜索引擎名称已存在，请使用其他名称。');
+			return;
+		}
+
+		engineMap[category][engineName] = engineUrl;
+		globalId2enginemap[fullEngineName] = engineUrl;
+
+		chrome.storage.sync.set({
+			'engineMap': engineMap,
+			'id2enginemap': globalId2enginemap
+		}, function () {
+			if (chrome.runtime.lastError) {
+				console.error('添加搜索引擎时发生错误:', chrome.runtime.lastError);
+				alert('添加搜索引擎时发生错误，请重试。');
+			} else {
+				alert('搜索引擎添加成功！');
+				// 修改: 更改函数调用顺序,并传入最新数据
+				updateTabContentUI(category, engineMap, globalId2enginemap); // 新增
+            updateAllEngineLists(globalId2enginemap);
+            updateSelectMenus();
+			}
+		});
+
+		// 清空输入框
+		document.getElementById(`${category}EngineName`).value = '';
+		document.getElementById(`${category}EngineUrl`).value = '';
+	});
+}
+// 保持现有的存储变化监听器
+chrome.storage.onChanged.addListener(function (changes, namespace) {
+	if (namespace === 'sync' && (changes.engineMap || changes.id2enginemap)) {
+		chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
+			updateAllEngineLists(data.id2enginemap);
+			updateSelectMenus();
+			loadTabContent(document.querySelector('.tab.active').dataset.category);
+		});
+	}
+});
 // 用这个新函数替换
 function loadEngines(category) {
 	var list = document.getElementById('engineList');
