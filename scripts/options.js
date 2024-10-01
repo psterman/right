@@ -142,16 +142,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 	});
 
-	// 显示选择菜单
-	function showSelectMenu(menu) {
-		menu.style.display = 'block';
-	}
-
-	// 隐藏选择菜单
-	function hideSelectMenu(menu) {
-		menu.style.display = 'none';
-	}
-
 	// 恢复保存的方向搜索引擎选择
 	chrome.storage.sync.get('directionEngines', (data) => {
 		const directionEngines = data.directionEngines || {};
@@ -1353,22 +1343,29 @@ document.addEventListener('DOMContentLoaded', function () {
 		chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
 			const engineMap = data.engineMap || {};
 			const globalId2enginemap = data.id2enginemap || {};
-			let engines = {};
+			let presetEngines = searchEngines[category] || [];
+			let customEngines = {};
 
-			// 合并预设和自定义搜索引擎
-			if (engineMap[category]) {
-				engines = { ...engines, ...engineMap[category] };
-			}
+			// 获取用户自定义搜索引擎
 			Object.keys(globalId2enginemap).forEach(key => {
 				if (key.startsWith(category + '_')) {
-					engines[key.replace(category + '_', '')] = globalId2enginemap[key];
+					customEngines[key.replace(category + '_', '')] = globalId2enginemap[key];
 				}
 			});
 
 			let content = `
             <h2>${getCategoryName(category)}引擎</h2>
-            <ul id="${category}EngineList" class="engine-list">
-                ${Object.entries(engines).map(([name, url]) => `
+            <h3>预设搜索引擎</h3>
+            <ul id="${category}PresetEngineList" class="engine-list">
+                ${presetEngines.map(engine => `
+                    <li>
+                        <span>${engine.name}: ${engine.url}</span>
+                    </li>
+                `).join('')}
+            </ul>
+            <h3>自定义搜索引擎</h3>
+            <ul id="${category}CustomEngineList" class="engine-list">
+                ${Object.entries(customEngines).map(([name, url]) => `
                     <li>
                         <span>${name}: ${url}</span>
                         <button class="delete-engine" data-category="${category}" data-name="${name}">删除</button>
@@ -1384,11 +1381,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 			document.getElementById('tabContent').innerHTML = content;
 
-			// 添加新引擎的事件监听器
+			// 添加事件监听器
 			document.getElementById(`add${capitalize(category)}Engine`).addEventListener('click', () => addEngine(category));
-
-			// 使用事件委托处理删除按钮的点击事件
-			document.getElementById(`${category}EngineList`).addEventListener('click', function (e) {
+			document.getElementById(`${category}CustomEngineList`).addEventListener('click', function (e) {
 				if (e.target.classList.contains('delete-engine')) {
 					deleteEngine(e.target.dataset.category, e.target.dataset.name);
 				}
