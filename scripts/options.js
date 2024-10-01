@@ -1374,11 +1374,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 			document.getElementById('tabContent').innerHTML = content;
 
-			// 添加事件监听器
 			document.getElementById(`add${capitalize(category)}Engine`).addEventListener('click', () => addEngine(category));
-			document.getElementById(`${category}CustomEngineList`).addEventListener('click', function (e) {
+			document.getElementById('tabContent').addEventListener('click', function (e) {
 				if (e.target.classList.contains('delete-engine')) {
-					deleteEngine(e.target.dataset.category, e.target.dataset.name);
+					const category = e.target.dataset.category;
+					const name = e.target.dataset.name;
+					deleteEngine(category, name);
 				}
 			});
 		});
