@@ -1406,28 +1406,34 @@ document.addEventListener('DOMContentLoaded', function () {
 			let globalId2enginemap = data.id2enginemap || {};
 			const fullEngineName = `${category}_${name}`;
 
+			let deleted = false;
+
 			if (engineMap[category] && engineMap[category][name]) {
 				delete engineMap[category][name];
+				deleted = true;
 			}
 			if (globalId2enginemap[fullEngineName]) {
 				delete globalId2enginemap[fullEngineName];
+				deleted = true;
 			}
 
-			chrome.storage.sync.set({
-				'engineMap': engineMap,
-				'id2enginemap': globalId2enginemap
-			}, function () {
-				if (chrome.runtime.lastError) {
-					console.error('删除搜索引擎时发生错误:', chrome.runtime.lastError);
-					alert('删除搜索引擎时发生错误，请重试。');
-				} else {
-					alert('搜索引擎删除成功！');
-					// 新增: 更新界面
-
-					updateCurrentTabContent(category, globalId2enginemap);
-					updateAllEngineLists(globalId2enginemap);
-				}
-			});
+			if (deleted) {
+				chrome.storage.sync.set({
+					'engineMap': engineMap,
+					'id2enginemap': globalId2enginemap
+				}, function () {
+					if (chrome.runtime.lastError) {
+						console.error('删除搜索引擎时发生错误:', chrome.runtime.lastError);
+						alert('删除搜索引擎时发生错误，请重试。');
+					} else {
+						alert('搜索引擎删除成功！');
+						// 更新界面
+						updateCurrentTabContent(category, globalId2enginemap);
+					}
+				});
+			} else {
+				console.log('未找到要删除的搜索引擎');
+			}
 		});
 	}
 
