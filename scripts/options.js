@@ -39,14 +39,7 @@ const searchEngines = {
 		// 这里可以是空的，或者包含一些默认的自定义搜索引擎
 	]
 };
-function updateAllEngineLists(globalId2enginemap) {
-	const directions = ['left-up', 'up', 'right-up', 'left', 'right', 'left-down', 'down', 'right-down'];
 
-	directions.forEach(direction => {
-		const selectMenu = document.querySelector(`#direction-${direction} .select-menu`);
-		updateEngineList(selectMenu, globalId2enginemap);
-	});
-}
 
 function updateEngineList(selectMenu, globalId2enginemap) {
 	const categories = ['ai', 'regular', 'image', 'custom'];
@@ -1429,9 +1422,9 @@ document.addEventListener('DOMContentLoaded', function () {
 				} else {
 					alert('搜索引擎删除成功！');
 					// 新增: 更新界面
+
+					updateCurrentTabContent(category, globalId2enginemap);
 					updateAllEngineLists(globalId2enginemap);
-					updateSelectMenus();
-					loadTabContent(category);
 				}
 			});
 		});
@@ -1441,20 +1434,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	// 添加搜索引擎
 
 
-	// 辅助函数
-	function getCategoryName(category) {
-		const names = {
-			ai: 'AI 搜索',
-			image: '图片搜索',
-			regular: '综合搜索',
-			custom: '自定义搜索'
-		};
-		return names[category] || category;
-	}
 
-	function capitalize(string) {
-		return string.charAt(0).toUpperCase() + string.slice(1);
-	}
 
 	// 应用样式
 	function applyStyles() {
@@ -2381,8 +2361,9 @@ function addEngine(category) {
 					nameInput.value = '';
 					urlInput.value = '';
 					// 新增: 更新界面
+
 					updateCurrentTabContent(category, globalId2enginemap);
-					updateSelectMenus();
+					updateAllEngineLists(globalId2enginemap);
 				}
 			});
 		});
@@ -2392,31 +2373,70 @@ function addEngine(category) {
 }
 // 新增: updateCurrentTabContent 函数
 function updateCurrentTabContent(category, globalId2enginemap) {
-	const listElement = document.getElementById(`${category}EngineList`);
-	if (listElement) {
-		// 清空现有列表
-		listElement.innerHTML = '';
-		// 重新填充列表
-		Object.keys(globalId2enginemap).forEach(key => {
-			if (key.startsWith(`${category}_`)) {
-				const name = key.replace(`${category}_`, '');
-				const url = globalId2enginemap[key];
-				const li = document.createElement('li');
-				li.innerHTML = `
-                    <span>${name}: ${url}</span>
-                    <button class="delete-engine" data-category="${category}" data-name="${name}">删除</button>
-                `;
-				listElement.appendChild(li);
+	const tabContent = document.getElementById('tabContent');
+	if (tabContent) {
+		let content = `
+            <h2>${getCategoryName(category)}引擎</h2>
+            <ul id="${category}EngineList" class="engine-list">
+                ${Object.entries(globalId2enginemap)
+				.filter(([key]) => key.startsWith(category + '_'))
+				.map(([key, url]) => {
+					const name = key.replace(category + '_', '');
+					return `
+                            <li>
+                                <span>${name}: ${url}</span>
+                                <button class="delete-engine" data-category="${category}" data-name="${name}">删除</button>
+                            </li>
+                        `;
+				}).join('')}
+            </ul>
+            <div class="add-engine-form">
+                <input type="text" id="${category}EngineName" placeholder="搜索引擎名称">
+                <input type="text" id="${category}EngineUrl" placeholder="搜索引擎 URL">
+                <button id="add${capitalize(category)}Engine">添加${getCategoryName(category)}引擎</button>
+            </div>
+        `;
+		tabContent.innerHTML = content;
+
+		// 使用事件委托处理删除按钮的点击事件
+		tabContent.addEventListener('click', function (event) {
+			if (event.target.classList.contains('delete-engine')) {
+				const category = event.target.getAttribute('data-category');
+				const name = event.target.getAttribute('data-name');
+				deleteEngine(category, name);
 			}
 		});
+
+		// 为添加按钮添加事件监听器（确保只添加一次）
+		const addButton = document.getElementById(`add${capitalize(category)}Engine`);
+		if (addButton) {
+			// 移除可能存在的旧事件监听器
+			addButton.removeEventListener('click', addEngine);
+			// 添加新的事件监听器
+			addButton.addEventListener('click', () => addEngine(category));
+		}
 	}
+}
+// 辅助函数
+function getCategoryName(category) {
+	const names = {
+		ai: 'AI 搜索',
+		image: '图片搜索',
+		regular: '综合搜索',
+		custom: '自定义搜索'
+	};
+	return names[category] || category;
+}
+
+function capitalize(string) {
+	return string.charAt(0).toUpperCase() + string.slice(1);
 }
 // 保持现有的存储变化监听器
 chrome.storage.onChanged.addListener(function (changes, namespace) {
 	if (namespace === 'sync' && (changes.engineMap || changes.id2enginemap)) {
 		chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
-			updateAllEngineLists(data.id2enginemap);
-			updateSelectMenus();
+			updateAllEngineLists(globalId2enginemap);
+
 			loadTabContent(document.querySelector('.tab.active').dataset.category);
 		});
 	}
