@@ -2435,16 +2435,19 @@ button {
   padding: 4px;
   border-bottom: 1px solid #ccc;
 }
+
 .grid-24 {
   /* 修改: 更改边框颜色 */
   border: 1px solid #444;
 }
+
 .grid-cell {
   /* 修改: 更改背景色和边框颜色 */
   background-color: #2c2c2c;
   border: 1px solid #444;
   color: #ffffff;
 }
+
 .grid-cell:hover {
   /* 修改: 更改悬停背景色 */
   background-color: #3a3a3a;
@@ -2460,6 +2463,7 @@ button {
   margin: 0 10px;
   padding: 5px 15px;
 }
+
 .modal {
   display: none;
   position: fixed;
@@ -2493,6 +2497,7 @@ button {
 button {
   margin-right: 10px;
 }
+
 /* 在文件末尾添加以下样式 */
 /* 开始: 新增的CSS样式 */
 .emoji-directions {
@@ -2518,7 +2523,7 @@ button {
   display: none;
   position: absolute;
   background-color: #1e1e1e;
-    color: #ffffff;
+  color: #ffffff;
   max-width: 400px;
   /* 保持原有的最大宽度 */
   box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
@@ -2530,6 +2535,7 @@ button {
   transform: none;
   /* 移除水平居中的变换 */
 }
+
 .select-menu.show {
   display: flex;
 }
@@ -2537,7 +2543,7 @@ button {
 .category {
   padding: 10px;
   width: 150px;
-border-right: 1px solid #444;
+  border-right: 1px solid #444;
 }
 
 .category:last-child {
@@ -2582,42 +2588,43 @@ border-right: 1px solid #444;
 .category.custom {
   background-color: #3f2f4f;
 }
+
 /* 结束: 新增的CSS样式 */
 .engine-list {
-    list-style-type: none;
-    padding: 0;
+  list-style-type: none;
+  padding: 0;
 }
 
 .engine-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .delete-engine {
-    background-color: #ff4d4d;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .delete-engine:hover {
-    background-color: #ff1a1a;
+  background-color: #ff1a1a;
 }
 
 .add-engine-form {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 .add-engine-form input,
 .add-engine-form button {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
