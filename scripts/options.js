@@ -1645,11 +1645,11 @@ document.addEventListener('DOMContentLoaded', function () {
 	const ctrlSelectCheckbox = document.getElementById('ctrlSelectCheckbox');
 
 	// 加载保存的设置
-	chrome.storage.sync.get(['longPressEnabled', 'ctrlSelectEnabled'], function (result) {
+	chrome.storage.sync.get(['longPressEnabled', 'ctrlSelectEnabled', 'directionSearchEnabled'], function (result) {
 		longPressCheckbox.checked = result.longPressEnabled ?? true;
 		ctrlSelectCheckbox.checked = result.ctrlSelectEnabled ?? true;
+		directionSearchToggle.checked = result.directionSearchEnabled ?? true;  // 添加这一行
 	});
-
 	// 保存设置变更
 	longPressCheckbox.addEventListener('change', function () {
 		saveSettings();
@@ -1658,15 +1658,23 @@ document.addEventListener('DOMContentLoaded', function () {
 	ctrlSelectCheckbox.addEventListener('change', function () {
 		saveSettings();
 	});
-
+directionSearchToggle.addEventListener('change', function () {
+		saveSettings();
+	});
 	function saveSettings() {
 		const settings = {
 			longPressEnabled: longPressCheckbox.checked,
-			ctrlSelectEnabled: ctrlSelectCheckbox.checked
+			ctrlSelectEnabled: ctrlSelectCheckbox.checked,
+			directionSearchEnabled: directionSearchToggle.checked  // 添加这一行
 		};
 		chrome.storage.sync.set(settings, function () {
-			// 通知 background.js 设置已更新
-			chrome.runtime.sendMessage({ action: 'settingsUpdated', settings: settings });
+			if (chrome.runtime.lastError) {
+				console.error('保存设置时出错:', chrome.runtime.lastError);
+			} else {
+				console.log('所有设置已保存:', settings);
+				// 通知 background.js 设置已更新
+				chrome.runtime.sendMessage({ action: 'settingsUpdated', settings: settings });
+			}
 		});
 	}
 	document.getElementById('shortcutLink').addEventListener('click', function () {
@@ -1681,28 +1689,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	// 绑定添加搜索引擎按钮的点击事件
 	var addEngineButton = document.getElementById('addEngineButton');
 	addEngineButton.addEventListener('click', addEngine);
-	const
-		earchToggle = document.getElementById('directionSearchToggle');
-
-	// 加载时设置开关状态
-	chrome.storage.sync.get('directionSearchEnabled', function (items) {
-		directionSearchToggle.checked = items.directionSearchEnabled || false;
-	});
-
-	// 监听开关状态变化
-	directionSearchToggle.addEventListener('change', function () {
-		let isChecked = this.checked; // 保留对当前状态的引用
-		chrome.storage.sync.set({ 'directionSearchEnabled': isChecked });
-		// 发送消息给所有标签页，通知它们更新方向搜索的状态
-		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-			for (let tab of tabs) {
-				chrome.tabs.sendMessage(tab.id, {
-					action: 'updateDirectionSearchStatus',
-					enabled: isChecked
-				});
-			}
-		});
-	});
+	// 获取复选框元素
+	
 	chrome.storage.sync.get('savedPages', function (items) {
 		if (items.savedPages) {
 			var savedPages = items.savedPages;
@@ -2533,6 +2521,50 @@ function addOrUpdateSearchEngine() {
 
 // 初始化
 document.addEventListener('DOMContentLoaded', function () {
+	const directionSearchToggle = document.getElementById('directionSearchToggle');
+
+	// 修改：加载设置函数
+	function loadSettings() {
+		chrome.storage.sync.get('directionSearchEnabled', function (data) {
+			if (data.hasOwnProperty('directionSearchEnabled')) {
+				directionSearchToggle.checked = data.directionSearchEnabled;
+				console.log('方向搜索设置已加载:', directionSearchToggle.checked);
+			} else {
+				console.log('没有保存的方向搜索设置');
+			}
+			updateDirectionSearchUI(); // 确保UI更新反映当前状态
+		});
+	}
+
+	// 保存设置函数（保持不变）
+	function saveSettings() {
+		chrome.storage.sync.set({ directionSearchEnabled: directionSearchToggle.checked }, function () {
+			console.log('方向搜索设置已保存:', directionSearchToggle.checked);
+		});
+	}
+
+	// 修改：更新UI函数
+	function updateDirectionSearchUI() {
+		const emojiDirections = document.querySelector('.emoji-directions');
+		if (emojiDirections) {
+			emojiDirections.style.display = directionSearchToggle.checked ? 'grid' : 'none';
+			console.log('UI已更新。表情方向显示:', emojiDirections.style.display);
+		} else {
+			console.warn('未找到表情方向元素');
+		}
+	}
+
+	// 修改：监听复选框状态变化
+	directionSearchToggle.addEventListener('change', function () {
+		saveSettings();
+		updateDirectionSearchUI();
+		console.log('方向搜索开关状态已更改:', this.checked);
+	});
+
+	// 修改：页面加载时初始化设置
+	
+		loadSettings();
+		
 	loadCurrentSearchEngines();
 	initCustomSelects();
 	updateAllEngineLists(); // 初始化所有 select-menu
