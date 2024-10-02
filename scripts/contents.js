@@ -937,47 +937,31 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         e.stopPropagation();
         e.dataTransfer.dropEffect = 'move';
 
-        var dropData = '';
-        var isLink = false;
-        var isImage = false;
+        var dropData = e.dataTransfer.getData('text/plain');
+        var isLink = dropData.startsWith('http://') || dropData.startsWith('https://');
+        var isImage = e.target.tagName.toLowerCase() === 'img' || (isLink && dropData.match(/\.(jpeg|jpg|gif|png)$/) !== null);
 
-        // 检查拖拽的数据是否为链接
-        if (e.dataTransfer.types.includes('text/uri-list')) {
-            // 如果是链接，获取链接的 URL
-            dropData = e.dataTransfer.getData('text/uri-list');
-            isLink = true;
-            // 检查链接是否为图片
-            if (dropData.match(/\.(jpeg|jpg|gif|png)$/) != null) {
-                isImage = true;
-            }
-        } else {
-            // 否则，获取选中的文本
-            dropData = window.getSelection().toString();
-        }
+        // 处理图片拖拽
+        if (isImage) {
+            var imageUrl = isLink ? dropData : e.target.src;
+            var googleImageSearchUrl = 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(imageUrl);
 
-        // 发送消息到后台脚本
-        if (isLink && isImage) {
-            chrome.storage.sync.get('defaultSearchEngine', function (data) {
-                if (!handleImageSearch(dropData, data.defaultSearchEngine)) {
-                    // 如果不是以图搜索引擎，按原来的逻辑处理
-                    chrome.runtime.sendMessage({
-                        action: 'setpage',
-                        query: dropData,
-                        foreground: e.altKey ? true : false,
-                    });
-                }
+            chrome.runtime.sendMessage({
+                action: 'setpage',
+                query: googleImageSearchUrl,
+                foreground: e.altKey ? true : false,
             });
         } else {
-            // 无论是链接还是文本，都发送 'setpage' 动作
+            // 处理非图片拖拽（保持原有逻辑）
             chrome.runtime.sendMessage({
                 action: 'setpage',
                 query: isLink ? dropData : 'https://www.google.com/search?q=' + encodeURIComponent(dropData),
                 foreground: e.altKey ? true : false,
             });
         }
+
         return false;
     }
-
     function bypass(element) {
         if (window[location.href])
             return true
@@ -1741,7 +1725,7 @@ document.addEventListener('keydown', handleKeyDown);
 
 // 修改鼠标事件处理函数
 function handleMouseDown(e) {
-    if (!longPressEnabled || e.button !== 0) return;
+    if (!longPressEnabled || e.button !== 0 || !e.ctrlKey) return;
 
     isMouseDown = true;
     startX = e.clientX;
@@ -1843,40 +1827,6 @@ function createGrid() {
 
     document.body.appendChild(grid);
 }
-// 以图搜索
-function handleImageSearch(imageUrl, searchEngine) {
-    let searchUrl;
-    const encodedImageUrl = encodeURIComponent(imageUrl);
-
-    switch (searchEngine) {
-        case 'google_image_search':
-            searchUrl = `https://lens.google.com/uploadbyurl?url=${encodedImageUrl}`;
-            break;
-        case 'baidu_image_search':
-            searchUrl = `https://image.baidu.com/n/pc_search?queryImageUrl=${encodedImageUrl}`;
-            break;
-        case 'tineye_image_search':
-            searchUrl = `https://tineye.com/search?url=${encodedImageUrl}`;
-            break;
-        case 'yandex_image_search':
-            searchUrl = `https://yandex.com/images/search?rpt=imageview&url=${encodedImageUrl}`;
-            break;
-        case 'bing_image_search':
-            searchUrl = `https://www.bing.com/images/search?view=detailv2&iss=sbi&form=SBIHMP&q=imgurl:${encodedImageUrl}`;
-            break;
-        default:
-            return false; // 不是以图搜索引擎
-    }
-
-    chrome.runtime.sendMessage({
-        action: 'setpage',
-        query: searchUrl,
-        foreground: true,
-    });
-
-    return true; // 已处理以图搜索
-}
-
 
 function executeGridAction(item) {
     if (item.type === 'function') {
