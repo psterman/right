@@ -926,11 +926,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 x: e.clientX,
                 y: e.clientY
             }
-        }
+        } 
 
         return false
     }
-
     function drop(e) {
         if (bypass(e.target)) return false;
 
@@ -968,20 +967,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     });
                 }
             });
-        } else if (isLink) {
-            // 如果是普通链接，发送 'setpage' 动作
+        } else {
+            // 无论是链接还是文本，都发送 'setpage' 动作
             chrome.runtime.sendMessage({
                 action: 'setpage',
-                query: dropData,
-                foreground: e.altKey ? true : false, // 如果按下 alt 键则在前台打开
-            });
-        } else {
-            var searchText = dropData;
-            // 如果是文本，发送 'searchWithDirection' 动作
-            chrome.runtime.sendMessage({
-                action: 'searchWithDirection',
-                text: encodeURIComponent(dropData),
-                direction: direction
+                query: isLink ? dropData : 'https://www.google.com/search?q=' + encodeURIComponent(dropData),
+                foreground: e.altKey ? true : false,
             });
         }
         return false;
