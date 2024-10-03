@@ -1,4 +1,17 @@
+
 // 在全局范围内添加这些变量
+let directionSearchEnabled = false;
+let directionEngines = {};
+
+chrome.storage.sync.get(['selectedEngines', 'directionSearchEnabled', 'directionEngines', 'id2enginemap'], function (result) {
+    selectedEngines = result.selectedEngines || [];
+    directionSearchEnabled = result.directionSearchEnabled || false;
+    directionEngines = result.directionEngines || {};
+    id2enginemap = result.id2enginemap || {};
+
+    initializeSearch();
+});
+
 let selectedIndex = -1;
 let engineItems = [];
 const aiSearchEngines = [
@@ -883,6 +896,16 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     let dragStartPoint = {}
     let direction
 
+
+
+
+    // 添加一个函数来获取方向搜索引擎设置
+    function getDirectionEngines(callback) {
+        chrome.storage.sync.get('directionEngines', (data) => {
+            callback(data.directionEngines || {});
+        });
+    }
+
     function dragstart(e) {
         if (bypass(e.target))
             return false
@@ -930,6 +953,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
         return false
     }
+    // 修改 drop 函数
     function drop(e) {
         if (bypass(e.target)) return false;
 
@@ -941,27 +965,86 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         var isLink = dropData.startsWith('http://') || dropData.startsWith('https://');
         var isImage = e.target.tagName.toLowerCase() === 'img' || (isLink && dropData.match(/\.(jpeg|jpg|gif|png)$/) !== null);
 
-        // 处理图片拖拽
-        if (isImage) {
-            var imageUrl = isLink ? dropData : e.target.src;
-            var googleImageSearchUrl = 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(imageUrl);
+        const dragDirection = direction;
+
+        console.log('拖动方向:', dragDirection);
+        console.log('方向搜索启用状态:', directionSearchEnabled);
+        console.log('方向搜索引擎设置:', directionEngines);
+
+        let searchUrl;
+        let searchText = dropData;
+
+        if (directionSearchEnabled && dragDirection && directionEngines[`direction-${dragDirection}`]) {
+            const engineName = directionEngines[`direction-${dragDirection}`];
+            console.log('当前使用的方向:', `direction-${dragDirection}`);
+            console.log('对应的搜索引擎:', engineName);
+
+            chrome.storage.sync.get(['engineData', 'id2enginemap'], function (result) {
+                const engineData = result.engineData || {};
+                const id2enginemap = result.id2enginemap || {};
+
+                console.log('engineData:', engineData);
+                console.log('id2enginemap:', id2enginemap);
+
+                // 尝试从 id2enginemap 获取 URL
+                let engineUrl = id2enginemap[engineName.toLowerCase()];
+
+                // 如果在 id2enginemap 中没找到，尝试从 engineData 获取
+                if (!engineUrl && Object.keys(engineData).length > 0) {
+                    engineUrl = Object.values(engineData).find(engine => engine.name.toLowerCase() === engineName.toLowerCase())?.url;
+                }
+
+                console.log('搜索引擎URL:', engineUrl);
+
+                if (engineUrl) {
+                    searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
+                } else {
+                    console.log('未找到搜索引擎URL，使用默认Google搜索');
+                    searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
+                }
+
+                console.log('最终搜索URL:', searchUrl);
+
+                // 执行搜索
+                chrome.runtime.sendMessage({
+                    action: 'setpage',
+                    query: searchUrl,
+                    foreground: e.altKey ? true : false,
+                });
+            });
+        } else {
+            console.log('方向搜索未启用或未找到对应方向的搜索引擎，使用默认处理逻辑');
+            if (isImage) {
+                var imageUrl = isLink ? searchText : e.target.src;
+                searchUrl = 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(imageUrl);
+            } else {
+                searchUrl = isLink ? searchText : 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
+            }
+
+            console.log('最终使用的搜索URL:', searchUrl);
 
             chrome.runtime.sendMessage({
                 action: 'setpage',
-                query: googleImageSearchUrl,
-                foreground: e.altKey ? true : false,
-            });
-        } else {
-            // 处理非图片拖拽（保持原有逻辑）
-            chrome.runtime.sendMessage({
-                action: 'setpage',
-                query: isLink ? dropData : 'https://www.google.com/search?q=' + encodeURIComponent(dropData),
+                query: searchUrl,
                 foreground: e.altKey ? true : false,
             });
         }
 
         return false;
     }
+    function normalizeUrl(url) {
+        return url.replace(/^https?:\/\//, '').toLowerCase().replace(/\/$/, '');
+    }
+    // 添加一个监听器来接收来自 options.js 的更新
+    chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+        if (request.action === 'updateDirectionSearchSettings') {
+            directionSearchEnabled = request.directionSearchEnabled;
+            directionEngines = request.directionEngines;
+            console.log('方向搜索设置已更新:', directionSearchEnabled, directionEngines);
+        }
+    });
+    
+    
     function bypass(element) {
         if (window[location.href])
             return true

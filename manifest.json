@@ -32,8 +32,7 @@
          "js": [
             "/scripts/contents.js",
             "/scripts/options.js",
-            "/scripts/communicate.js",
-            "/scripts/setting.js"
+            "/scripts/communicate.js"
 
          ],
          
