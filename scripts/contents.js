@@ -1,5 +1,6 @@
 
 // 在全局范围内添加这些变量
+let currentNotification = null; // 全局变量，用于跟踪当前显示的通知
 let id2enginemap = {};// 在初始化函数中（例如 DOMContentLoaded 事件监听器中）添加
 chrome.storage.sync.get('id2enginemap', function (result) {
     if (result.id2enginemap) {
@@ -981,7 +982,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
     // 显示搜索提示的函数
     function showSearchNotification(engineName, searchText, direction) {
-        removeDragNotification(); // 先移除已存在的提示
+        // 如果存在当前通知，先移除它
+        if (currentNotification) {
+            document.body.removeChild(currentNotification);
+            currentNotification = null;
+        }
 
         const notification = document.createElement('div');
         notification.id = 'drag-search-notification';
@@ -1002,30 +1007,38 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         opacity: 0;
     `;
 
-        // 修改: 使用 innerHTML 来设置内容，并为搜索文本添加红色样式
         notification.innerHTML = `将使用${engineName}搜索"<span style="color: red;">${searchText.substring(0, 50)}${searchText.length > 50 ? '...' : ''}</span>"，按Esc键取消。`;
 
         document.body.appendChild(notification);
+
+        // 设置当前通知
+        currentNotification = notification;
 
         // 确保元素已经被添加到 DOM 中后设置不透明
         setTimeout(() => {
             notification.style.opacity = '1';
         }, 0);
     }
-    // 移除搜索提示的函数
+
+    // 修改 removeDragNotification 函数
     function removeDragNotification() {
-        const notification = document.getElementById('drag-search-notification');
-        if (notification) {
-            // 新增: 设置透明度为0，触发淡出效果
-            notification.style.opacity = '0';
-            // 新增: 等待淡出动画完成后移除元素
+        if (currentNotification) {
+            currentNotification.style.opacity = '0';
             setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
+                if (currentNotification && currentNotification.parentNode) {
+                    document.body.removeChild(currentNotification);
                 }
+                currentNotification = null;
             }, 300); // 等待淡出动画完成
         }
     }
+
+    // 添加 ESC 键监听器来移除通知
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            removeDragNotification();
+        }
+    });
     // 修改 drop 函数
     function drop(e) {
         if (bypass(e.target)) return false;
