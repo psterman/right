@@ -33,6 +33,26 @@ const searchEngines = {
 	regular: [
 		{ name: "Google", url: "https://www.google.com/search?q=%s" },
 		{ name: "Bing", url: "https://www.bing.com/search?q=%s" },
+		{ name: "百度", url: "https://www.baidu.com/s?wd=%s" },
+		{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
+		{ name: "Yandex", url: "https://yandex.com/search/?text=%s" },
+		{ name: "搜狗", url: "https://www.sogou.com/web?query=%s" },
+		{ name: "360搜索", url: "https://www.so.com/s?q=%s" },
+		{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s" },
+		{ name: "闲鱼", url: "https://s.2.taobao.com/list/list.htm?q=%s" },
+		{ name: "抖音", url: "https://www.douyin.com/search/%s" },
+		{ name: "X", url: "https://twitter.com/search?q=%s" },
+		{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" },
+		{ name: "V2EX", url: "https://www.v2ex.com/search?q=%s" },
+		{ name: "Github", url: "https://github.com/search?q=%s" },
+		{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s" },
+		{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s" },
+		{ name: "FaceBook", url: "https://www.facebook.com/search/top/?q=%s" },
+		{ name: "bilibili", url: "https://search.bilibili.com/all?keyword=%s" },
+		{ name: "知乎", url: "https://www.zhihu.com/search?q=%s" },
+		{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s" },
+		{ name: "微博", url: "https://s.weibo.com/weibo/%s" },
+		{ name: "今日头条", url: "https://so.toutiao.com/search?keyword=%s" }
 		// 添加更多综合搜索引擎...
 	],
 	custom: [

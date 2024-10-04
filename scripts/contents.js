@@ -1,5 +1,12 @@
 
 // 在全局范围内添加这些变量
+let id2enginemap = {};// 在初始化函数中（例如 DOMContentLoaded 事件监听器中）添加
+chrome.storage.sync.get('id2enginemap', function (result) {
+    if (result.id2enginemap) {
+        id2enginemap = result.id2enginemap;
+        console.log('已加载 id2enginemap:', id2enginemap);
+    }
+});
 let directionSearchEnabled = false;
 let directionEngines = {};
 
@@ -1021,112 +1028,86 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         e.stopPropagation();
         e.dataTransfer.dropEffect = 'move';
 
+        console.log('拖拽事件触发');
+
+        let isImage = false;
+        let imageUrl = '';
+
+        // 检查是否拖动的是图片文件或HTML
+        if (e.dataTransfer.types.includes('text/html') && e.dataTransfer.getData('text/html').includes('<img')) {
+            isImage = true;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = e.dataTransfer.getData('text/html');
+            const imgElement = tempDiv.querySelector('img');
+            if (imgElement) {
+                imageUrl = imgElement.src || imgElement.currentSrc;
+            }
+            console.log('拖动数据中包含图片HTML');
+        } else if (e.target.tagName.toLowerCase() === 'img') {
+            isImage = true;
+            imageUrl = e.target.src || e.target.currentSrc;
+            console.log('拖动的是网页中的图片元素');
+        }
+
+        console.log('是否为图片:', isImage);
+        console.log('图片URL:', imageUrl);
+
         var dropData = e.dataTransfer.getData('text/plain');
         console.log('原始拖放数据 (dropData):', dropData);
 
-        // 修改: 检查方向搜索功能是否启用
-        chrome.storage.sync.get(['directionSearchEnabled'], function (result) {
+        chrome.storage.sync.get(['directionSearchEnabled', 'directionEngines', 'id2enginemap'], function (result) {
             console.log('方向搜索启用状态:', result.directionSearchEnabled);
-            // 如果方向搜索被禁用，直接返回，不执行任何搜索
+            console.log('方向搜索引擎设置:', result.directionEngines);
+            console.log('id2enginemap:', result.id2enginemap);
+
             if (result.directionSearchEnabled !== true) {
                 console.log('搜索功能已禁用，不执行任何搜索');
                 return;
             }
+
             const dragDirection = direction;
             console.log('拖动方向:', dragDirection);
-            console.log('方向搜索引擎设置:', directionEngines);
 
             let searchUrl;
-            let searchText = dropData;
+            let searchText = isImage ? imageUrl : dropData;
             console.log('搜索文本 (searchText):', searchText);
 
-            // 修改: 根据 directionSearchEnabled 的值来决定搜索行为
-            if (result.directionSearchEnabled === true) {
-                // 方向搜索被启用
-                if (dragDirection && directionEngines[`direction-${dragDirection}`]) {
-                    const engineName = directionEngines[`direction-${dragDirection}`];
-                    console.log('执行方向搜索，使用引擎:', engineName);
+            if (isImage) {
+                // 对于图片，使用默认的图片搜索引擎（这里假设使用百度图片）
+                searchUrl = 'https://image.baidu.com/search/index?tn=baiduimage&word=' + encodeURIComponent(searchText);
+                console.log('图片搜索URL:', searchUrl);
+            } else if (dragDirection && result.directionEngines[`direction-${dragDirection}`]) {
+                const engineName = result.directionEngines[`direction-${dragDirection}`];
+                console.log('执行方向搜索，使用引擎:', engineName);
 
-                    chrome.storage.sync.get(['engineData', 'id2enginemap'], function (result) {
-                        const engineData = result.engineData || {};
-                        const id2enginemap = result.id2enginemap || {};
+                // 使用小写比较来查找匹配的搜索引擎URL
+                let engineUrl = result.id2enginemap[engineName.toLowerCase()];
 
-                        console.log('engineData:', engineData);
-                        console.log('id2enginemap:', id2enginemap);
-
-                        let engineUrl = id2enginemap[engineName.toLowerCase()];
-                        console.log('从 id2enginemap 获取的 URL:', engineUrl);
-
-                        if (!engineUrl && Object.keys(engineData).length > 0) {
-                            engineUrl = Object.values(engineData).find(engine => engine.name.toLowerCase() === engineName.toLowerCase())?.url;
-                            console.log('从 engineData 获取的 URL:', engineUrl);
-                        }
-
-                        console.log('最终使用的搜索引擎URL:', engineUrl);
-
-                        if (engineUrl) {
-                            console.log('搜索文本编码前:', searchText);
-                            console.log('搜索文本编码后:', encodeURIComponent(searchText));
-
-                            if (engineUrl.includes('?q=') && !engineUrl.includes('%s')) {
-                                searchUrl = engineUrl + encodeURIComponent(searchText);
-                            } else {
-                                searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
-                            }
-                            console.log('构建后的搜索URL:', searchUrl);
-                        } else {
-                            console.log('未找到搜索引擎URL，使用默认Google搜索');
-                            searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
-                        }
-
-                        console.log('最终搜索URL:', searchUrl);
-
-                        // 执行搜索
-                        chrome.runtime.sendMessage({
-                            action: 'setpage',
-                            query: searchUrl,
-                            foreground: e.altKey ? true : false,
-                        }, function (response) {
-                            console.log('发送消息后的响应:', response);
-                        });
-                    });
-                } else {
-                    console.log('未找到匹配的方向搜索引擎，使用默认搜索');
-                    searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
-                    chrome.runtime.sendMessage({
-                        action: 'setpage',
-                        query: searchUrl,
-                        foreground: e.altKey ? true : false,
-                    }, function (response) {
-                        console.log('发送消息后的响应:', response);
-                    });
+                console.log('从 id2enginemap 获取的 URL:', engineUrl);
+                console.log('完整的 id2enginemap:', JSON.stringify(result.id2enginemap, null, 2));
+                console.log('从 id2enginemap 获取的 URL:', engineUrl);
+                
+                if (!engineUrl) {
+                    console.log('在 id2enginemap 中未找到引擎 URL，使用默认搜索');
+                    engineUrl = 'https://www.google.com/search?q=%s';
                 }
+
+                searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
             } else {
-                console.log('方向搜索已禁用，使用默认搜索');
-                var isLink = searchText.startsWith('http://') || searchText.startsWith('https://');
-                var isImage = e.target.tagName.toLowerCase() === 'img' || (isLink && searchText.match(/\.(jpeg|jpg|gif|png)$/) !== null);
-                console.log('是否为链接:', isLink);
-                console.log('是否为图片:', isImage);
-
-                if (isImage) {
-                    var imageUrl = isLink ? searchText : e.target.src;
-                    searchUrl = 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(imageUrl);
-                    console.log('图片搜索URL:', searchUrl);
-                } else {
-                    searchUrl = isLink ? searchText : 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
-                    console.log('普通搜索URL:', searchUrl);
-                }
-
-                console.log('最终使用的搜索URL:', searchUrl);
-
-                chrome.runtime.sendMessage({
-                    action: 'setpage',
-                    query: searchUrl,
-                    foreground: e.altKey ? true : false,
-                }, function (response) {
-                    console.log('发送消息后的响应:', response);
-                });
+                console.log('执行默认文本搜索');
+                searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
             }
+
+            console.log('最终使用的搜索URL:', searchUrl);
+
+            // 执行搜索
+            chrome.runtime.sendMessage({
+                action: 'setpage',
+                query: searchUrl,
+                foreground: e.altKey
+            }, function (response) {
+                console.log('发送消息后的响应:', response);
+            });
         });
 
         return false;
