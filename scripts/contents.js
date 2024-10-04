@@ -953,6 +953,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
         return false
     }
+    
     // 修改 drop 函数
     function drop(e) {
         if (bypass(e.target)) return false;
@@ -962,8 +963,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         e.dataTransfer.dropEffect = 'move';
 
         var dropData = e.dataTransfer.getData('text/plain');
+        console.log('原始拖放数据 (dropData):', dropData);
+
         var isLink = dropData.startsWith('http://') || dropData.startsWith('https://');
         var isImage = e.target.tagName.toLowerCase() === 'img' || (isLink && dropData.match(/\.(jpeg|jpg|gif|png)$/) !== null);
+        console.log('是否为链接:', isLink);
+        console.log('是否为图片:', isImage);
 
         const dragDirection = direction;
 
@@ -973,6 +978,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
         let searchUrl;
         let searchText = dropData;
+        console.log('搜索文本 (searchText):', searchText);
 
         if (directionSearchEnabled && dragDirection && directionEngines[`direction-${dragDirection}`]) {
             const engineName = directionEngines[`direction-${dragDirection}`];
@@ -986,18 +992,26 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 console.log('engineData:', engineData);
                 console.log('id2enginemap:', id2enginemap);
 
-                // 尝试从 id2enginemap 获取 URL
                 let engineUrl = id2enginemap[engineName.toLowerCase()];
+                console.log('从 id2enginemap 获取的 URL:', engineUrl);
 
-                // 如果在 id2enginemap 中没找到，尝试从 engineData 获取
                 if (!engineUrl && Object.keys(engineData).length > 0) {
                     engineUrl = Object.values(engineData).find(engine => engine.name.toLowerCase() === engineName.toLowerCase())?.url;
+                    console.log('从 engineData 获取的 URL:', engineUrl);
                 }
 
-                console.log('搜索引擎URL:', engineUrl);
+                console.log('最终使用的搜索引擎URL:', engineUrl);
 
                 if (engineUrl) {
-                    searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
+                    console.log('搜索文本编码前:', searchText);
+                    console.log('搜索文本编码后:', encodeURIComponent(searchText));
+
+                    if (engineUrl.includes('?q=') && !engineUrl.includes('%s')) {
+                        searchUrl = engineUrl + encodeURIComponent(searchText);
+                    } else {
+                        searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
+                    }
+                    console.log('构建后的搜索URL:', searchUrl);
                 } else {
                     console.log('未找到搜索引擎URL，使用默认Google搜索');
                     searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
@@ -1010,6 +1024,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     action: 'setpage',
                     query: searchUrl,
                     foreground: e.altKey ? true : false,
+                }, function (response) {
+                    console.log('发送消息后的响应:', response);
                 });
             });
         } else {
@@ -1017,8 +1033,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             if (isImage) {
                 var imageUrl = isLink ? searchText : e.target.src;
                 searchUrl = 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(imageUrl);
+                console.log('图片搜索URL:', searchUrl);
             } else {
                 searchUrl = isLink ? searchText : 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
+                console.log('普通搜索URL:', searchUrl);
             }
 
             console.log('最终使用的搜索URL:', searchUrl);
@@ -1027,6 +1045,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 action: 'setpage',
                 query: searchUrl,
                 foreground: e.altKey ? true : false,
+            }, function (response) {
+                console.log('发送消息后的响应:', response);
             });
         }
 
