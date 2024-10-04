@@ -21,6 +21,7 @@ chrome.storage.sync.get(['selectedEngines', 'directionSearchEnabled', 'direction
 
 let selectedIndex = -1;
 let engineItems = [];
+
 const aiSearchEngines = [
     { name: 'AI搜索', url: 'https://example.com/ai-search?q=%s' },
     { name: 'Perplexity', url: 'https://www.perplexity.ai/?q=%s' },
