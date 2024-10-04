@@ -982,14 +982,16 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         font-size: 14px;
         max-width: 300px;
         word-wrap: break-word;
-        // 新增: 添加过渡效果
         transition: opacity 0.3s ease-out;
-        opacity: 0; // 初始设置为透明
+        opacity: 0;
     `;
-        notification.textContent = `将使用${engineName}搜索"${searchText.substring(0, 50)}${searchText.length > 50 ? '...' : ''}"（${direction}方向）。按Esc键取消。`;
+
+        // 修改: 使用 innerHTML 来设置内容，并为搜索文本添加红色样式
+        notification.innerHTML = `将使用${engineName}搜索"<span style="color: red;">${searchText.substring(0, 50)}${searchText.length > 50 ? '...' : ''}</span>"，按Esc键取消。`;
+
         document.body.appendChild(notification);
 
-        // 新增: 确保元素已经被添加到 DOM 中后设置不透明
+        // 确保元素已经被添加到 DOM 中后设置不透明
         setTimeout(() => {
             notification.style.opacity = '1';
         }, 0);
