@@ -18,6 +18,14 @@ chrome.storage.sync.get(['selectedEngines', 'directionSearchEnabled', 'direction
 
     initializeSearch();
 });
+//更新background对应的searchengines-id2enginemap搜索引擎列表
+function getIdToEngineMap(callback) {
+  chrome.runtime.sendMessage({action: "getIdToEngineMap"}, function(response) {
+    if (response && response.id2enginemap) {
+      callback(response.id2enginemap);
+    }
+  });
+}
 
 let selectedIndex = -1;
 let engineItems = [];

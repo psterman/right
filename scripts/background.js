@@ -870,3 +870,19 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 	}
 });
 
+chrome.storage.onChanged.addListener(function (changes, namespace) {
+	if (changes.id2enginemap) {
+		chrome.storage.sync.get('id2enginemap', function (result) {
+			console.log('Background: id2enginemap 已更新', result.id2enginemap);
+			// 这里可以添加使用更新后的 id2enginemap 的逻辑
+		});
+	}
+});
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === "getIdToEngineMap") {
+		chrome.storage.sync.get('id2enginemap', function (result) {
+			sendResponse({ id2enginemap: result.id2enginemap });
+		});
+		return true;  // 保持消息通道开放,以便异步发送响应
+	}
+});

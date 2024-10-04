@@ -39,7 +39,7 @@ const searchEngines = {
 		{ name: "搜狗", url: "https://www.sogou.com/web?query=%s" },
 		{ name: "360搜索", url: "https://www.so.com/s?q=%s" },
 		{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s" },
-		{ name: "闲鱼", url: "https://s.2.taobao.com/list/list.htm?q=%s" },
+		{ name: "闲鱼", url: "https://www.goofish.com/search?q=%s&spm=a21ybx.home" },
 		{ name: "抖音", url: "https://www.douyin.com/search/%s" },
 		{ name: "X", url: "https://twitter.com/search?q=%s" },
 		{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" },
@@ -59,35 +59,58 @@ const searchEngines = {
 		// 这里可以是空的，或者包含一些默认的自定义搜索引擎
 	]
 };
+function loadOptions() {
+	chrome.storage.sync.get(['selectedEngines', 'id2enginemap'], function (result) {
+		let id2enginemap = result.id2enginemap || {};
 
+		// 特别检查闲鱼搜索引擎
+		console.log('加载前闲鱼 URL:', id2enginemap['闲鱼']);
 
-function updateEngineList(selectMenu, globalId2enginemap) {
-	const categories = ['ai', 'regular', 'image', 'custom'];
-
-	categories.forEach(category => {
-		const list = selectMenu.querySelector(`.category.${category} .engine-list`);
-		list.innerHTML = ''; // 清空现有列表
-
-		// 添加预设搜索引擎
-		searchEngines[category].forEach(engine => {
-			const li = document.createElement('li');
-			li.textContent = engine.name;
-			li.addEventListener('click', () => selectEngine(engine.name, selectMenu));
-			list.appendChild(li);
+		// 更新 id2enginemap
+		Object.entries(searchEngines).forEach(([category, engines]) => {
+			engines.forEach(engine => {
+				id2enginemap[engine.name.toLowerCase()] = engine.url;
+			});
 		});
 
-		// 添加用户自定义搜索引擎
-		Object.keys(globalId2enginemap).forEach(engineName => {
-			if (engineName.startsWith(category + '_')) {
-				const li = document.createElement('li');
-				li.textContent = engineName.split('_')[1];
-				li.addEventListener('click', () => selectEngine(engineName, selectMenu));
-				list.appendChild(li);
-			}
+		console.log('更新后闲鱼 URL:', id2enginemap['闲鱼']);
+
+		// 保存更新后的 id2enginemap
+		chrome.storage.sync.set({ id2enginemap: id2enginemap }, function () {
+			console.log('id2enginemap 已保存，闲鱼 URL:', id2enginemap['闲鱼']);
 		});
 	});
 }
 
+function saveOptions() {
+	let id2enginemap = {};
+
+	// 从 searchEngines 更新 id2enginemap
+	Object.entries(searchEngines).forEach(([category, engines]) => {
+		engines.forEach(engine => {
+			id2enginemap[engine.name.toLowerCase()] = engine.url;
+		});
+	});
+
+	console.log('保存前闲鱼 URL:', id2enginemap['闲鱼']);
+
+	chrome.storage.sync.set({ id2enginemap: id2enginemap }, function () {
+		console.log('保存后闲鱼 URL:', id2enginemap['闲鱼']);
+	});
+}
+// 确保在页面加载时执行 loadOptions
+document.addEventListener('DOMContentLoaded', function () {
+	loadOptions();
+	// 稍微延迟执行 saveOptions，确保 loadOptions 已完成
+	setTimeout(saveOptions, 1000);
+});
+// 为保存按钮添加事件监听器
+document.addEventListener('DOMContentLoaded', function () {
+	const saveButton = document.getElementById('save');
+	if (saveButton) {
+		saveButton.addEventListener('click', saveOptions);
+	}
+});
 function selectEngine(engineName, selectMenu) {
 	const button = selectMenu.previousElementSibling;
 	button.textContent = engineName;
