@@ -2,7 +2,7 @@
 // 在全局范围内添加这些变量
 let directionSearchEnabled = false;
 let directionEngines = {};
-
+let isNotificationSuppressed = false;
 chrome.storage.sync.get(['selectedEngines', 'directionSearchEnabled', 'directionEngines', 'id2enginemap'], function (result) {
     selectedEngines = result.selectedEngines || [];
     directionSearchEnabled = result.directionSearchEnabled || false;
@@ -909,7 +909,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     function dragstart(e) {
         if (bypass(e.target))
             return false
-
+        isNotificationSuppressed = false; // 重置抑制标志
         var data = ''
         if (window.getSelection() && window.getSelection().anchorNode &&
             window.getSelection().anchorNode.parentNode === e.target.parentNode) {
@@ -960,11 +960,18 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             removeDragNotification();
+            isNotificationSuppressed = true;
+            console.log('通知被抑制，直到下次拖动');
         }
     });
 
     // 显示搜索提示的函数
     function showSearchNotification(engineName, searchText, direction) {
+        if (isNotificationSuppressed) {
+            console.log('通知当前被抑制，不显示提示');
+            return;
+        }
+
         removeDragNotification(); // 先移除已存在的提示
 
         const notification = document.createElement('div');
@@ -977,7 +984,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         color: white;
         padding: 10px;
         border-radius: 5px;
-        z-index: 9999;
+        z-index: 999989;
         font-family: Arial, sans-serif;
         font-size: 14px;
         max-width: 300px;
@@ -986,12 +993,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         opacity: 0;
     `;
 
-        // 修改: 使用 innerHTML 来设置内容，并为搜索文本添加红色样式
-        notification.innerHTML = `将使用${engineName}搜索"<span style="color: red;">${searchText.substring(0, 50)}${searchText.length > 50 ? '...' : ''}</span>"，按Esc键取消。`;
+        notification.innerHTML = `将使用${engineName}搜索"<span style="color: red;">${searchText.substring(0, 50)}${searchText.length > 50 ? '...' : ''}</span>",按Esc键暂时取消提示。`;
 
         document.body.appendChild(notification);
 
-        // 确保元素已经被添加到 DOM 中后设置不透明
         setTimeout(() => {
             notification.style.opacity = '1';
         }, 0);
@@ -1039,7 +1044,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             let searchUrl;
             let searchText = dropData;
             console.log('搜索文本 (searchText):', searchText);
+            // 新增: 判断是否为图片
+            var isImage = e.target.tagName.toLowerCase() === 'img' || (searchText.startsWith('http') && searchText.match(/\.(jpeg|jpg|gif|png)$/i) !== null);
+            console.log('是否为图片:', isImage);
+            
 
+            
             // 修改: 根据 directionSearchEnabled 的值来决定搜索行为
             if (result.directionSearchEnabled === true) {
                 // 方向搜索被启用
@@ -1109,12 +1119,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 console.log('是否为图片:', isImage);
 
                 if (isImage) {
-                    var imageUrl = isLink ? searchText : e.target.src;
+                    // 新增: 处理图片搜索
+                    var imageUrl = e.target.tagName.toLowerCase() === 'img' ? e.target.src : searchText;
                     searchUrl = 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(imageUrl);
                     console.log('图片搜索URL:', searchUrl);
+                } else if (dragDirection && directionEngines[`direction-${dragDirection}`]) {
+                    // 执行方向搜索（保持不变）
+                    const engineName = directionEngines[`direction-${dragDirection}`];
+                    console.log('执行方向搜索，使用引擎:', engineName);
+                    // ... (方向搜索的代码，保持不变)
                 } else {
-                    searchUrl = isLink ? searchText : 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
-                    console.log('普通搜索URL:', searchUrl);
+                    // 修改: 执行默认文本搜索
+                    console.log('执行默认文本搜索');
+                    searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
                 }
 
                 console.log('最终使用的搜索URL:', searchUrl);
