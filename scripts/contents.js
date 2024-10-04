@@ -1013,8 +1013,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     // 修改 drop 函数
     function drop(e) {
         if (bypass(e.target)) return false;
-        // 新增: 立即移除提示
+
+        // 立即移除提示
         removeDragNotification();
+
         e.preventDefault();
         e.stopPropagation();
         e.dataTransfer.dropEffect = 'move';
@@ -1022,61 +1024,101 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         var dropData = e.dataTransfer.getData('text/plain');
         console.log('原始拖放数据 (dropData):', dropData);
 
-        var isLink = dropData.startsWith('http://') || dropData.startsWith('https://');
-        var isImage = e.target.tagName.toLowerCase() === 'img' || (isLink && dropData.match(/\.(jpeg|jpg|gif|png)$/) !== null);
-        console.log('是否为链接:', isLink);
-        console.log('是否为图片:', isImage);
+        // 修改: 检查方向搜索功能是否启用
+        chrome.storage.sync.get(['directionSearchEnabled'], function (result) {
+            console.log('方向搜索启用状态:', result.directionSearchEnabled);
+            // 如果方向搜索被禁用，直接返回，不执行任何搜索
+            if (result.directionSearchEnabled !== true) {
+                console.log('搜索功能已禁用，不执行任何搜索');
+                return;
+            }
+            const dragDirection = direction;
+            console.log('拖动方向:', dragDirection);
+            console.log('方向搜索引擎设置:', directionEngines);
 
-        const dragDirection = direction;
+            let searchUrl;
+            let searchText = dropData;
+            console.log('搜索文本 (searchText):', searchText);
 
-        console.log('拖动方向:', dragDirection);
-        console.log('方向搜索启用状态:', directionSearchEnabled);
-        console.log('方向搜索引擎设置:', directionEngines);
+            // 修改: 根据 directionSearchEnabled 的值来决定搜索行为
+            if (result.directionSearchEnabled === true) {
+                // 方向搜索被启用
+                if (dragDirection && directionEngines[`direction-${dragDirection}`]) {
+                    const engineName = directionEngines[`direction-${dragDirection}`];
+                    console.log('执行方向搜索，使用引擎:', engineName);
 
-        let searchUrl;
-        let searchText = dropData;
-        console.log('搜索文本 (searchText):', searchText);
+                    chrome.storage.sync.get(['engineData', 'id2enginemap'], function (result) {
+                        const engineData = result.engineData || {};
+                        const id2enginemap = result.id2enginemap || {};
 
-        if (directionSearchEnabled && dragDirection && directionEngines[`direction-${dragDirection}`]) {
-            const engineName = directionEngines[`direction-${dragDirection}`];
-            console.log('当前使用的方向:', `direction-${dragDirection}`);
-            console.log('对应的搜索引擎:', engineName);
+                        console.log('engineData:', engineData);
+                        console.log('id2enginemap:', id2enginemap);
 
-            chrome.storage.sync.get(['engineData', 'id2enginemap'], function (result) {
-                const engineData = result.engineData || {};
-                const id2enginemap = result.id2enginemap || {};
+                        let engineUrl = id2enginemap[engineName.toLowerCase()];
+                        console.log('从 id2enginemap 获取的 URL:', engineUrl);
 
-                console.log('engineData:', engineData);
-                console.log('id2enginemap:', id2enginemap);
+                        if (!engineUrl && Object.keys(engineData).length > 0) {
+                            engineUrl = Object.values(engineData).find(engine => engine.name.toLowerCase() === engineName.toLowerCase())?.url;
+                            console.log('从 engineData 获取的 URL:', engineUrl);
+                        }
 
-                let engineUrl = id2enginemap[engineName.toLowerCase()];
-                console.log('从 id2enginemap 获取的 URL:', engineUrl);
+                        console.log('最终使用的搜索引擎URL:', engineUrl);
 
-                if (!engineUrl && Object.keys(engineData).length > 0) {
-                    engineUrl = Object.values(engineData).find(engine => engine.name.toLowerCase() === engineName.toLowerCase())?.url;
-                    console.log('从 engineData 获取的 URL:', engineUrl);
-                }
+                        if (engineUrl) {
+                            console.log('搜索文本编码前:', searchText);
+                            console.log('搜索文本编码后:', encodeURIComponent(searchText));
 
-                console.log('最终使用的搜索引擎URL:', engineUrl);
+                            if (engineUrl.includes('?q=') && !engineUrl.includes('%s')) {
+                                searchUrl = engineUrl + encodeURIComponent(searchText);
+                            } else {
+                                searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
+                            }
+                            console.log('构建后的搜索URL:', searchUrl);
+                        } else {
+                            console.log('未找到搜索引擎URL，使用默认Google搜索');
+                            searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
+                        }
 
-                if (engineUrl) {
-                    console.log('搜索文本编码前:', searchText);
-                    console.log('搜索文本编码后:', encodeURIComponent(searchText));
+                        console.log('最终搜索URL:', searchUrl);
 
-                    if (engineUrl.includes('?q=') && !engineUrl.includes('%s')) {
-                        searchUrl = engineUrl + encodeURIComponent(searchText);
-                    } else {
-                        searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
-                    }
-                    console.log('构建后的搜索URL:', searchUrl);
+                        // 执行搜索
+                        chrome.runtime.sendMessage({
+                            action: 'setpage',
+                            query: searchUrl,
+                            foreground: e.altKey ? true : false,
+                        }, function (response) {
+                            console.log('发送消息后的响应:', response);
+                        });
+                    });
                 } else {
-                    console.log('未找到搜索引擎URL，使用默认Google搜索');
+                    console.log('未找到匹配的方向搜索引擎，使用默认搜索');
                     searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
+                    chrome.runtime.sendMessage({
+                        action: 'setpage',
+                        query: searchUrl,
+                        foreground: e.altKey ? true : false,
+                    }, function (response) {
+                        console.log('发送消息后的响应:', response);
+                    });
+                }
+            } else {
+                console.log('方向搜索已禁用，使用默认搜索');
+                var isLink = searchText.startsWith('http://') || searchText.startsWith('https://');
+                var isImage = e.target.tagName.toLowerCase() === 'img' || (isLink && searchText.match(/\.(jpeg|jpg|gif|png)$/) !== null);
+                console.log('是否为链接:', isLink);
+                console.log('是否为图片:', isImage);
+
+                if (isImage) {
+                    var imageUrl = isLink ? searchText : e.target.src;
+                    searchUrl = 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(imageUrl);
+                    console.log('图片搜索URL:', searchUrl);
+                } else {
+                    searchUrl = isLink ? searchText : 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
+                    console.log('普通搜索URL:', searchUrl);
                 }
 
-                console.log('最终搜索URL:', searchUrl);
+                console.log('最终使用的搜索URL:', searchUrl);
 
-                // 执行搜索
                 chrome.runtime.sendMessage({
                     action: 'setpage',
                     query: searchUrl,
@@ -1084,31 +1126,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 }, function (response) {
                     console.log('发送消息后的响应:', response);
                 });
-            });
-        } else {
-            console.log('方向搜索未启用或未找到对应方向的搜索引擎，使用默认处理逻辑');
-            if (isImage) {
-                var imageUrl = isLink ? searchText : e.target.src;
-                searchUrl = 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(imageUrl);
-                console.log('图片搜索URL:', searchUrl);
-            } else {
-                searchUrl = isLink ? searchText : 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
-                console.log('普通搜索URL:', searchUrl);
             }
-
-            console.log('最终使用的搜索URL:', searchUrl);
-
-            chrome.runtime.sendMessage({
-                action: 'setpage',
-                query: searchUrl,
-                foreground: e.altKey ? true : false,
-            }, function (response) {
-                console.log('发送消息后的响应:', response);
-            });
-        }
+        });
 
         return false;
-    }// 新增: 添加 dragend 事件监听器
+    }
+    // 新增: 添加 dragend 事件监听器
     document.addEventListener('dragend', function (e) {
         removeDragNotification();
     });

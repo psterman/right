@@ -2571,6 +2571,15 @@ document.addEventListener('DOMContentLoaded', function () {
 	// 修改：更新UI函数
 	function updateDirectionSearchUI() {
     const directionSearchToggle = document.getElementById('directionSearchToggle');
+		// 新增: 加载保存的设置
+		chrome.storage.sync.get(['searchEnabled'], function (result) {
+			directionSearchToggle.checked = result.searchEnabled !== false;
+		});
+
+		// 新增: 保存设置
+		directionSearchToggle.addEventListener('change', function () {
+			chrome.storage.sync.set({ searchEnabled: this.checked });
+		});
     const emojiDirections = document.querySelector('.emoji-directions');
     if (emojiDirections) {
         emojiDirections.style.display = directionSearchToggle.checked ? 'grid' : 'none';
