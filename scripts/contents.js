@@ -2,6 +2,9 @@
 // 在全局范围内添加这些变量
 let directionSearchEnabled = false;
 let directionEngines = {};
+let isSelecting = false;
+let selectionText = '';
+let lastDirection = '';
 
 chrome.storage.sync.get(['selectedEngines', 'directionSearchEnabled', 'directionEngines', 'id2enginemap'], function (result) {
     selectedEngines = result.selectedEngines || [];
@@ -906,54 +909,64 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         });
     }
 
+    // 修改 dragstart 函数
     function dragstart(e) {
         if (bypass(e.target))
-            return false
+            return false;
 
-        var data = ''
-        if (window.getSelection() && window.getSelection().anchorNode &&
-            window.getSelection().anchorNode.parentNode === e.target.parentNode) {
-            data = window.getSelection().toString()
-        }
-        // data = data || e.target.src || e.target.href || e.target.innerText
-        if (!data) {
-            data = data || e.target.href || (function (element) {
-                while (!element.parentElement.href) {
-                    element = element.parentElement
-                }
-                return element.parentElement.href
-            })(e.target)
-        }
+        selectionText = window.getSelection().toString().trim();
+        dragStartPoint = { x: e.clientX, y: e.clientY };
+        isSelecting = true;
 
-        e.dataTransfer.setData('text/plain', data)
-        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', selectionText);
+        e.dataTransfer.effectAllowed = 'move';
 
-        dragStartPoint = { x: e.clientX, y: e.clientY }
-        return false
+        return false;
     }
 
+
+
+    // 修改 dragover 函数
     function dragover(e) {
-        if (bypass(e.target))
-            return false
+        if (bypass(e.target) || !isSelecting)
+            return false;
 
-        e.preventDefault()
-        e.stopPropagation()
-        e.dataTransfer.dropEffect = 'move'
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'move';
 
-        const { x, y } = dragStartPoint
-        const d = getDirection(x, y, e.clientX, e.clientY)
+        const { x, y } = dragStartPoint;
+        const newDirection = getDirection(x, y, e.clientX, e.clientY);
 
-        if (d) {
-            direction = d
-            dragStartPoint = {
-                x: e.clientX,
-                y: e.clientY
-            }
-        } 
+        if (newDirection && newDirection !== lastDirection) {
+            lastDirection = newDirection;
+            showDragNotification(selectionText, newDirection);
+        }
 
-        return false
+        return false;
     }
-    
+    // 新增函数：显示拖动提示
+    function showDragNotification(text, direction) {
+        if (directionSearchEnabled && directionEngines[`direction-${direction}`]) {
+            const engineName = directionEngines[`direction-${direction}`];
+            showSearchNotification(engineName, text, direction);
+        }
+    }
+
+    // 新增函数：移除拖动提示
+    function removeDragNotification() {
+        const notification = document.getElementById('drag-search-notification');
+        if (notification) {
+            document.body.removeChild(notification);
+        }
+    }
+    // 修改 Esc 键监听器
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isSelecting) {
+            isSelecting = false;
+            removeDragNotification();
+        }
+    });
     // 修改 drop 函数
     function drop(e) {
         if (bypass(e.target)) return false;
@@ -961,97 +974,90 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         e.preventDefault();
         e.stopPropagation();
         e.dataTransfer.dropEffect = 'move';
-
+        isSelecting = false;
+        // 移除提示
+        removeDragNotification();
         var dropData = e.dataTransfer.getData('text/plain');
-        console.log('原始拖放数据 (dropData):', dropData);
-
-        var isLink = dropData.startsWith('http://') || dropData.startsWith('https://');
-        var isImage = e.target.tagName.toLowerCase() === 'img' || (isLink && dropData.match(/\.(jpeg|jpg|gif|png)$/) !== null);
-        console.log('是否为链接:', isLink);
-        console.log('是否为图片:', isImage);
-
         const dragDirection = direction;
-
-        console.log('拖动方向:', dragDirection);
-        console.log('方向搜索启用状态:', directionSearchEnabled);
-        console.log('方向搜索引擎设置:', directionEngines);
-
-        let searchUrl;
-        let searchText = dropData;
-        console.log('搜索文本 (searchText):', searchText);
 
         if (directionSearchEnabled && dragDirection && directionEngines[`direction-${dragDirection}`]) {
             const engineName = directionEngines[`direction-${dragDirection}`];
-            console.log('当前使用的方向:', `direction-${dragDirection}`);
-            console.log('对应的搜索引擎:', engineName);
 
             chrome.storage.sync.get(['engineData', 'id2enginemap'], function (result) {
                 const engineData = result.engineData || {};
                 const id2enginemap = result.id2enginemap || {};
 
-                console.log('engineData:', engineData);
-                console.log('id2enginemap:', id2enginemap);
-
                 let engineUrl = id2enginemap[engineName.toLowerCase()];
-                console.log('从 id2enginemap 获取的 URL:', engineUrl);
 
                 if (!engineUrl && Object.keys(engineData).length > 0) {
                     engineUrl = Object.values(engineData).find(engine => engine.name.toLowerCase() === engineName.toLowerCase())?.url;
-                    console.log('从 engineData 获取的 URL:', engineUrl);
                 }
-
-                console.log('最终使用的搜索引擎URL:', engineUrl);
 
                 if (engineUrl) {
-                    console.log('搜索文本编码前:', searchText);
-                    console.log('搜索文本编码后:', encodeURIComponent(searchText));
-
+                    let searchUrl;
                     if (engineUrl.includes('?q=') && !engineUrl.includes('%s')) {
-                        searchUrl = engineUrl + encodeURIComponent(searchText);
+                        searchUrl = engineUrl + encodeURIComponent(dropData);
                     } else {
-                        searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
+                        searchUrl = engineUrl.replace('%s', encodeURIComponent(dropData));
                     }
-                    console.log('构建后的搜索URL:', searchUrl);
-                } else {
-                    console.log('未找到搜索引擎URL，使用默认Google搜索');
-                    searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
+
+                    // 立即显示提示信息
+                    showSearchNotification(engineName, dropData, dragDirection);
+
+                    // 添加Esc键监听器
+                    document.addEventListener('keydown', cancelSearch);
+
+                    // 立即执行搜索
+                    chrome.runtime.sendMessage({
+                        action: 'setpage',
+                        query: searchUrl,
+                        foreground: e.altKey ? true : false,
+                    });
                 }
-
-                console.log('最终搜索URL:', searchUrl);
-
-                // 执行搜索
-                chrome.runtime.sendMessage({
-                    action: 'setpage',
-                    query: searchUrl,
-                    foreground: e.altKey ? true : false,
-                }, function (response) {
-                    console.log('发送消息后的响应:', response);
-                });
-            });
-        } else {
-            console.log('方向搜索未启用或未找到对应方向的搜索引擎，使用默认处理逻辑');
-            if (isImage) {
-                var imageUrl = isLink ? searchText : e.target.src;
-                searchUrl = 'https://lens.google.com/uploadbyurl?url=' + encodeURIComponent(imageUrl);
-                console.log('图片搜索URL:', searchUrl);
-            } else {
-                searchUrl = isLink ? searchText : 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
-                console.log('普通搜索URL:', searchUrl);
-            }
-
-            console.log('最终使用的搜索URL:', searchUrl);
-
-            chrome.runtime.sendMessage({
-                action: 'setpage',
-                query: searchUrl,
-                foreground: e.altKey ? true : false,
-            }, function (response) {
-                console.log('发送消息后的响应:', response);
             });
         }
 
         return false;
     }
+
+    let searchCancelled = false;
+
+    function showSearchNotification(engineName, searchText, direction) {
+        removeDragNotification(); // 先移除已存在的提示
+
+        const notification = document.createElement('div');
+        notification.id = 'drag-search-notification';
+        notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        z-index: 9999;
+    `;
+        notification.textContent = `将使用${engineName}搜索"${searchText}"（${direction}方向）。释放鼠标执行，按Esc键取消。`;
+        document.body.appendChild(notification);
+    }
+
+    function cancelSearch(e) {
+        if (e.key === 'Escape') {
+            searchCancelled = true;
+            showCancelNotification();
+            document.removeEventListener('keydown', cancelSearch);
+            // 这里可以添加取消搜索的逻辑，比如关闭新打开的标签页
+        }
+    }
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isSelecting) {
+            isSelecting = false;
+            const notification = document.getElementById('drag-search-notification');
+            if (notification) {
+                document.body.removeChild(notification);
+            }
+        }
+    });
     function normalizeUrl(url) {
         return url.replace(/^https?:\/\//, '').toLowerCase().replace(/\/$/, '');
     }
