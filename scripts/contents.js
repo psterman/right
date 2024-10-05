@@ -1743,8 +1743,33 @@ function createMultiMenu(start, end) {
 
 // 修改: 加载搜索引擎到 multiMenu1 和 multiMenu2
 function loadEnginesIntoGrid(multiMenu1, multiMenu2) {
-    // 加载普通搜索引擎到 multiMenu1
-    const loadNormalEngines = (menu) => {
+    // 加载 AI 和综合搜索引擎到 multiMenu1
+    const loadAIAndGeneralEngines = (menu) => {
+        chrome.storage.sync.get(['searchengines'], function (data) {
+            const engines = data.searchengines || {};
+            const aiEngines = engines.ai || [];
+            const generalEngines = engines.综合搜索 || [];
+            const combinedEngines = [...aiEngines, ...generalEngines];
+            const gridItems = menu.querySelectorAll('.grid-item');
+
+            gridItems.forEach((item, index) => {
+                if (index < combinedEngines.length) {
+                    const engine = combinedEngines[index];
+                    item.textContent = engine.name;
+                    item.setAttribute('data-url', engine.url);
+                    item.style.cursor = 'pointer';
+                } else {
+                    item.textContent = '';
+                    item.removeAttribute('data-url');
+                    item.style.cursor = 'default';
+                    item.style.backgroundColor = 'transparent'; // 设置空格子为透明
+                }
+            });
+        });
+    };
+
+    // 加载自定义搜索引擎到 multiMenu2
+    const loadCustomEngines = (menu) => {
         chrome.storage.sync.get('id2enginemap', function (data) {
             const engines = data.id2enginemap || {};
             const engineEntries = Object.entries(engines);
@@ -1760,33 +1785,15 @@ function loadEnginesIntoGrid(multiMenu1, multiMenu2) {
                     item.textContent = '';
                     item.removeAttribute('data-url');
                     item.style.cursor = 'default';
+                    item.style.backgroundColor = 'transparent'; // 设置空格子为透明
                 }
             });
         });
     };
 
-    // 加载 AI 搜索引擎到 multiMenu2
-    const loadAIEngines = (menu) => {
-        const gridItems = menu.querySelectorAll('.grid-item');
-        gridItems.forEach((item, index) => {
-            if (index < aiSearchEngines.length) {
-                const engine = aiSearchEngines[index];
-                item.textContent = engine.name;
-                item.setAttribute('data-url', engine.url);
-                item.style.cursor = 'pointer';
-            } else {
-                item.textContent = '';
-                item.removeAttribute('data-url');
-                item.style.cursor = 'default';
-                item.style.backgroundColor = 'transparent'; // 设置空格子为透明
-            }
-        });
-    };
-
-    loadNormalEngines(multiMenu1);
-    loadAIEngines(multiMenu2);
+    loadAIAndGeneralEngines(multiMenu1);
+    loadCustomEngines(multiMenu2);
 }
-
 function handleSearchClick(event) {
     const searchText = globalSearchInput.value.trim();
     const engineurl = event.target.getAttribute('data-url');
