@@ -963,15 +963,24 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         if (newDirection && newDirection !== direction) {
             direction = newDirection;
             const selectedText = window.getSelection().toString().trim();
-            if (directionSearchEnabled && directionEngines[`direction-${direction}`]) {
-                const engineName = directionEngines[`direction-${direction}`];
-                showSearchNotification(engineName, selectedText, direction);
+
+            // 新增: 检查是否为链接
+            const isLink = e.dataTransfer.types.includes('text/uri-list');
+
+            if (directionSearchEnabled) {
+                if (isLink) {
+                    // 如果是链接，显示固定的提示
+                    showSearchNotification("在侧边栏打开链接", "", direction);
+                } else if (directionEngines[`direction-${direction}`]) {
+                    // 如果不是链接，保持原有的方向搜索逻辑
+                    const engineName = directionEngines[`direction-${direction}`];
+                    showSearchNotification(engineName, selectedText, direction);
+                }
             }
         }
 
         return false;
     }
-
     // 添加 Esc 键监听器
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
@@ -1006,7 +1015,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         opacity: 0;
     `;
 
-        notification.innerHTML = `将使用${engineName}搜索"<span style="color: red;">${searchText.substring(0, 50)}${searchText.length > 50 ? '...' : ''}</span>"，按Esc键取消。`;
+        // 修改: 根据是否为链接显示不同的提示内容
+        if (engineName === "在侧边栏打开链接") {
+            notification.innerHTML = `${engineName}，按Esc键取消。`;
+        } else {
+            notification.innerHTML = `将使用${engineName}搜索"<span style="color: red;">${searchText.substring(0, 50)}${searchText.length > 50 ? '...' : ''}</span>"，按Esc键取消。`;
+        }
 
         document.body.appendChild(notification);
 
@@ -1053,7 +1067,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
         let isImage = false;
         let imageUrl = '';
-
+        // 新增: 添加链接相关变量
+        let isLink = false;
+        let linkUrl = '';
         // 检查是否拖动的是图片文件或HTML
         if (e.dataTransfer.types.includes('text/html') && e.dataTransfer.getData('text/html').includes('<img')) {
             isImage = true;
@@ -1069,10 +1085,16 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             imageUrl = e.target.src || e.target.currentSrc;
             console.log('拖动的是网页中的图片元素');
         }
-
+        else if (e.dataTransfer.types.includes('text/uri-list')) {
+            isLink = true;
+            linkUrl = e.dataTransfer.getData('text/uri-list');
+            console.log('拖动的是链接');
+        }
         console.log('是否为图片:', isImage);
         console.log('图片URL:', imageUrl);
-
+        // 新增: 输出链接相关信息
+        console.log('是否为链接:', isLink);
+        console.log('链接URL:', linkUrl);
         var dropData = e.dataTransfer.getData('text/plain');
         console.log('原始拖放数据 (dropData):', dropData);
 
@@ -1090,22 +1112,29 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             console.log('拖动方向:', dragDirection);
 
             let searchUrl;
-            let searchText = isImage ? imageUrl : dropData;
+            // 修改: 更新searchText的赋值逻辑，优先考虑链接
+            let searchText = isImage ? imageUrl : (isLink ? linkUrl : dropData);
             console.log('搜索文本 (searchText):', searchText);
 
             if (isImage) {
                 // 对于图片，使用默认的图片搜索引擎（这里假设使用百度图片）
                 searchUrl = 'https://image.baidu.com/search/index?tn=baiduimage&word=' + encodeURIComponent(searchText);
                 console.log('图片搜索URL:', searchUrl);
-            } else if (dragDirection && result.directionEngines[`direction-${dragDirection}`]) {
+            } else if (isLink || linkUrl) {
+            // 如果是链接，直接使用链接URL
+            searchUrl = searchText;
+            console.log('链接URL:', searchUrl);
+        } else {
+            // 对于普通文本，使用方向搜索
+            const dragDirection = direction;
+            console.log('拖动方向:', dragDirection);
+
+            if (dragDirection && result.directionEngines[`direction-${dragDirection}`]) {
                 const engineName = result.directionEngines[`direction-${dragDirection}`];
                 console.log('执行方向搜索，使用引擎:', engineName);
 
-                // 使用小写比较来查找匹配的搜索引擎URL
                 let engineUrl = result.id2enginemap[engineName.toLowerCase()];
 
-                console.log('从 id2enginemap 获取的 URL:', engineUrl);
-                console.log('完整的 id2enginemap:', JSON.stringify(result.id2enginemap, null, 2));
                 console.log('从 id2enginemap 获取的 URL:', engineUrl);
                 
                 if (!engineUrl) {
@@ -1118,21 +1147,22 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 console.log('执行默认文本搜索');
                 searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
             }
+        }
 
-            console.log('最终使用的搜索URL:', searchUrl);
+        console.log('最终使用的搜索URL:', searchUrl);
 
-            // 执行搜索
-            chrome.runtime.sendMessage({
-                action: 'setpage',
-                query: searchUrl,
-                foreground: e.altKey
-            }, function (response) {
-                console.log('发送消息后的响应:', response);
-            });
+        // 执行搜索
+        chrome.runtime.sendMessage({
+            action: 'setpage',
+            query: searchUrl,
+            foreground: e.altKey
+        }, function (response) {
+            console.log('发送消息后的响应:', response);
         });
+    });
 
-        return false;
-    }
+    return false;
+}
     // 新增: 添加 dragend 事件监听器
     document.addEventListener('dragend', function (e) {
         removeDragNotification();
