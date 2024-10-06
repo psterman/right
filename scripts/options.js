@@ -1,4 +1,43 @@
 // 定义全局变量存储搜索引擎映射
+let topEngineListContainer = [];
+let bottomEngineListContainer = [];
+let multiMenu1 = [];
+let multiMenu2 = [];
+
+// 从存储中加载数据
+function loadData() {
+	chrome.storage.sync.get(['id2enginemap', 'multiMenu1', 'multiMenu2'], function (result) {
+		id2enginemap = result.id2enginemap || {};
+		multiMenu1 = result.multiMenu1 || [];
+		multiMenu2 = result.multiMenu2 || [];
+
+		// 将 id2enginemap 转换为 topEngineListContainer 和 bottomEngineListContainer
+		topEngineListContainer = [];
+		bottomEngineListContainer = [];
+
+		// 假设前10个引擎为顶部引擎,其余为底部引擎
+		let count = 0;
+		for (let [name, url] of Object.entries(id2enginemap)) {
+			if (count < 10) {
+				topEngineListContainer.push({ name, url });
+			} else {
+				bottomEngineListContainer.push({ name, url });
+			}
+			count++;
+		}
+
+		console.log('Loaded data:', {
+			topEngineListContainer,
+			bottomEngineListContainer,
+			multiMenu1,
+			multiMenu2
+		});
+
+		initializeTab3();
+	});
+}
+
+document.addEventListener('DOMContentLoaded', loadData);
 var globalId2enginemap = {};
 function updateGlobalId2enginemap(newData) {
 	globalId2enginemap = newData;
@@ -3095,4 +3134,153 @@ function saveEngineSettings(engineName, engineUrl) {
 function normalizeUrl(url) {
 	// 移除协议，将所有字符转为小写，移除尾部斜杠
 	return url.replace(/^https?:\/\//, '').toLowerCase().replace(/\/$/, '');
+}
+//悬浮窗
+
+document.addEventListener('DOMContentLoaded', function () {
+	initializeTab3();
+});
+
+function initializeTab3() {
+	console.log('Initializing Tab3');
+	const tabButtons = document.querySelectorAll('#tab3 .tab-button');
+	const tabPanes = document.querySelectorAll('#tab3 .tab-pane');
+
+	tabButtons.forEach(button => {
+		button.addEventListener('click', () => {
+			const tabId = button.getAttribute('data-tab');
+			switchTab(tabId);
+		});
+	});
+
+	loadEngineList('topEngineList', topEngineListContainer);
+	loadEngineList('bottomEngineList', bottomEngineListContainer);
+	loadMultiMenu('multiMenu1', multiMenu1);
+	loadMultiMenu('multiMenu2', multiMenu2);
+
+	document.querySelectorAll('#tab3 .add-engine').forEach(button => {
+		button.addEventListener('click', (e) => {
+			const listId = e.target.closest('.tab-pane').id;
+			addNewEngine(listId);
+		});
+	});
+
+	document.querySelectorAll('#tab3 .add-menu-item').forEach(button => {
+		button.addEventListener('click', (e) => {
+			const listId = e.target.closest('.tab-pane').id;
+			addNewMenuItem(listId);
+		});
+	});
+
+	// 确保第一个标签页是活跃的
+	switchTab('topEngineList');
+}
+
+function switchTab(tabId) {
+	console.log('Switching to tab:', tabId);
+	document.querySelectorAll('#tab3 .tab-button').forEach(btn => {
+		btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
+	});
+	document.querySelectorAll('#tab3 .tab-pane').forEach(pane => {
+		pane.classList.toggle('active', pane.id === tabId);
+	});
+}
+function loadEngineList(containerId, engineList) {
+	const container = document.querySelector(`#${containerId} .engine-list`);
+	container.innerHTML = '';
+	engineList.forEach((engine, index) => {
+		const item = createEngineItem(engine, index, containerId);
+		container.appendChild(item);
+	});
+}
+
+function loadMultiMenu(containerId, menuList) {
+	const container = document.querySelector(`#${containerId} .menu-list`);
+	container.innerHTML = '';
+	menuList.forEach((menu, index) => {
+		const item = createMenuItem(menu, index, containerId);
+		container.appendChild(item);
+	});
+}
+
+function createEngineItem(engine, index, containerId) {
+	const item = document.createElement('div');
+	item.className = 'engine-item';
+	item.innerHTML = `
+        <input type="text" class="engine-name" value="${engine.name}" placeholder="引擎名称">
+        <input type="text" class="engine-url" value="${engine.url}" placeholder="引擎URL">
+        <button class="delete-engine">删除</button>
+    `;
+	item.querySelector('.delete-engine').addEventListener('click', () => deleteEngine(containerId, index));
+	item.querySelectorAll('input').forEach(input => {
+		input.addEventListener('change', () => updateEngine(containerId, index, item));
+	});
+	return item;
+}
+
+function createMenuItem(menu, index, containerId) {
+	const item = document.createElement('div');
+	item.className = 'menu-item';
+	item.innerHTML = `
+        <input type="text" class="menu-name" value="${menu}" placeholder="菜单项">
+        <button class="delete-menu-item">删除</button>
+    `;
+	item.querySelector('.delete-menu-item').addEventListener('click', () => deleteMenuItem(containerId, index));
+	item.querySelector('input').addEventListener('change', () => updateMenuItem(containerId, index, item));
+	return item;
+}
+
+function addNewEngine(listId) {
+	const list = listId === 'topEngineList' ? topEngineListContainer : bottomEngineListContainer;
+	list.push({ name: '', url: '' });
+	loadEngineList(listId, list);
+	saveEngineList(listId, list);
+}
+
+function addNewMenuItem(listId) {
+	const list = listId === 'multiMenu1' ? multiMenu1 : multiMenu2;
+	list.push('');
+	loadMultiMenu(listId, list);
+	saveMultiMenu(listId, list);
+}
+
+function deleteEngine(containerId, index) {
+	const list = containerId === 'topEngineList' ? topEngineListContainer : bottomEngineListContainer;
+	list.splice(index, 1);
+	loadEngineList(containerId, list);
+	saveEngineList(containerId, list);
+}
+
+function deleteMenuItem(containerId, index) {
+	const list = containerId === 'multiMenu1' ? multiMenu1 : multiMenu2;
+	list.splice(index, 1);
+	loadMultiMenu(containerId, list);
+	saveMultiMenu(containerId, list);
+}
+
+function updateEngine(containerId, index, item) {
+	const list = containerId === 'topEngineList' ? topEngineListContainer : bottomEngineListContainer;
+	list[index] = {
+		name: item.querySelector('.engine-name').value,
+		url: item.querySelector('.engine-url').value
+	};
+	saveEngineList(containerId, list);
+}
+
+function updateMenuItem(containerId, index, item) {
+	const list = containerId === 'multiMenu1' ? multiMenu1 : multiMenu2;
+	list[index] = item.querySelector('.menu-name').value;
+	saveMultiMenu(containerId, list);
+}
+
+function saveEngineList(containerId, list) {
+	chrome.storage.sync.set({ [containerId]: list }, () => {
+		console.log(`${containerId} saved`);
+	});
+}
+
+function saveMultiMenu(containerId, list) {
+	chrome.storage.sync.set({ [containerId]: list }, () => {
+		console.log(`${containerId} saved`);
+	});
 }

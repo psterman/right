@@ -1,4 +1,3 @@
-
 // 在全局范围内添加这些变量
 let currentNotification = null; // 全局变量，用于跟踪当前显示的通知
 let id2enginemap = {};// 在初始化函数中（例如 DOMContentLoaded 事件监听器中）添加

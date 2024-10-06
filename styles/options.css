@@ -2628,3 +2628,99 @@ button {
 .add-engine-form button {
   margin-bottom: 10px;
 }
+.tab-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 10px;
+}
+
+.tab-buttons button {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.tab-buttons button.active {
+  background-color: #ddd;
+}
+
+.tab-content {
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+.engine-item,
+.menu-item {
+  margin-bottom: 10px;
+}
+
+.engine-item input,
+.menu-item input {
+  margin-right: 10px;
+}
+.tab-container {
+  margin-top: 20px;
+}
+
+.tab-buttons {
+  display: flex;
+  border-bottom: 1px solid #444;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #fff;
+}
+
+.tab-button.active {
+  border-bottom: 2px solid #007bff;
+  font-weight: bold;
+}
+
+.tab-content {
+  padding: 20px 0;
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+.engine-item,
+.menu-item {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.engine-item input,
+.menu-item input {
+  flex: 1;
+  margin-right: 10px;
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #444;
+}
+
+.add-engine,
+.add-menu-item {
+  margin-top: 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.delete-engine,
+.delete-menu-item {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
