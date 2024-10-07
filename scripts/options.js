@@ -68,6 +68,7 @@ function addNewAISearchEngine() {
 		loadAISearchEngines('multiMenu1'); // 重新加载列表
 	}
 }
+
 function loadAISearchEngines(menuId) {
 	console.log('开始加载AI搜索引擎');
 	// 使用 setTimeout 来确保 DOM 完全加载
@@ -185,6 +186,89 @@ function updateGlobalId2enginemap(newData) {
 	globalId2enginemap = newData;
 	updateAllEngineLists();
 }
+function loadCustomSearchEngines(menuId) {
+	console.log('开始加载自定义搜索引擎');
+	setTimeout(() => {
+		const menuList = document.querySelector('#multiMenu2 .custom-search-engine-list');
+		if (!menuList) {
+			console.error('自定义搜索引擎列表元素未找到，选择器：#multiMenu2 .custom-search-engine-list');
+			console.log('当前DOM结构：', document.body.innerHTML);
+			return;
+		}
+		menuList.innerHTML = ''; // 清空现有内容
+
+		chrome.storage.sync.get('customSearchEngines', function (data) {
+			console.log('从存储中获取的自定义搜索引擎数据：', data.customSearchEngines);
+			let engines = data.customSearchEngines || [];
+
+			if (engines.length === 0) {
+				console.log('未找到保存的自定义搜索引擎，使用默认值');
+				engines = [
+					{ name: "默认自定义搜索", url: "https://example.com/custom-search?q=%s" }
+				];
+			}
+
+			engines.forEach((engine, index) => {
+				const itemElement = document.createElement('div');
+				itemElement.classList.add('menu-item');
+				itemElement.innerHTML = `
+                    <span>${engine.name}</span>
+                    <input type="text" value="${engine.url}" readonly>
+                    <button class="edit-custom-engine">编辑</button>
+                    <button class="delete-custom-engine">删除</button>
+                `;
+
+				// 添加编辑和删除功能
+				const editButton = itemElement.querySelector('.edit-custom-engine');
+				const deleteButton = itemElement.querySelector('.delete-custom-engine');
+
+				editButton.addEventListener('click', () => editCustomEngine(index));
+				deleteButton.addEventListener('click', () => deleteCustomEngine(index));
+
+				menuList.appendChild(itemElement);
+			});
+
+			console.log(`加载了 ${engines.length} 个自定义搜索引擎到 multiMenu2`);
+		});
+	}, 0);
+}
+
+function editCustomEngine(index) {
+	chrome.storage.sync.get('customSearchEngines', function (data) {
+		let engines = data.customSearchEngines || [];
+		const newName = prompt('输入新的搜索引擎名称:', engines[index].name);
+		const newUrl = prompt('输入新的搜索引擎URL:', engines[index].url);
+
+		if (newName && newUrl) {
+			engines[index] = { name: newName, url: newUrl };
+			saveCustomSearchEngines(engines);
+			loadCustomSearchEngines('multiMenu2'); // 重新加载列表
+		}
+	});
+}
+
+function deleteCustomEngine(index) {
+	chrome.storage.sync.get('customSearchEngines', function (data) {
+		let engines = data.customSearchEngines || [];
+		if (confirm('确定要删除这个自定义搜索引擎吗？')) {
+			engines.splice(index, 1);
+			saveCustomSearchEngines(engines);
+			loadCustomSearchEngines('multiMenu2'); // 重新加载列表
+		}
+	});
+}
+
+function saveCustomSearchEngines(engines) {
+	chrome.storage.sync.set({ customSearchEngines: engines }, function () {
+		console.log('自定义搜索引擎已保存');
+	});
+}
+
+// 确保在DOM加载完成后调用loadCustomSearchEngines
+document.addEventListener('DOMContentLoaded', () => {
+	console.log('DOM内容已加载');
+	loadCustomSearchEngines('multiMenu2');
+});
 let openMenu = null; // 用于跟踪当前打开的菜单
 // 在文件顶部添加或更新以下函数
 function showSelectMenu(menu) {
