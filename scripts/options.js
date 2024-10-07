@@ -3,7 +3,27 @@ let topEngineListContainer = [];
 let bottomEngineListContainer = [];
 let multiMenu1 = [];
 let multiMenu2 = [];
-
+let aiSearchEngines = [];
+document.addEventListener('DOMContentLoaded', function () {
+	chrome.storage.sync.get('aiSearchEngines', function (data) {
+		if (data.aiSearchEngines && Array.isArray(data.aiSearchEngines)) {
+			const bottomEngineListContainer = document.getElementById('bottomEngineListContainer');
+			data.aiSearchEngines.forEach(engine => {
+				const item = createEngineItem(engine.name, engine.url);
+				bottomEngineListContainer.appendChild(item);
+			});
+		}
+	});
+});
+function updateAISearchEngines(newEngines) {
+	chrome.storage.sync.set({ aiSearchEngines: newEngines }, function () {
+		console.log('AI搜索引擎列表已在选项页面更新');
+		// 可能需要刷新显示
+	});
+}
+function createEngineItem(name, url) {
+	// 创建和返回搜索引擎列表项的代码
+}
 // 从存储中加载数据
 function loadData() {
 	chrome.storage.sync.get(['id2enginemap', 'multiMenu1', 'multiMenu2'], function (result) {
@@ -37,6 +57,128 @@ function loadData() {
 	});
 }
 
+// 新的函数重命名为 addNewAISearchEngine
+function addNewAISearchEngine() {
+	const name = prompt('输入新的搜索引擎名称:');
+	const url = prompt('输入新的搜索引擎URL:');
+
+	if (name && url) {
+		aiSearchEngines.push({ name, url });
+		saveAISearchEngines();
+		loadAISearchEngines('multiMenu1'); // 重新加载列表
+	}
+}
+function loadAISearchEngines(menuId) {
+	console.log('开始加载AI搜索引擎');
+	// 使用 setTimeout 来确保 DOM 完全加载
+	setTimeout(() => {
+		const menuList = document.querySelector('#multiMenu1 .ai-search-engine-list');
+		if (!menuList) {
+			console.error('AI搜索引擎列表元素未找到，选择器：#multiMenu1 .ai-search-engine-list');
+			console.log('当前DOM结构：', document.body.innerHTML);
+			return;
+		}
+		menuList.innerHTML = ''; // 清空现有内容
+
+		chrome.storage.sync.get('aiSearchEngines', function (data) {
+			console.log('从存储中获取的AI搜索引擎数据：', data.aiSearchEngines);
+			let engines = data.aiSearchEngines || [];
+
+			if (engines.length === 0) {
+				console.log('未找到保存的AI搜索引擎，使用默认值');
+				engines = [
+					{ name: "默认AI搜索", url: "https://example.com/search?q=%s" }
+				];
+			}
+
+			engines.forEach((engine, index) => {
+				const itemElement = document.createElement('div');
+				itemElement.classList.add('menu-item');
+				itemElement.innerHTML = `
+                    <span>${engine.name}</span>
+                    <input type="text" value="${engine.url}" readonly>
+                    <button class="edit-engine">编辑</button>
+                    <button class="delete-engine">删除</button>
+                `;
+
+				// 添加编辑和删除功能
+				const editButton = itemElement.querySelector('.edit-engine');
+				const deleteButton = itemElement.querySelector('.delete-engine');
+
+				editButton.addEventListener('click', () => editEngine(index));
+				deleteButton.addEventListener('click', () => deleteEngine(index));
+
+				menuList.appendChild(itemElement);
+			});
+
+			console.log(`加载了 ${engines.length} 个 AI 搜索引擎到 multiMenu1`);
+		});
+	}, 0);
+}
+
+// 确保在DOM加载完成后调用loadAISearchEngines
+document.addEventListener('DOMContentLoaded', () => {
+	console.log('DOM内容已加载');
+	loadAISearchEngines('multiMenu1');
+});
+
+function editEngine(index) {
+	chrome.storage.sync.get('aiSearchEngines', function (data) {
+		let engines = data.aiSearchEngines || [];
+		const newName = prompt('输入新的搜索引擎名称:', engines[index].name);
+		const newUrl = prompt('输入新的搜索引擎URL:', engines[index].url);
+
+		if (newName && newUrl) {
+			engines[index] = { name: newName, url: newUrl };
+			saveAISearchEngines(engines);
+			loadAISearchEngines('multiMenu1'); // 重新加载列表
+		}
+	});
+}
+
+function deleteEngine(index) {
+	chrome.storage.sync.get('aiSearchEngines', function (data) {
+		let engines = data.aiSearchEngines || [];
+		if (confirm('确定要删除这个搜索引擎吗？')) {
+			engines.splice(index, 1);
+			saveAISearchEngines(engines);
+			loadAISearchEngines('multiMenu1'); // 重新加载列表
+		}
+	});
+}
+
+function saveAISearchEngines() {
+	chrome.storage.sync.set({ aiSearchEngines: aiSearchEngines }, function () {
+		console.log('AI搜索引擎已保存');
+	});
+}
+document.addEventListener('DOMContentLoaded', () => {
+	console.log('DOM内容已加载');
+	setTimeout(() => {
+		console.log('延迟执行loadAISearchEngines');
+		loadAISearchEngines('multiMenu1');
+	}, 1000); // 延迟1秒
+});
+// 在 DOMContentLoaded 事件监听器中使用新的函数名
+document.addEventListener('DOMContentLoaded', () => {
+	// ... 其他代码 ...
+	loadAISearchEngines('multiMenu1');
+	document.getElementById('addAISearchEngine').addEventListener('click', addNewAISearchEngine);
+});
+chrome.storage.sync.get('aiSearchEngines', function (data) {
+	console.log('从存储中获取的AI搜索引擎数据：', data.aiSearchEngines);
+	if (data.aiSearchEngines && Array.isArray(data.aiSearchEngines)) {
+		aiSearchEngines = data.aiSearchEngines;
+		loadAISearchEngines();
+	} else {
+		console.log('未找到有效的AI搜索引擎数据，使用默认值');
+		// 可以在这里设置一些默认的搜索引擎
+		aiSearchEngines = [
+			{ name: "默认AI搜索", url: "https://example.com/search?q=%s" }
+		];
+		loadAISearchEngines();
+	}
+});
 document.addEventListener('DOMContentLoaded', loadData);
 var globalId2enginemap = {};
 function updateGlobalId2enginemap(newData) {

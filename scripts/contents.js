@@ -29,7 +29,11 @@ function getIdToEngineMap(callback) {
 
 let selectedIndex = -1;
 let engineItems = [];
-
+function saveAISearchEngines() {
+    chrome.storage.sync.set({ aiSearchEngines: aiSearchEngines }, function () {
+        console.log('AI搜索引擎已保存:', aiSearchEngines);
+    });
+}
 const aiSearchEngines = [
     { name: 'AI搜索', url: 'https://example.com/ai-search?q=%s' },
     { name: 'Perplexity', url: 'https://www.perplexity.ai/?q=%s' },
@@ -43,6 +47,10 @@ const aiSearchEngines = [
     { name: 'YOU', url: 'https://you.com/search?q=%s' },
     { name: 'phind', url: 'https://www.phind.com/search?q=%s' }
 ];
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('DOM内容已加载，准备保存AI搜索引擎');
+    saveAISearchEngines();
+});
 // 添加悬浮图标
 function addFloatingIcon() {
     let isSidebarOpen = false; // 跟踪侧边栏状态
