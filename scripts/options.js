@@ -4,6 +4,8 @@ let bottomEngineListContainer = [];
 let multiMenu1 = [];
 let multiMenu2 = [];
 let aiSearchEngines = [];
+let customSearchEngines = [];
+
 document.addEventListener('DOMContentLoaded', function () {
 	chrome.storage.sync.get('aiSearchEngines', function (data) {
 		if (data.aiSearchEngines && Array.isArray(data.aiSearchEngines)) {
@@ -257,17 +259,82 @@ function deleteCustomEngine(index) {
 		}
 	});
 }
+// 添加这个新函数
+function addCustomSearchEngine() {
+	const name = prompt("请输入新的自定义搜索引擎名称：");
+	const url = prompt("请输入新的自定义搜索引擎URL（使用 %s 表示搜索词的位置）：");
 
+	if (name && url) {
+		chrome.storage.sync.get('customSearchEngines', function (data) {
+			let engines = data.customSearchEngines || [];
+			engines.push({ name, url });
+
+			chrome.storage.sync.set({ customSearchEngines: engines }, function () {
+				console.log('新的自定义搜索引擎已添加');
+				renderCustomSearchEngineList(); // 重新渲染列表
+			});
+		});
+	} else {
+		alert('请输入有效的名称和URL');
+	}
+}
 function saveCustomSearchEngines(engines) {
 	chrome.storage.sync.set({ customSearchEngines: engines }, function () {
 		console.log('自定义搜索引擎已保存');
 	});
 }
+function renderCustomSearchEngineList() {
+	const list = document.querySelector('#multiMenu2 .custom-search-engine-list');
+	list.innerHTML = ''; // 清空现有内容
 
-// 确保在DOM加载完成后调用loadCustomSearchEngines
+	chrome.storage.sync.get('customSearchEngines', function (data) {
+		const engines = data.customSearchEngines || [];
+
+		engines.forEach((engine, index) => {
+			const li = document.createElement('li');
+			li.innerHTML = `
+                <span>${engine.name}</span>
+                <input type="text" value="${engine.url}" readonly>
+                <button class="edit-custom-engine" data-index="${index}">编辑</button>
+                <button class="delete-custom-engine" data-index="${index}">删除</button>
+            `;
+			list.appendChild(li);
+		});
+
+		// 添加编辑和删除的事件监听器
+		addCustomEngineEventListeners();
+	});
+}
+function addCustomEngineEventListeners() {
+	const list = document.querySelector('#multiMenu2 .custom-search-engine-list');
+	list.querySelectorAll('.delete-custom-engine').forEach(button => {
+		button.addEventListener('click', function () {
+			const index = parseInt(this.getAttribute('data-index'));
+			deleteCustomSearchEngine(index);
+		});
+	});
+
+	// 同样为编辑按钮添加事件监听器
+	list.querySelectorAll('.edit-custom-engine').forEach(button => {
+		button.addEventListener('click', function () {
+			const index = parseInt(this.getAttribute('data-index'));
+			editCustomSearchEngine(index);
+		});
+	});
+}
+
+// 确保在DOM加载完成后初始化所有功能
 document.addEventListener('DOMContentLoaded', () => {
 	console.log('DOM内容已加载');
-	loadCustomSearchEngines('multiMenu2');
+
+	// 渲染自定义搜索引擎列表
+	renderCustomSearchEngineList();
+
+	// 为 "添加自定义搜索引擎" 按钮添加事件监听器
+	const addCustomSearchEngineButton = document.querySelector('#multiMenu2 .add-menu-item');
+	if (addCustomSearchEngineButton) {
+		addCustomSearchEngineButton.addEventListener('click', () => addCustomSearchEngine(false));
+	}
 });
 let openMenu = null; // 用于跟踪当前打开的菜单
 // 在文件顶部添加或更新以下函数
@@ -1876,7 +1943,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	const customSearchEngineList = document.getElementById('customSearchEngineList');
 
 
-	let customSearchEngines = [];
+	
 
 	function renderCustomSearchEngines() {
 		customSearchEngineList.innerHTML = '';
@@ -1906,34 +1973,31 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 	}
 
-	function addCustomSearchEngine() {
-		const name = customSearchEngineNameInput.value.trim();
-		const url = customSearchEngineUrlInput.value.trim();
-		if (name && url) {
-			customSearchEngines.push({ name, url });
-			customSearchEngineNameInput.value = '';
-			customSearchEngineUrlInput.value = '';
-			saveCustomSearchEngines();
-			renderCustomSearchEngines();
-		}
-	}
-
 	function editCustomSearchEngine(index) {
-		const newName = prompt('编辑搜索名称', customSearchEngines[index].name);
-		const newUrl = prompt('编辑搜索网址', customSearchEngines[index].url);
+		const engine = customSearchEngines[index];
+		const newName = prompt("请输入新的名称：", engine.name);
+		const newUrl = prompt("请输入新的URL：", engine.url);
+
 		if (newName && newUrl) {
 			customSearchEngines[index] = { name: newName, url: newUrl };
 			saveCustomSearchEngines();
-			renderCustomSearchEngines();
+			renderCustomSearchEngineList();
 		}
 	}
 
 	function deleteCustomSearchEngine(index) {
-		customSearchEngines.splice(index, 1);
-		saveCustomSearchEngines();
-		renderCustomSearchEngines();
-	}
+		if (confirm("确定要删除这个自定义搜索引擎吗？")) {
+			chrome.storage.sync.get('customSearchEngines', function (data) {
+				let engines = data.customSearchEngines || [];
+				engines.splice(index, 1);
 
+				chrome.storage.sync.set({ customSearchEngines: engines }, function () {
+					console.log('自定义搜索引擎已删除');
+					renderCustomSearchEngineList(); // 重新渲染列表
+				});
+			});
+		}
+	}
 	function saveCustomSearchEngines() {
 		chrome.storage.sync.set({ customSearchEngines: customSearchEngines }, function () {
 			console.log('Custom search engines saved.');
