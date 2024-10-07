@@ -378,17 +378,13 @@ function addCustomSearchEnginePrompt() {
 document.addEventListener('DOMContentLoaded', () => {
 	console.log('DOM内容已加载');
 
-	// 渲染两个自定义搜索引擎列表
 	renderCustomSearchEngineList();
-	updateCustomSearchEngineList();
 
-	// 为 "添加自定义搜索引擎" 按钮（输入框方式）添加事件监听器
 	const addCustomSearchEngineButton = document.getElementById('addCustomSearchEngineButton');
 	if (addCustomSearchEngineButton) {
 		addCustomSearchEngineButton.addEventListener('click', addCustomSearchEngine);
 	}
 
-	// 为 "添加自定义搜索引擎" 按钮（add-menu-item）添加事件监听器
 	const addMenuItemButton = document.querySelector('#multiMenu2 .add-menu-item');
 	if (addMenuItemButton) {
 		addMenuItemButton.addEventListener('click', addCustomSearchEnginePrompt);
