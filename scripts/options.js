@@ -261,8 +261,14 @@ function deleteCustomEngine(index) {
 }
 // 添加这个新函数
 function addCustomSearchEngine() {
-	const name = prompt("请输入新的自定义搜索引擎名称：");
-	const url = prompt("请输入新的自定义搜索引擎URL（使用 %s 表示搜索词的位置）：");
+	let name = document.getElementById('customSearchEngineName').value.trim();
+	let url = document.getElementById('customSearchEngineUrl').value.trim();
+
+	if (!name || !url) {
+		// 如果输入框为空，才使用提示框
+		name = name || prompt("请输入新的自定义搜索引擎名称：");
+		url = url || prompt("请输入新的自定义搜索引擎URL（使用 %s 表示搜索词的位置）：");
+	}
 
 	if (name && url) {
 		chrome.storage.sync.get('customSearchEngines', function (data) {
@@ -271,13 +277,41 @@ function addCustomSearchEngine() {
 
 			chrome.storage.sync.set({ customSearchEngines: engines }, function () {
 				console.log('新的自定义搜索引擎已添加');
-				renderCustomSearchEngineList(); // 重新渲染列表
+				// 清空输入框
+				document.getElementById('customSearchEngineName').value = '';
+				document.getElementById('customSearchEngineUrl').value = '';
+				// 重新渲染两个列表
+				renderCustomSearchEngineList();
+				updateCustomSearchEngineList();
 			});
 		});
 	} else {
 		alert('请输入有效的名称和URL');
 	}
 }
+function updateCustomSearchEngineList() {
+	const list = document.getElementById('customSearchEngineList');
+	list.innerHTML = ''; // 清空现有内容
+
+	chrome.storage.sync.get('customSearchEngines', function (data) {
+		const engines = data.customSearchEngines || [];
+
+		engines.forEach((engine, index) => {
+			const li = document.createElement('li');
+			li.innerHTML = `
+                <span>${engine.name}</span>
+                <input type="text" value="${engine.url}" readonly>
+                <button class="edit-custom-engine" data-index="${index}">编辑</button>
+                <button class="delete-custom-engine" data-index="${index}">删除</button>
+            `;
+			list.appendChild(li);
+		});
+
+		// 为新列表添加事件监听器
+		addCustomEngineEventListeners(list);
+	});
+}
+
 function saveCustomSearchEngines(engines) {
 	chrome.storage.sync.set({ customSearchEngines: engines }, function () {
 		console.log('自定义搜索引擎已保存');
@@ -302,11 +336,10 @@ function renderCustomSearchEngineList() {
 		});
 
 		// 添加编辑和删除的事件监听器
-		addCustomEngineEventListeners();
+		addCustomEngineEventListeners(list);
 	});
 }
-function addCustomEngineEventListeners() {
-	const list = document.querySelector('#multiMenu2 .custom-search-engine-list');
+function addCustomEngineEventListeners(list) {
 	list.querySelectorAll('.delete-custom-engine').forEach(button => {
 		button.addEventListener('click', function () {
 			const index = parseInt(this.getAttribute('data-index'));
@@ -314,7 +347,6 @@ function addCustomEngineEventListeners() {
 		});
 	});
 
-	// 同样为编辑按钮添加事件监听器
 	list.querySelectorAll('.edit-custom-engine').forEach(button => {
 		button.addEventListener('click', function () {
 			const index = parseInt(this.getAttribute('data-index'));
@@ -322,18 +354,44 @@ function addCustomEngineEventListeners() {
 		});
 	});
 }
+function addCustomSearchEnginePrompt() {
+	const name = prompt("请输入新的自定义搜索引擎名称：");
+	const url = prompt("请输入新的自定义搜索引擎URL（使用 %s 表示搜索词的位置）：");
 
+	if (name && url) {
+		chrome.storage.sync.get('customSearchEngines', function (data) {
+			let engines = data.customSearchEngines || [];
+			engines.push({ name, url });
+
+			chrome.storage.sync.set({ customSearchEngines: engines }, function () {
+				console.log('新的自定义搜索引擎已添加');
+				// 重新渲染两个列表
+				renderCustomSearchEngineList();
+				updateCustomSearchEngineList();
+			});
+		});
+	} else {
+		alert('请输入有效的名称和URL');
+	}
+}
 // 确保在DOM加载完成后初始化所有功能
 document.addEventListener('DOMContentLoaded', () => {
 	console.log('DOM内容已加载');
 
-	// 渲染自定义搜索引擎列表
+	// 渲染两个自定义搜索引擎列表
 	renderCustomSearchEngineList();
+	updateCustomSearchEngineList();
 
-	// 为 "添加自定义搜索引擎" 按钮添加事件监听器
-	const addCustomSearchEngineButton = document.querySelector('#multiMenu2 .add-menu-item');
+	// 为 "添加自定义搜索引擎" 按钮（输入框方式）添加事件监听器
+	const addCustomSearchEngineButton = document.getElementById('addCustomSearchEngineButton');
 	if (addCustomSearchEngineButton) {
-		addCustomSearchEngineButton.addEventListener('click', () => addCustomSearchEngine(false));
+		addCustomSearchEngineButton.addEventListener('click', addCustomSearchEngine);
+	}
+
+	// 为 "添加自定义搜索引擎" 按钮（add-menu-item）添加事件监听器
+	const addMenuItemButton = document.querySelector('#multiMenu2 .add-menu-item');
+	if (addMenuItemButton) {
+		addMenuItemButton.addEventListener('click', addCustomSearchEnginePrompt);
 	}
 });
 let openMenu = null; // 用于跟踪当前打开的菜单
@@ -1974,29 +2032,38 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function editCustomSearchEngine(index) {
-		const engine = customSearchEngines[index];
-		const newName = prompt("请输入新的名称：", engine.name);
-		const newUrl = prompt("请输入新的URL：", engine.url);
+		chrome.storage.sync.get('customSearchEngines', function (data) {
+			let engines = data.customSearchEngines || [];
+			const engine = engines[index];
 
-		if (newName && newUrl) {
-			customSearchEngines[index] = { name: newName, url: newUrl };
-			saveCustomSearchEngines();
-			renderCustomSearchEngineList();
-		}
+			const newName = prompt("请输入新的搜索引擎名称:", engine.name);
+			const newUrl = prompt("请输入新的搜索引擎URL:", engine.url);
+
+			if (newName && newUrl) {
+				engines[index] = { name: newName, url: newUrl };
+
+				chrome.storage.sync.set({ customSearchEngines: engines }, function () {
+					console.log('自定义搜索引擎已编辑');
+					renderCustomSearchEngineList();
+					updateCustomSearchEngineList();
+				});
+			}
+		});
 	}
 
 	function deleteCustomSearchEngine(index) {
-		if (confirm("确定要删除这个自定义搜索引擎吗？")) {
-			chrome.storage.sync.get('customSearchEngines', function (data) {
-				let engines = data.customSearchEngines || [];
+		chrome.storage.sync.get('customSearchEngines', function (data) {
+			let engines = data.customSearchEngines || [];
+			if (confirm(`确定要删除 "${engines[index].name}" 吗？`)) {
 				engines.splice(index, 1);
 
 				chrome.storage.sync.set({ customSearchEngines: engines }, function () {
 					console.log('自定义搜索引擎已删除');
-					renderCustomSearchEngineList(); // 重新渲染列表
+					renderCustomSearchEngineList();
+					updateCustomSearchEngineList();
 				});
-			});
-		}
+			}
+		});
 	}
 	function saveCustomSearchEngines() {
 		chrome.storage.sync.set({ customSearchEngines: customSearchEngines }, function () {
