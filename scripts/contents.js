@@ -1,4 +1,10 @@
 // 在全局范围内添加这些变量
+let currentPopup = null;
+// 从存储中检索选中的搜索引擎
+// 假设这是在 contents.js 中的现有代码
+let selectedEngines = []; // 声明全局变量
+let longPressEnabled = true;
+let ctrlSelectEnabled = true;
 let currentNotification = null; // 全局变量，用于跟踪当前显示的通知
 let id2enginemap = {};// 在初始化函数中（例如 DOMContentLoaded 事件监听器中）添加
 chrome.storage.sync.get('id2enginemap', function (result) {
@@ -20,11 +26,11 @@ chrome.storage.sync.get(['selectedEngines', 'directionSearchEnabled', 'direction
 });
 //更新background对应的searchengines-id2enginemap搜索引擎列表
 function getIdToEngineMap(callback) {
-  chrome.runtime.sendMessage({action: "getIdToEngineMap"}, function(response) {
-    if (response && response.id2enginemap) {
-      callback(response.id2enginemap);
-    }
-  });
+    chrome.runtime.sendMessage({ action: "getIdToEngineMap" }, function (response) {
+        if (response && response.id2enginemap) {
+            callback(response.id2enginemap);
+        }
+    });
 }
 
 let selectedIndex = -1;
@@ -272,12 +278,6 @@ observer.observe(document.body, {
     childList: true,
     subtree: true
 });
-let currentPopup = null;
-// 从存储中检索选中的搜索引擎
-// 假设这是在 contents.js 中的现有代码
-let selectedEngines = []; // 声明全局变量
-let longPressEnabled = true;
-let ctrlSelectEnabled = true;
 
 // 监听来自 background.js 的消息
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
@@ -363,7 +363,6 @@ function handleTextSelection(e) {
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
         selectedText = target.value.substring(target.selectionStart, target.selectionEnd).trim();
 
-        // 修改条件检查，确保在输入框中有文本时显示菜单
         if (selectedText !== '') {
             showInputContextMenu(target, x, y);
         }
@@ -372,27 +371,153 @@ function handleTextSelection(e) {
         if (selectedText) {
             showSearchLinks(selectedText, x, y, selectedEngines);
         }
+    } else if (currentPopup) {
+        document.body.removeChild(currentPopup);
+        currentPopup = null;
     }
 }
 function showSearchLinks(selectedText, x, y, currentEngine) {
+    console.log('showSearchLinks called with:', { selectedText, x, y, currentEngine });
+
     if (currentPopup) {
         document.body.removeChild(currentPopup);
-        currentPopup = null; // 更新 currentPopup
+        currentPopup = null;
     }
+
     var popup = document.createElement('div');
     popup.style.position = 'fixed';
     popup.style.zIndex = '9999';
     popup.style.borderRadius = '20px';
     popup.style.backgroundColor = 'black';
     popup.className = 'search-popup flex-container';
-
-    var style = document.createElement('style');
-    style.innerHTML = '.search-popup a { text-decoration: none; }';
-    document.head.appendChild(style);
-
     popup.style.maxWidth = 'auto';
     popup.style.overflow = 'auto';
 
+    var searchLinksContainer = document.createElement('div');
+    searchLinksContainer.style.display = 'flex';
+    searchLinksContainer.style.flexWrap = 'wrap';
+    console.log('Before adding search engine links');
+    // 默认搜索引擎链接
+    var engines = getEnginesByType(currentEngine);
+    console.log('Engines:', engines);
+    engines = engines.filter(engine => selectedEngines.some(selected => selected.name === engine.name));
+    console.log('Filtered engines:', engines);
+    engines.forEach(engine => {
+        var searchLink = createSearchLink(engine.name, engine.urlBase, selectedText);
+        searchLinksContainer.appendChild(searchLink);
+    });
+    console.log('After adding search engine links');
+
+    // 统一处理所有复选框状态和创建相应的功能链接
+    chrome.storage.sync.get([
+        'copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox',
+        'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox', 'closesidepanelCheckbox',
+        'savedPages'
+    ], function (items) {
+        console.log('Retrieved checkbox states:', items);
+
+        const actions = [
+            {
+                id: 'copyCheckbox', text: '复制', action: () => {
+                    console.log('Copy action triggered');
+                    navigator.clipboard.writeText(selectedText).then(() => {
+                        console.log('文本已复制');
+                        removePopup();
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                    });
+                }
+            },
+            {
+                id: 'deleteCheckbox', text: '删除选中文本', action: () => {
+                    console.log('Delete action triggered');
+                    // 实现删除逻辑
+                    removePopup();
+                }
+            },
+            {
+                id: 'jumpCheckbox', text: '收藏', action: () => {
+                    console.log('Jump action triggered');
+                    // 实现收藏逻辑
+                    removePopup();
+                }
+            },
+            {
+                id: 'closeCheckbox', text: '关闭', action: () => {
+                    console.log('Close action triggered');
+                    chrome.runtime.sendMessage({ action: "closeTab" }, () => {
+                        removePopup();
+                    });
+                }
+            },
+            {
+                id: 'refreshCheckbox', text: '刷新', action: () => {
+                    console.log('Refresh action triggered');
+                    removePopup();
+                    setTimeout(() => {
+                        location.reload();
+                    }, 100);
+                }
+            },
+            {
+                id: 'pasteCheckbox', text: '粘贴', action: () => {
+                    console.log('Paste action triggered');
+                    // 实现粘贴逻辑
+                    removePopup();
+                }
+            },
+            {
+                id: 'downloadCheckbox', text: '下载', action: () => {
+                    console.log('Download action triggered');
+                    // 实现下载逻辑
+                    removePopup();
+                }
+            },
+            {
+                id: 'closesidepanelCheckbox', text: '开关', action: () => {
+                    console.log('Toggle sidepanel action triggered');
+                    // 实现开关侧边栏逻辑
+                    removePopup();
+                }
+            }
+        ];
+
+        console.log('Before adding action links');
+        actions.forEach(({ id, text, action }) => {
+            console.log(`Checking ${id}: ${items[id]}`);
+            if (items[id]) {
+                console.log(`Creating action link for ${text}`);
+                var actionLink = createActionLink(text, action);
+                searchLinksContainer.appendChild(actionLink);
+                console.log(`Added ${text} link to container`);
+            }
+        });
+        console.log('After adding action links');
+
+        popup.appendChild(searchLinksContainer);
+        document.body.appendChild(popup);
+        currentPopup = popup;
+
+        console.log('Popup added to body');
+
+        adjustPopupPosition(popup, x, y);
+        console.log('Popup position adjusted');
+    });
+}
+
+
+function removePopup() {
+    console.log('Removing popup');
+    if (currentPopup) {
+        document.body.removeChild(currentPopup);
+        currentPopup = null;
+        console.log('Popup removed');
+    } else {
+        console.log('No popup to remove');
+    }
+}
+
+function adjustPopupPosition(popup, x, y) {
     var screenWidth = window.innerWidth;
     var menuWidth = 300;
     var menuOffset = 10;
@@ -404,341 +529,318 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         popup.style.left = (x + menuOffset) + 'px';
         popup.style.right = 'auto';
     }
-
     popup.style.top = y + 'px';
-    popup.style.zIndex = '9999';
-    popup.style.borderRadius = '20px';
-    popup.style.backgroundColor = 'black';
-    popup.className = 'search-popup flex-container';
+}
+chrome.storage.sync.get(['websiteList', 'selectedEngines'], function (data) {
+    var websiteList = data.websiteList || [];
+    var selectedEngines = data.selectedEngines || [];
 
-    var searchLinksContainer = document.createElement('div');
-    searchLinksContainer.style.display = 'flex';
-    searchLinksContainer.style.flexWrap = 'wrap'; // 添加这行以允许链接换行
+    // 创建一个数组来存储所有要显示的链接
+    var allLinks = [];
 
-    chrome.storage.sync.get(['websiteList', 'selectedEngines'], function (data) {
-        var websiteList = data.websiteList || [];
-        var selectedEngines = data.selectedEngines || [];
-
-        // 创建一个数组来存储所有要显示的链接
-        var allLinks = [];
-
-        // 处理 websiteList
-        websiteList.forEach(function (website) {
-            if (website.checked) {
-                allLinks.push({
-                    name: website.name,
-                    action: function () {
-                        chrome.runtime.sendMessage({
-                            action: 'setpage',
-                            query: website.url + encodeURIComponent(selectedText),
-                            openSidebar: false,
-                        });
-                        document.body.removeChild(popup);
-                        currentPopup = null;
-                    }
-                });
-            }
-        });
-        // 创建一个映射对象，将搜索引擎名称映射到其URL基础字符串
-        const engineUrlMap = {
-            'Google': 'https://www.google.com/search?q=',
-            'Bing': 'https://www.bing.com/search?q=',
-            'DuckDuckGo': 'https://duckduckgo.com/?q=',
-            'Baidu': 'https://www.baidu.com/s?wd=',
-            'Yandex': 'https://yandex.com/search/?text=',
-            'Deepl': 'https://www.deepl.com/zh/translator#en/-hans/',
-            'Doubao': 'https://www.doubao.com/chat/',
-            'download': 'https://9xbuddy.in/process?url=',
-            'Tongyi': 'https://tongyi.aliyun.com/qianwen/',
-            'Kimi': 'https://kimi.moonshot.cn/',
-            'Yuanbao': 'https://yuanbao.tencent.com/bot/chat',
-            'Mita': 'https://metaso.cn/',
-            'Yiyan': 'https://yiyan.baidu.com/',
-            'Poe': 'https://poe.com/ChatGPT',
-            'Perplexity': 'https://www.perplexity.ai/',
-            'Chatgpt': 'https://chatgpt.com/',
-            'Gemini': 'https://gemini.google.com/',
-            'bookmarks': 'https://v.flomoapp.com/'
-            // 可以根据需要添加更多搜索引擎
-        };
-
-        // 确保selectedEngines中的每个引擎都有其对应的urlBase
-        selectedEngines.forEach(function (engine) {
-            // 使用映射对象获取正确的urlBase，如果找不到则使用一个默认值或空字符串
-            const urlBase = engineUrlMap[engine.name] || '';
-
-            // 确保urlBase不为空再添加到链接数组中
-            if (urlBase) {
-                allLinks.push({
-                    name: engine.name,
-                    action: function () {
-                        // 使用获取到的urlBase构建搜索链接
-                        chrome.runtime.sendMessage({
-                            action: 'setpage',
-                            query: urlBase + encodeURIComponent(selectedText),
-                            openSidebar: false,
-                        });
-                        document.body.removeChild(popup);
-                        currentPopup = null;
-                    }
-                });
-            }
-        });
-
-        // 创建并添加所有链接
-        allLinks.forEach(function (link) {
-            var actionLink = createActionLink(link.name, link.action);
-            searchLinksContainer.appendChild(actionLink);
-        });
-    });
-
-    // 读取复选框的状态
-    chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox', 'closesidepanelCheckbox'], function (checkboxes) {
-        var showCopy = checkboxes.copyCheckbox;
-        var showJump = checkboxes.jumpCheckbox;
-        var showClose = checkboxes.closeCheckbox;
-        var showRefresh = checkboxes.refreshCheckbox;
-        var showPaste = checkboxes.pasteCheckbox;
-        var showDownload = checkboxes.downloadCheckbox;
-        var showDelete = checkboxes.deleteCheckbox;
-        var showclosesidepanel = checkboxes.closesidepanelCheckbox;
-
-        // 添加复制、跳转和关闭选项到搜索链接容器
-        if (showCopy) {
-            var searchLinkCopy = createActionLink('复制', function () {
-                var textToCopy = selectedText;
-
-                var tempTextArea = document.createElement('textarea');
-                tempTextArea.value = textToCopy;
-                document.body.appendChild(tempTextArea);
-
-                tempTextArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempTextArea);
-
-                document.body.removeChild(popup);
-                currentPopup = null;
-            });
-            searchLinksContainer.appendChild(searchLinkCopy);
-        }
-
-        // 以下是在文本框上右键点击时显示的上下文菜单中的删除链接
-        // 修改后的 deleteSelectedText 函数
-        function deleteSelectedText(inputElement) {
-            var start = inputElement.selectionStart;
-            var end = inputElement.selectionEnd;
-            if (start !== end) {
-                var newValue = inputElement.value.substring(0, start) + inputElement.value.substring(end);
-                inputElement.value = newValue;
-                inputElement.focus(); // 确保输入框仍然获得焦点
-                // 将光标移至删除后的位置
-                inputElement.setSelectionRange(start, start);
-            }
-        }
-
-        // 创建删除选中文本的链接时，确保传递正确的 inputElement
-        if (showDelete) {
-            var searchLinkCut = createActionLink('删除选中文本', function () {
-                // 调用 deleteSelectedText 函数并传递正确的 inputElement
-                deleteSelectedText(e.target);
-                // 隐藏弹出菜单
-                hideInputContextMenu();
-            });
-            searchLinksContainer.appendChild(searchLinkCut);
-        }
-        if (showJump) {
-
-            chrome.storage.sync.get('savedPages', function (items) {
-                if (items.savedPages) {
-                    var savedPages = items.savedPages;
-
-                    var workmodel = createActionLink('收藏', function () {
-                        // 发送消息请求 background.js 打开主页和侧边栏的页面
-                        chrome.runtime.sendMessage({
-                            action: 'openHomepageAndSidebar',
-                            urls: {
-                                homepageUrl: savedPages.homepageUrl,  // 主页网址
-                                sidebarUrl: savedPages.sidebarUrl    // 侧边栏网址
-                            }
-                        });
+    // 处理 websiteList
+    websiteList.forEach(function (website) {
+        if (website.checked) {
+            allLinks.push({
+                name: website.name,
+                action: function () {
+                    chrome.runtime.sendMessage({
+                        action: 'setpage',
+                        query: website.url + encodeURIComponent(selectedText),
+                        openSidebar: false,
                     });
-
-                    searchLinksContainer.appendChild(workmodel);
-
+                    document.body.removeChild(popup);
+                    currentPopup = null;
                 }
             });
-            searchLinksContainer.appendChild(toggleSidebarLink);
         }
-        if (showclosesidepanel) {
-            var searchLinkOpenSidebar = createActionLink('开关', function () {
-                var currentUrl = window.location.href;
+    });
+    // 创建一个映射对象，将搜索引擎名称映射到其URL基础字符串
+    const engineUrlMap = {
+        'Google': 'https://www.google.com/search?q=',
+        'Bing': 'https://www.bing.com/search?q=',
+        'DuckDuckGo': 'https://duckduckgo.com/?q=',
+        'Baidu': 'https://www.baidu.com/s?wd=',
+        'Yandex': 'https://yandex.com/search/?text=',
+        'Deepl': 'https://www.deepl.com/zh/translator#en/-hans/',
+        'Doubao': 'https://www.doubao.com/chat/',
+        'download': 'https://9xbuddy.in/process?url=',
+        'Tongyi': 'https://tongyi.aliyun.com/qianwen/',
+        'Kimi': 'https://kimi.moonshot.cn/',
+        'Yuanbao': 'https://yuanbao.tencent.com/bot/chat',
+        'Mita': 'https://metaso.cn/',
+        'Yiyan': 'https://yiyan.baidu.com/',
+        'Poe': 'https://poe.com/ChatGPT',
+        'Perplexity': 'https://www.perplexity.ai/',
+        'Chatgpt': 'https://chatgpt.com/',
+        'Gemini': 'https://gemini.google.com/',
+        'bookmarks': 'https://v.flomoapp.com/'
+        // 可以根据需要添加更多搜索引擎
+    };
 
+    // 确保selectedEngines中的每个引擎都有其对应的urlBase
+    selectedEngines.forEach(function (engine) {
+        // 使用映射对象获取正确的urlBase，如果找不到则使用一个默认值或空字符串
+        const urlBase = engineUrlMap[engine.name] || '';
 
-                // 发送当前页面URL和sidebarUrl到侧边栏，等待响应
-                chrome.runtime.sendMessage({
-                    action: 'setpage',
-                    query: currentUrl,
+        // 确保urlBase不为空再添加到链接数组中
+        if (urlBase) {
+            allLinks.push({
+                name: engine.name,
+                action: function () {
+                    // 使用获取到的urlBase构建搜索链接
+                    chrome.runtime.sendMessage({
+                        action: 'setpage',
+                        query: urlBase + encodeURIComponent(selectedText),
+                        openSidebar: false,
+                    });
+                    document.body.removeChild(popup);
+                    currentPopup = null;
+                }
+            });
+        }
+    });
 
-                }, function (response) {
-                    if (response && response.ready) {
-                        // 侧边栏已准备好加载新的URL
-                        // 加载存储的previousUrl
-                        chrome.runtime.sendMessage({
-                            action: 'loadSidebarUrl',
+    // 创建并添加所有链接
+    allLinks.forEach(function (link) {
+        var actionLink = createActionLink(link.name, link.action);
+        searchLinksContainer.appendChild(actionLink);
+    });
+});
 
-                        });
-                    }
+// 读取复选框的状态
+chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox', 'closesidepanelCheckbox'], function (checkboxes) {
+    var showCopy = checkboxes.copyCheckbox;
+    var showJump = checkboxes.jumpCheckbox;
+    var showClose = checkboxes.closeCheckbox;
+    var showRefresh = checkboxes.refreshCheckbox;
+    var showPaste = checkboxes.pasteCheckbox;
+    var showDownload = checkboxes.downloadCheckbox;
+    var showDelete = checkboxes.deleteCheckbox;
+    var showclosesidepanel = checkboxes.closesidepanelCheckbox;
+
+    // 添加复制、跳转和关闭选项到搜索链接容器
+    if (showCopy) {
+        var searchLinkCopy = createActionLink('复制', function () {
+            var textToCopy = selectedText;
+
+            var tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            document.body.appendChild(tempTextArea);
+
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            document.body.removeChild(popup);
+            currentPopup = null;
+        });
+        searchLinksContainer.appendChild(searchLinkCopy);
+    }
+
+    // 以下是在文本框上右键点击时显示的上下文菜单中的删除链接
+    // 修改后的 deleteSelectedText 函数
+    function deleteSelectedText(inputElement) {
+        var start = inputElement.selectionStart;
+        var end = inputElement.selectionEnd;
+        if (start !== end) {
+            var newValue = inputElement.value.substring(0, start) + inputElement.value.substring(end);
+            inputElement.value = newValue;
+            inputElement.focus(); // 确保输入框仍然获得焦点
+            // 将光标移至删除后的位置
+            inputElement.setSelectionRange(start, start);
+        }
+    }
+
+    // 创建删除选中文本的链接时，确保传递正确的 inputElement
+    if (showDelete) {
+        var searchLinkCut = createActionLink('删除选中文本', function () {
+            // 调用 deleteSelectedText 函数并传递正确的 inputElement
+            deleteSelectedText(e.target);
+            // 隐藏弹出菜单
+            hideInputContextMenu();
+        });
+        searchLinksContainer.appendChild(searchLinkCut);
+    }
+    if (showJump) {
+
+        chrome.storage.sync.get('savedPages', function (items) {
+            if (items.savedPages) {
+                var savedPages = items.savedPages;
+
+                var workmodel = createActionLink('收藏', function () {
+                    // 发送消息请求 background.js 打开主页和侧边栏的页面
+                    chrome.runtime.sendMessage({
+                        action: 'openHomepageAndSidebar',
+                        urls: {
+                            homepageUrl: savedPages.homepageUrl,  // 主页网址
+                            sidebarUrl: savedPages.sidebarUrl    // 侧边栏网址
+                        }
+                    });
                 });
-            });
-            searchLinksContainer.appendChild(searchLinkOpenSidebar);
-        }
-        if (showClose) {
-            var searchLinkClose1 = createActionLink('关闭', function () {
-                chrome.runtime.sendMessage({ action: "closeTab" });
-            });
-            searchLinksContainer.appendChild(searchLinkClose1);
-        }
 
-        if (showRefresh) {
-            var searchLinkRefresh = createActionLink('刷新', function () {
-                // 先移除弹出菜单
-                document.body.removeChild(popup);
-                currentPopup = null;
+                searchLinksContainer.appendChild(workmodel);
 
-                // 然后刷新当前页面
-                window.location.reload();
+            }
+        });
+        searchLinksContainer.appendChild(toggleSidebarLink);
+    }
+    if (showclosesidepanel) {
+        var searchLinkOpenSidebar = createActionLink('开关', function () {
+            var currentUrl = window.location.href;
+
+
+            // 发送当前页面URL和sidebarUrl到侧边栏，等待响应
+            chrome.runtime.sendMessage({
+                action: 'setpage',
+                query: currentUrl,
+
+            }, function (response) {
+                if (response && response.ready) {
+                    // 侧边栏已准备好加载新的URL
+                    // 加载存储的previousUrl
+                    chrome.runtime.sendMessage({
+                        action: 'loadSidebarUrl',
+
+                    });
+                }
             });
-            searchLinksContainer.appendChild(searchLinkRefresh);
-        }
-        /*   if (showPaste) {
-              var searchLinkOpenSidebar = createActionLink('开关', function () {
-                  // 获取当前页面的 URL
-                  var currentUrl = window.location.href;
-  
-                  // 发送消息，包含 action 和当前页面的 URL 作为 query
-                  chrome.runtime.sendMessage({
-                      action: 'setpage',
-                      query: currentUrl // 使用当前页面的 URL 作为 query
-                  });
+        });
+        searchLinksContainer.appendChild(searchLinkOpenSidebar);
+    }
+    if (showClose) {
+        var searchLinkClose1 = createActionLink('关闭', function () {
+            chrome.runtime.sendMessage({ action: "closeTab" });
+        });
+        searchLinksContainer.appendChild(searchLinkClose1);
+    }
+
+    if (showRefresh) {
+        var searchLinkRefresh = createActionLink('刷新', function () {
+            // 先移除弹出菜单
+            document.body.removeChild(popup);
+            currentPopup = null;
+
+            // 然后刷新当前页面
+            window.location.reload();
+        });
+        searchLinksContainer.appendChild(searchLinkRefresh);
+    }
+    /*   if (showPaste) {
+          var searchLinkOpenSidebar = createActionLink('开关', function () {
+              // 获取当前页面的 URL
+              var currentUrl = window.location.href;
+ 
+              // 发送消息，包含 action 和当前页面的 URL 作为 query
+              chrome.runtime.sendMessage({
+                  action: 'setpage',
+                  query: currentUrl // 使用当前页面的 URL 作为 query
               });
-              searchLinksContainer.appendChild(searchLinkOpenSidebar);
-          } */
-        if (showDownload) {
-            var searchLinkDownload = createActionLink('下载', function () {
-                // 先移除弹出菜单
-                document.body.removeChild(popup);
-                currentPopup = null;
+          });
+          searchLinksContainer.appendChild(searchLinkOpenSidebar);
+      } */
+    if (showDownload) {
+        var searchLinkDownload = createActionLink('下载', function () {
+            // 先移除弹出菜单
+            document.body.removeChild(popup);
+            currentPopup = null;
 
-                // 然后刷新当前页面下载
-                window.location.reload();
-            });
-            searchLinksContainer.appendChild(searchLinkDownload);
-        }
+            // 然后刷新当前页面下载
+            window.location.reload();
+        });
+        searchLinksContainer.appendChild(searchLinkDownload);
+    }
+});
+function createActionLink(text, clickHandler) {
+    console.log(`Creating action link: ${text}`);
+    var link = document.createElement('a');
+    link.textContent = text;
+    link.style.color = 'white';
+    link.style.padding = '5px 10px';
+    link.style.cursor = 'pointer';
+    link.style.backgroundColor = 'black';
+    link.style.transition = 'background-color 0.3s';
+
+    link.addEventListener('mouseover', function () {
+        this.style.backgroundColor = 'rgb(37, 138, 252)';
+    });
+    link.addEventListener('mouseout', function () {
+        this.style.backgroundColor = 'black';
+    });
+    link.addEventListener('click', function (event) {
+        console.log(`Clicked on ${text}`);
+        event.preventDefault();
+        event.stopPropagation();
+        clickHandler();
     });
 
+    return link;
+}
+function createSearchLink(name, urlBase, searchText) {
+    var link = document.createElement('a');
+    link.href = urlBase + encodeURIComponent(searchText);
+    link.textContent = name;
+    link.style.color = 'white';
+    link.style.padding = '5px 10px';
+    link.style.cursor = 'pointer';
+    link.style.backgroundColor = 'black';
+    link.style.transition = 'background-color 0.3s';
+    link.style.whiteSpace = 'nowrap';
+    link.target = '_blank';
 
-
-    // 默认搜索引擎链接
-    var engines = getEnginesByType(currentEngine);
-    // 过滤只显示用户勾选的搜索引擎
-    engines = engines.filter(engine => selectedEngines.some(selected => selected.name === engine.name));
-    engines.forEach(engine => {
-        var searchLink = createSearchLink(engine.name, engine.urlBase, selectedText);
-        searchLinksContainer.appendChild(searchLink);
+    link.addEventListener('mouseover', function () {
+        this.style.backgroundColor = 'rgb(37, 138, 252)';
+    });
+    link.addEventListener('mouseout', function () {
+        this.style.backgroundColor = 'black';
     });
 
+    return link;
+}
+
+function getEnginesByType(type) {
+    switch (type) {
+        case 'googleImage':
+            return [
+                { name: '百度', urlBase: 'https://image.baidu.com/search/index?word=' },
+                { name: '谷歌', urlBase: 'https://www.google.com/search?tbm=isch&q=' },
+                { name: '微信', urlBase: 'https://image.sogou.com/search?query=' }, // 微信图片搜索可能没有直接对应的链接，这里使用搜狗作为示例
+                { name: '昵图', urlBase: 'https://www.nipic.com/search/index.html?key=' }
+            ];
+        case 'douban':
+            return [
+                { name: '大师兄', urlBase: 'http://www.dsxz.org/search.php?keyword=' }, // 示例链接，可能需要根据实际情况调整
+                { name: '低端影视', urlBase: 'http://www.ddys.tv/e/search/result.html?keyword=' }, // 同上
+                { name: '豆瓣', urlBase: 'https://movie.douban.com/subject_search?search_text=' }
+            ];
+        case 'neteaseMusic':
+            return [{ name: '网易云', urlBase: 'https://music.163.com/#/search/m/?keywords=' },
+            { name: 'QQ音乐', urlBase: 'https://y.qq.com/portal/search.html#page=1&searchid=1&remoteplace=txt.yqq.top&t=song&w=' },
+            { name: '酷狗', urlBase: 'https://www.kugou.com/yy/index.php?r=search/song&keyword=' },
+            { name: '酷我', urlBase: 'https://www.kuwo.cn/search/list?key=' }
+            ];
+        case 'zhihu':
+            return [
+                { name: '知乎', urlBase: 'https://www.zhihu.com/search?type=content&q=' },
+                { name: '小红书', urlBase: 'https://www.xiaohongshu.com/search_result.html?keyword=' }, // 示例链接，实际可能需要调整
+                { name: '什么值得买', urlBase: 'https://search.smzdm.com/?c=home&s=' },
+                { name: 'Wiki', urlBase: 'https://www.wikipedia.org/w/index.php?search=' }
+            ];
+        default:
+            return [
+                /*   { name: '百度', urlBase: 'https://www.baidu.com/s?wd=' },
+                  { name: '谷歌', urlBase: 'https://www.google.com/search?q=' },
+                  { name: '抖音', urlBase: 'https://www.douyin.com/search/' },
+                  { name: '微信', urlBase: 'https://weixin.sogou.com/weixin?type=2&query=' },
+                  { name: 'weibo', urlBase: 'https://s.weibo.com/weibo?q=' } */
 
 
-    popup.appendChild(searchLinksContainer);
-    document.body.appendChild(popup);
-    currentPopup = popup;
-
-
-    function createActionLink(text, clickHandler) {
-        var link = document.createElement('a');
-        link.textContent = text;
-        link.style.color = 'white';
-        link.style.padding = '5px 10px';
-        link.style.cursor = 'pointer';
-        link.style.backgroundColor = 'black';
-        link.style.transition = 'background-color 0.3s';
-
-        link.addEventListener('mouseover', function () {
-            this.style.backgroundColor = 'rgb(37, 138, 252)';
-        });
-        link.addEventListener('mouseout', function () {
-            this.style.backgroundColor = 'black';
-        });
-        link.addEventListener('click', clickHandler);
-
-        return link;
-    }
-
-    function createSearchLink(name, urlBase, searchText) {
-        var link = document.createElement('a');
-        link.href = urlBase + encodeURIComponent(searchText);
-        link.textContent = name;
-        link.style.color = 'white';
-        link.style.padding = '5px 10px';
-        link.style.cursor = 'pointer';
-        link.style.backgroundColor = 'black';
-        link.style.transition = 'background-color 0.3s';
-        link.style.whiteSpace = 'nowrap';
-        link.target = '_blank';
-
-        link.addEventListener('mouseover', function () {
-            this.style.backgroundColor = 'rgb(37, 138, 252)';
-        });
-        link.addEventListener('mouseout', function () {
-            this.style.backgroundColor = 'black';
-        });
-
-        return link;
-    }
-
-    function getEnginesByType(type) {
-        switch (type) {
-            case 'googleImage':
-                return [
-                    { name: '百度', urlBase: 'https://image.baidu.com/search/index?word=' },
-                    { name: '谷歌', urlBase: 'https://www.google.com/search?tbm=isch&q=' },
-                    { name: '微信', urlBase: 'https://image.sogou.com/search?query=' }, // 微信图片搜索可能没有直接对应的链接，这里使用搜狗作为示例
-                    { name: '昵图', urlBase: 'https://www.nipic.com/search/index.html?key=' }
-                ];
-            case 'douban':
-                return [
-                    { name: '大师兄', urlBase: 'http://www.dsxz.org/search.php?keyword=' }, // 示例链接，可能需要根据实际情况调整
-                    { name: '低端影视', urlBase: 'http://www.ddys.tv/e/search/result.html?keyword=' }, // 同上
-                    { name: '豆瓣', urlBase: 'https://movie.douban.com/subject_search?search_text=' }
-                ];
-            case 'neteaseMusic':
-                return [{ name: '网易云', urlBase: 'https://music.163.com/#/search/m/?keywords=' },
-                { name: 'QQ音乐', urlBase: 'https://y.qq.com/portal/search.html#page=1&searchid=1&remoteplace=txt.yqq.top&t=song&w=' },
-                { name: '酷狗', urlBase: 'https://www.kugou.com/yy/index.php?r=search/song&keyword=' },
-                { name: '酷我', urlBase: 'https://www.kuwo.cn/search/list?key=' }
-                ];
-            case 'zhihu':
-                return [
-                    { name: '知乎', urlBase: 'https://www.zhihu.com/search?type=content&q=' },
-                    { name: '小红书', urlBase: 'https://www.xiaohongshu.com/search_result.html?keyword=' }, // 示例链接，实际可能需要调整
-                    { name: '什么值得买', urlBase: 'https://search.smzdm.com/?c=home&s=' },
-                    { name: 'Wiki', urlBase: 'https://www.wikipedia.org/w/index.php?search=' }
-                ];
-            default:
-                return [
-                    /*   { name: '百度', urlBase: 'https://www.baidu.com/s?wd=' },
-                      { name: '谷歌', urlBase: 'https://www.google.com/search?q=' },
-                      { name: '抖音', urlBase: 'https://www.douyin.com/search/' },
-                      { name: '微信', urlBase: 'https://weixin.sogou.com/weixin?type=2&query=' },
-                      { name: 'weibo', urlBase: 'https://s.weibo.com/weibo?q=' } */
-
-
-                ];
-        }
+            ];
     }
 }
 // 为所有输入框和文本区域添加事件监听
 document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('mouseup', handleTextSelection);
     const inputs = document.querySelectorAll('input, textarea');
     inputs.forEach(input => {
         input.addEventListener('focus', handleInputFocus);
@@ -821,24 +923,23 @@ function showInputContextMenu(inputElement, x, y) {
     currentPopup = popup;
 }
 
-function createActionLink(text, action) {
-    const link = document.createElement('a');
+function createActionLink(text, clickHandler) {
+    var link = document.createElement('a');
     link.textContent = text;
-    link.style.color = 'white';
+    link.style.display = 'block';
+    link.style.color = '#333';
     link.style.padding = '5px 10px';
+    link.style.textDecoration = 'none';
     link.style.cursor = 'pointer';
-    link.style.backgroundColor = 'black';
     link.style.transition = 'background-color 0.3s';
 
     link.addEventListener('mouseover', function () {
-        this.style.backgroundColor = 'rgb(37, 138, 252)';
+        this.style.backgroundColor = '#f0f0f0';
     });
-
     link.addEventListener('mouseout', function () {
-        this.style.backgroundColor = 'black';
+        this.style.backgroundColor = 'transparent';
     });
-
-    link.addEventListener('click', action);
+    link.addEventListener('click', clickHandler);
 
     return link;
 }
@@ -1129,48 +1230,48 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 searchUrl = 'https://image.baidu.com/search/index?tn=baiduimage&word=' + encodeURIComponent(searchText);
                 console.log('图片搜索URL:', searchUrl);
             } else if (isLink || linkUrl) {
-            // 如果是链接，直接使用链接URL
-            searchUrl = searchText;
-            console.log('链接URL:', searchUrl);
-        } else {
-            // 对于普通文本，使用方向搜索
-            const dragDirection = direction;
-            console.log('拖动方向:', dragDirection);
-
-            if (dragDirection && result.directionEngines[`direction-${dragDirection}`]) {
-                const engineName = result.directionEngines[`direction-${dragDirection}`];
-                console.log('执行方向搜索，使用引擎:', engineName);
-
-                let engineUrl = result.id2enginemap[engineName.toLowerCase()];
-
-                console.log('从 id2enginemap 获取的 URL:', engineUrl);
-                
-                if (!engineUrl) {
-                    console.log('在 id2enginemap 中未找到引擎 URL，使用默认搜索');
-                    engineUrl = 'https://www.google.com/search?q=%s';
-                }
-
-                searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
+                // 如果是链接，直接使用链接URL
+                searchUrl = searchText;
+                console.log('链接URL:', searchUrl);
             } else {
-                console.log('执行默认文本搜索');
-                searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
+                // 对于普通文本，使用方向搜索
+                const dragDirection = direction;
+                console.log('拖动方向:', dragDirection);
+
+                if (dragDirection && result.directionEngines[`direction-${dragDirection}`]) {
+                    const engineName = result.directionEngines[`direction-${dragDirection}`];
+                    console.log('执行方向搜索，使用引擎:', engineName);
+
+                    let engineUrl = result.id2enginemap[engineName.toLowerCase()];
+
+                    console.log('从 id2enginemap 获取的 URL:', engineUrl);
+
+                    if (!engineUrl) {
+                        console.log('在 id2enginemap 中未找到引擎 URL，使用默认搜索');
+                        engineUrl = 'https://www.google.com/search?q=%s';
+                    }
+
+                    searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
+                } else {
+                    console.log('执行默认文本搜索');
+                    searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
+                }
             }
-        }
 
-        console.log('最终使用的搜索URL:', searchUrl);
+            console.log('最终使用的搜索URL:', searchUrl);
 
-        // 执行搜索
-        chrome.runtime.sendMessage({
-            action: 'setpage',
-            query: searchUrl,
-            foreground: e.altKey
-        }, function (response) {
-            console.log('发送消息后的响应:', response);
+            // 执行搜索
+            chrome.runtime.sendMessage({
+                action: 'setpage',
+                query: searchUrl,
+                foreground: e.altKey
+            }, function (response) {
+                console.log('发送消息后的响应:', response);
+            });
         });
-    });
 
-    return false;
-}
+        return false;
+    }
     // 新增: 添加 dragend 事件监听器
     document.addEventListener('dragend', function (e) {
         removeDragNotification();
