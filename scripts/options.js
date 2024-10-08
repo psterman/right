@@ -5,6 +5,12 @@ let multiMenu1 = [];
 let multiMenu2 = [];
 let aiSearchEngines = [];
 let customSearchEngines = [];
+// 在文件顶部添加这段代码
+// 定义要保存状态的复选框ID列表
+const checkboxIds = [
+	'copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox',
+	'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox', 'closesidepanelCheckbox'
+];
 
 document.addEventListener('DOMContentLoaded', function () {
 	chrome.storage.sync.get('aiSearchEngines', function (data) {
@@ -1745,6 +1751,8 @@ function editWebsite(index) {
 // 页面加载时调用
 document.addEventListener('DOMContentLoaded', function () {
 	loadSavedPages();
+	restoreCheckboxStates();
+	addCheckboxListeners();
 	chrome.storage.sync.get('id2enginemap', function (data) {
 		const globalId2enginemap = data.id2enginemap || {};
 		updateAllEngineLists(globalId2enginemap);
@@ -1958,22 +1966,21 @@ document.addEventListener('DOMContentLoaded', function () {
             background-color: #2c2c2c;
             color: #ffffff;
         }
-        button {
-            padding: 8px 16px;
-            background-color: #4285f4;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-        }
-        button:hover {
-            background-color: #3367d6;
-        }
+       button {
+    
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+
+    /* 添加以下属性 */
+    display:inline-block;
+    align-items: center;
+    justify-content: center;
+    text-align: center; /* 为了保险起见，也设置文本对齐 */
+}
     `;
 
 		// 创建 style 元素并添加到 head
@@ -2246,33 +2253,7 @@ directionSearchToggle.addEventListener('change', function () {
 			updateCheckboxes(items.selectedEngines);
 		}
 	});
-	// 读取复选框状态并设置到页面上的复选框
-	chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox', 'closesidepanelCheckbox'], function (items) {
-		if (items.copyCheckbox !== undefined) {
-			document.getElementById('copyCheckbox').checked = items.copyCheckbox;
-		}
-		if (items.deleteCheckbox !== undefined) {
-			document.getElementById('deleteCheckbox').checked = items.deleteCheckbox;
-		}
-		if (items.jumpCheckbox !== undefined) {
-			document.getElementById('jumpCheckbox').checked = items.jumpCheckbox;
-		}
-		if (items.closeCheckbox !== undefined) {
-			document.getElementById('closeCheckbox').checked = items.closeCheckbox;
-		}
-		if (items.refreshCheckbox !== undefined) {
-			document.getElementById('refreshCheckbox').checked = items.refreshCheckbox;
-		}
-		if (items.pasteCheckbox !== undefined) {
-			document.getElementById('pasteCheckbox').checked = items.pasteCheckbox;
-		}
-		if (items.downloadCheckbox !== undefined) {
-			document.getElementById('downloadCheckbox').checked = items.downloadCheckbox;
-		}
-		if (items.closesidepanelCheckbox !== undefined) {
-			document.getElementById('closesidepanelCheckbox').checked = items.closesidepanelCheckbox;
-		}
-	});
+	
 	// 为每个复选框添加 "change" 事件监听器，以保存更改的状态
 	document.querySelectorAll('.engine-checkbox').forEach(checkbox => {
 		checkbox.addEventListener('change', function () {
@@ -2289,37 +2270,7 @@ directionSearchToggle.addEventListener('change', function () {
 			chrome.storage.sync.set({ selectedEngines: searchEngineList });
 		});
 	});
-	// 为复选框添加change事件监听器，以保存状态
-	document.getElementById('copyCheckbox').addEventListener('change', function () {
-		chrome.storage.sync.set({ 'copyCheckbox': this.checked });
-	});
-	document.getElementById('deleteCheckbox').addEventListener('change', function () { chrome.storage.sync.set({ 'deleteCheckbox': this.checked }); });
-	document.getElementById('jumpCheckbox').addEventListener('change', function () {
-		chrome.storage.sync.set({ 'jumpCheckbox': this.checked });
-	});
-
-	document.getElementById('closeCheckbox').addEventListener('change', function () {
-		chrome.storage.sync.set({ 'closeCheckbox': this.checked });
-	});
-	document.getElementById('refreshCheckbox').addEventListener('change', function () {
-		chrome.storage.sync.set({ 'refreshCheckbox': this.checked });
-	});
-	document.getElementById('pasteCheckbox').addEventListener('change', function () {
-		chrome.storage.sync.set({ 'pasteCheckbox': this.checked });
-	});
-	document.getElementById('downloadCheckbox').addEventListener('change', function () {
-		chrome.storage.sync.set({ 'downloadCheckbox': this.checked });
-	});
-	document.getElementById('closesidepanelCheckbox').addEventListener('change', function () {
-		chrome.storage.sync.set({ 'closesidepanelCheckbox': this.checked });
-	});
-	// 在contents.js中，适当位置初始化selectedSearchEngines
-	// 加载用户勾选的搜索引擎
-	chrome.storage.sync.get('selectedSearchEngines', function (result) {
-		selectedSearchEngines = result.selectedSearchEngines || [];
-		// 确保selectedSearchEngines被正确加载后，再进行其他操作
-	});
-
+	
 	// 从存储中读取复选框状态
 	chrome.storage.sync.get('websiteList', function (result) {
 		if (result.websiteList) {
@@ -2461,6 +2412,43 @@ var refreshCheckbox = document.getElementById('refreshCheckbox');
 var pasteCheckbox = document.getElementById('pasteCheckbox');
 var downloadCheckbox = document.getElementById('downloadCheckbox');
 var closesidepanelCheckbox = document.getElementById('closesidepanelCheckbox');
+// 保存复选框状态的函数
+function saveCheckboxState(checkboxId) {
+	const checkbox = document.getElementById(checkboxId);
+	chrome.storage.sync.set({ [checkboxId]: checkbox.checked }, function () {
+		console.log(`${checkboxId} 状态已保存: ${checkbox.checked}`);
+	});
+}
+
+// 为所有复选框添加change事件监听器
+function addCheckboxListeners() {
+	checkboxIds.forEach(id => {
+		const checkbox = document.getElementById(id);
+		if (checkbox) {
+			checkbox.addEventListener('change', function () {
+				saveCheckboxState(id);
+			});
+		} else {
+			console.warn(`未找到ID为 ${id} 的复选框`);
+		}
+	});
+}
+
+// 从存储中恢复复选框状态
+function restoreCheckboxStates() {
+	chrome.storage.sync.get(checkboxIds, function (items) {
+		checkboxIds.forEach(id => {
+			if (items[id] !== undefined) {
+				const checkbox = document.getElementById(id);
+				if (checkbox) {
+					checkbox.checked = items[id];
+					console.log(`${id} 状态已恢复: ${items[id]}`);
+				}
+			}
+		});
+	});
+}
+
 // 更新搜索引擎选项
 chrome.runtime.sendMessage({
 	action: 'updateSearchEngines',
