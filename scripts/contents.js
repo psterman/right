@@ -1,4 +1,9 @@
-// 在全局范围内添加这些变量
+// 点击页面任意位置关闭弹出菜单
+document.addEventListener('mousedown', function (e) {
+    if (currentPopup && !currentPopup.contains(e.target)) {
+        removePopup();
+    }
+});
 let currentPopup = null;
 // 从存储中检索选中的搜索引擎
 // 假设这是在 contents.js 中的现有代码
@@ -321,13 +326,7 @@ function sendMessageToBackground(selectedText) {
     chrome.runtime.sendMessage({ msg: "setsearch", value: selectedText });
 }
 
-// 监听鼠标按下事件，点击页面任意位置关闭弹出菜单
-document.addEventListener('mousedown', function (e) {
-    if (currentPopup && !currentPopup.contains(e.target)) {
-        document.body.removeChild(currentPopup);
-        currentPopup = null;
-    }
-});
+
 
 // 在 contents.js 文件中，确保 showSearchLinks 函数在用户选中文本后被调用
 /* document.addEventListener('mouseup', function (e) {
@@ -376,147 +375,168 @@ function handleTextSelection(e) {
         currentPopup = null;
     }
 }
-function showSearchLinks(selectedText, x, y, currentEngine) {
-    console.log('showSearchLinks called with:', { selectedText, x, y, currentEngine });
+// 在文档中添加事件监听器
+// 跟踪鼠标按下时的位置
+let mouseDownX = 0;
+let mouseDownY = 0;
 
-    if (currentPopup) {
-        document.body.removeChild(currentPopup);
-        currentPopup = null;
+document.addEventListener('mousedown', function (e) {
+    mouseDownX = e.clientX;
+    mouseDownY = e.clientY;
+});
+
+document.addEventListener('mouseup', function (e) {
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+
+    // 检查鼠标是否移动（表示可能进行了文本选择）
+    const mouseHasMoved = Math.abs(e.clientX - mouseDownX) > 5 || Math.abs(e.clientY - mouseDownY) > 5;
+
+    if (selectedText && mouseHasMoved) {
+        removePopup(); // 移除旧的弹出窗口
+        showSearchLinks(selectedText, e.clientX, e.clientY);
+    } else if (!selectedText && currentPopup) {
+        // 如果没有选中文本，并且当前有弹出窗口，则移除它
+        removePopup();
     }
+});
+function debugPopup() {
+    console.log('Current popup:', currentPopup);
+    console.log('Popup in DOM:', document.body.contains(currentPopup));
+}
+function showSearchLinks(selectedText, x, y) {
+    console.log('showSearchLinks called with:', { selectedText, x, y });
 
-    var popup = document.createElement('div');
-    popup.style.position = 'fixed';
-    popup.style.zIndex = '9999';
-    popup.style.borderRadius = '20px';
-    popup.style.backgroundColor = 'black';
-    popup.className = 'search-popup flex-container';
-    popup.style.maxWidth = 'auto';
-    popup.style.overflow = 'auto';
+    // 确保移除任何现有的弹出窗口
+    removePopup();
 
-    var searchLinksContainer = document.createElement('div');
-    searchLinksContainer.style.display = 'flex';
-    searchLinksContainer.style.flexWrap = 'wrap';
-    console.log('Before adding search engine links');
-    // 默认搜索引擎链接
-    var engines = getEnginesByType(currentEngine);
-    console.log('Engines:', engines);
-    engines = engines.filter(engine => selectedEngines.some(selected => selected.name === engine.name));
-    console.log('Filtered engines:', engines);
-    engines.forEach(engine => {
-        var searchLink = createSearchLink(engine.name, engine.urlBase, selectedText);
-        searchLinksContainer.appendChild(searchLink);
-    });
-    console.log('After adding search engine links');
+    // 创建新的弹出窗口
+    const popup = document.createElement('div');
+    popup.style.cssText = `
+        position: fixed;
+        z-index: 9999;
+        background-color: black;
+        border-radius: 5px;
+        padding: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        display: flex;
+        flex-direction: row;
+    `;
 
-    // 统一处理所有复选框状态和创建相应的功能链接
-    chrome.storage.sync.get([
-        'copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox',
-        'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox', 'closesidepanelCheckbox',
-        'savedPages'
-    ], function (items) {
-        console.log('Retrieved checkbox states:', items);
+    // 定义可能的操作
+    const actions = [
+        { id: 'copyCheckbox', text: '复制', action: () => copySelectedText(selectedText) },
+        { id: 'deleteCheckbox', text: '删除选中文本', action: () => deleteSelectedText() },
+        { id: 'jumpCheckbox', text: '收藏', action: () => bookmarkPage() },
+        { id: 'closeCheckbox', text: '关闭', action: () => closeCurrentTab() },
+        { id: 'refreshCheckbox', text: '刷新', action: () => refreshPage() },
+        { id: 'pasteCheckbox', text: '粘贴', action: () => pasteText() },
+        { id: 'downloadCheckbox', text: '下载', action: () => downloadContent() },
+        { id: 'closesidepanelCheckbox', text: '开关', action: () => toggleSidepanel() }
+    ];
 
-        const actions = [
-            {
-                id: 'copyCheckbox', text: '复制', action: () => {
-                    console.log('Copy action triggered');
-                    navigator.clipboard.writeText(selectedText).then(() => {
-                        console.log('文本已复制');
-                        removePopup();
-                    }).catch(err => {
-                        console.error('复制失败:', err);
-                    });
-                }
-            },
-            {
-                id: 'deleteCheckbox', text: '删除选中文本', action: () => {
-                    console.log('Delete action triggered');
-                    // 实现删除逻辑
-                    removePopup();
-                }
-            },
-            {
-                id: 'jumpCheckbox', text: '收藏', action: () => {
-                    console.log('Jump action triggered');
-                    // 实现收藏逻辑
-                    removePopup();
-                }
-            },
-            {
-                id: 'closeCheckbox', text: '关闭', action: () => {
-                    console.log('Close action triggered');
-                    chrome.runtime.sendMessage({ action: "closeTab" }, () => {
-                        removePopup();
-                    });
-                }
-            },
-            {
-                id: 'refreshCheckbox', text: '刷新', action: () => {
-                    console.log('Refresh action triggered');
-                    removePopup();
-                    setTimeout(() => {
-                        location.reload();
-                    }, 100);
-                }
-            },
-            {
-                id: 'pasteCheckbox', text: '粘贴', action: () => {
-                    console.log('Paste action triggered');
-                    // 实现粘贴逻辑
-                    removePopup();
-                }
-            },
-            {
-                id: 'downloadCheckbox', text: '下载', action: () => {
-                    console.log('Download action triggered');
-                    // 实现下载逻辑
-                    removePopup();
-                }
-            },
-            {
-                id: 'closesidepanelCheckbox', text: '开关', action: () => {
-                    console.log('Toggle sidepanel action triggered');
-                    // 实现开关侧边栏逻辑
-                    removePopup();
-                }
-            }
-        ];
-
-        console.log('Before adding action links');
+    // 获取用户设置并创建链接
+    chrome.storage.sync.get(actions.map(a => a.id), (items) => {
+        let hasVisibleActions = false;
         actions.forEach(({ id, text, action }) => {
-            console.log(`Checking ${id}: ${items[id]}`);
             if (items[id]) {
-                console.log(`Creating action link for ${text}`);
-                var actionLink = createActionLink(text, action);
-                searchLinksContainer.appendChild(actionLink);
-                console.log(`Added ${text} link to container`);
+                popup.appendChild(createActionLink(text, action));
+                hasVisibleActions = true;
             }
         });
-        console.log('After adding action links');
 
-        popup.appendChild(searchLinksContainer);
-        document.body.appendChild(popup);
-        currentPopup = popup;
-
-        console.log('Popup added to body');
-
-        adjustPopupPosition(popup, x, y);
-        console.log('Popup position adjusted');
+        if (hasVisibleActions) {
+            document.body.appendChild(popup);
+            currentPopup = popup;
+            // 调用 adjustPopupPosition 函数来调整弹出窗口的位置
+            adjustPopupPosition(popup, x, y);
+        } else {
+            console.log('No actions to display');
+        }
     });
 }
+function createActionLink(text, clickHandler) {
+    const link = document.createElement('div');
+    link.textContent = text;
+    link.style.cssText = `
+        padding: 5px 10px;
+        cursor: pointer;
+        color: black;
+        transition: background-color 0.3s;
+    `;
 
+    link.addEventListener('mouseover', () => {
+        link.style.backgroundColor = '#f0f0f0';
+    });
+
+    link.addEventListener('mouseout', () => {
+        link.style.backgroundColor = 'transparent';
+    });
+
+    link.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation(); // 阻止事件冒泡
+        console.log('Action link clicked:', text); // 添加日志
+        removePopup();
+    });
+
+    return link;
+}
 
 function removePopup() {
-    console.log('Removing popup');
-    if (currentPopup) {
-        document.body.removeChild(currentPopup);
-        currentPopup = null;
-        console.log('Popup removed');
+    console.log('removePopup called');
+    if (currentPopup && document.body.contains(currentPopup)) {
+        try {
+            document.body.removeChild(currentPopup);
+            currentPopup = null;
+            console.log('Popup removed');
+        } catch (error) {
+            console.error('Error removing popup:', error);
+        }
     } else {
         console.log('No popup to remove');
     }
 }
 
+
+
+// 以下是各种操作的具体实现函数
+function copySelectedText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        console.log('文本已复制');
+    }).catch(err => {
+        console.error('复制失败:', err);
+        removePopup();
+    });
+}
+
+function deleteSelectedText() {
+    document.execCommand('delete', false); 
+}
+
+function bookmarkPage() {
+    chrome.runtime.sendMessage({ action: 'bookmarkCurrentPage' }); 
+}
+
+function closeCurrentTab() {
+    chrome.runtime.sendMessage({ action: 'closeCurrentTab' }); 
+}
+
+function refreshPage() {
+    location.reload(); 
+}
+
+function pasteText() {
+    document.execCommand('paste', false); 
+}
+
+function downloadContent() {
+    chrome.runtime.sendMessage({ action: 'downloadPageContent' }); 
+}
+
+function toggleSidepanel() {
+    chrome.runtime.sendMessage({ action: 'toggleSidepanel' }); 
+}
 function adjustPopupPosition(popup, x, y) {
     var screenWidth = window.innerWidth;
     var menuWidth = 300;
@@ -751,31 +771,8 @@ chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'clos
         searchLinksContainer.appendChild(searchLinkDownload);
     }
 });
-function createActionLink(text, clickHandler) {
-    console.log(`Creating action link: ${text}`);
-    var link = document.createElement('a');
-    link.textContent = text;
-    link.style.color = 'white';
-    link.style.padding = '5px 10px';
-    link.style.cursor = 'pointer';
-    link.style.backgroundColor = 'black';
-    link.style.transition = 'background-color 0.3s';
+// 创建操作链接的函数
 
-    link.addEventListener('mouseover', function () {
-        this.style.backgroundColor = 'rgb(37, 138, 252)';
-    });
-    link.addEventListener('mouseout', function () {
-        this.style.backgroundColor = 'black';
-    });
-    link.addEventListener('click', function (event) {
-        console.log(`Clicked on ${text}`);
-        event.preventDefault();
-        event.stopPropagation();
-        clickHandler();
-    });
-
-    return link;
-}
 function createSearchLink(name, urlBase, searchText) {
     var link = document.createElement('a');
     link.href = urlBase + encodeURIComponent(searchText);
@@ -923,26 +920,7 @@ function showInputContextMenu(inputElement, x, y) {
     currentPopup = popup;
 }
 
-function createActionLink(text, clickHandler) {
-    var link = document.createElement('a');
-    link.textContent = text;
-    link.style.display = 'block';
-    link.style.color = '#333';
-    link.style.padding = '5px 10px';
-    link.style.textDecoration = 'none';
-    link.style.cursor = 'pointer';
-    link.style.transition = 'background-color 0.3s';
 
-    link.addEventListener('mouseover', function () {
-        this.style.backgroundColor = '#f0f0f0';
-    });
-    link.addEventListener('mouseout', function () {
-        this.style.backgroundColor = 'transparent';
-    });
-    link.addEventListener('click', clickHandler);
-
-    return link;
-}
 let inputs = document.querySelectorAll('input, textarea');
 // 在输入框的 focus 事件中触发弹出菜单
 inputs.forEach(input => {
