@@ -4,7 +4,7 @@ document.addEventListener('mousedown', function (e) {
         removePopup();
     }
 });
-let currentPopup = null;
+
 // 从存储中检索选中的搜索引擎
 // 假设这是在 contents.js 中的现有代码
 let selectedEngines = []; // 声明全局变量
@@ -340,75 +340,6 @@ function sendMessageToBackground(selectedText) {
     }
 });
  */
-// 监听鼠标弹起事件，以捕获用户选择的文本
-document.addEventListener('mouseup', function (e) {
-    handleTextSelection(e);
-});
-
-// 监听 input 和 textarea 的 select 事件
-document.querySelectorAll('input, textarea').forEach(element => {
-    element.addEventListener('select', function (e) {
-        handleTextSelection(e);
-    });
-});
-
-function handleTextSelection(e) {
-    var selection = window.getSelection();
-    var target = e.target;
-    var selectedText = '';
-    var x = e.clientX;
-    var y = e.clientY;
-
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-        selectedText = target.value.substring(target.selectionStart, target.selectionEnd).trim();
-
-        if (selectedText !== '') {
-            showInputContextMenu(target, x, y);
-        }
-    } else if (!selection.isCollapsed) {
-        selectedText = selection.toString().trim();
-        if (selectedText) {
-            showSearchLinks(selectedText, x, y, selectedEngines);
-        }
-    } else if (currentPopup) {
-        document.body.removeChild(currentPopup);
-        currentPopup = null;
-    }
-}
-// 在文档中添加事件监听器
-// 跟踪鼠标按下时的位置
-let mouseDownX = 0;
-let mouseDownY = 0;
-
-document.addEventListener('mousedown', function (e) {
-    mouseDownX = e.clientX;
-    mouseDownY = e.clientY;
-});
-
-document.addEventListener('mouseup', function (e) {
-    const selection = window.getSelection();
-    const selectedText = selection.toString().trim();
-
-    // 检查鼠标是否移动（表示可能进行了文本选择）
-    const mouseHasMoved = Math.abs(e.clientX - mouseDownX) > 5 || Math.abs(e.clientY - mouseDownY) > 5;
-
-    if (selectedText && mouseHasMoved) {
-        removePopup(); // 移除旧的弹出窗口
-        showSearchLinks(selectedText, e.clientX, e.clientY);
-    } else if (!selectedText && currentPopup) {
-        // 如果没有选中文本，并且当前有弹出窗口，则移除它
-        removePopup();
-    }
-});
-function debugPopup() {
-    console.log('Current popup:', currentPopup);
-    console.log('Popup in DOM:', document.body.contains(currentPopup));
-}
-function showSearchLinks(selectedText, x, y) {
-    console.log('showSearchLinks called with:', { selectedText, x, y });
-
-    // 确保移除任何现有的弹出窗口
-    removePopup();
 
     // 创建新的弹出窗口
     const popup = document.createElement('div');
@@ -435,69 +366,7 @@ function showSearchLinks(selectedText, x, y) {
         { id: 'closesidepanelCheckbox', text: '开关', action: () => toggleSidepanel() }
     ];
 
-    // 获取用户设置并创建链接
-    chrome.storage.sync.get(actions.map(a => a.id), (items) => {
-        let hasVisibleActions = false;
-        actions.forEach(({ id, text, action }) => {
-            if (items[id]) {
-                popup.appendChild(createActionLink(text, action));
-                hasVisibleActions = true;
-            }
-        });
-
-        if (hasVisibleActions) {
-            document.body.appendChild(popup);
-            currentPopup = popup;
-            // 调用 adjustPopupPosition 函数来调整弹出窗口的位置
-            adjustPopupPosition(popup, x, y);
-        } else {
-            console.log('No actions to display');
-        }
-    });
-}
-function createActionLink(text, clickHandler) {
-    const link = document.createElement('div');
-    link.textContent = text;
-    link.style.cssText = `
-        padding: 5px 10px;
-        cursor: pointer;
-        color: black;
-        transition: background-color 0.3s;
-    `;
-
-    link.addEventListener('mouseover', () => {
-        link.style.backgroundColor = '#f0f0f0';
-    });
-
-    link.addEventListener('mouseout', () => {
-        link.style.backgroundColor = 'transparent';
-    });
-
-    link.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation(); // 阻止事件冒泡
-        console.log('Action link clicked:', text); // 添加日志
-        removePopup();
-    });
-
-    return link;
-}
-
-function removePopup() {
-    console.log('removePopup called');
-    if (currentPopup && document.body.contains(currentPopup)) {
-        try {
-            document.body.removeChild(currentPopup);
-            currentPopup = null;
-            console.log('Popup removed');
-        } catch (error) {
-            console.error('Error removing popup:', error);
-        }
-    } else {
-        console.log('No popup to remove');
-    }
-}
-
+   
 
 
 // 以下是各种操作的具体实现函数
