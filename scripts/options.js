@@ -5,24 +5,189 @@ let multiMenu1 = [];
 let multiMenu2 = [];
 let aiSearchEngines = [];
 let customSearchEngines = [];
+let allRecords = [];
+const recordsPerPage = 10;
+let currentPage = 1;
 // 在文件顶部添加这段代码
 // 定义要保存状态的复选框ID列表
 const checkboxIds = [
 	'copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox',
 	'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox', 'closesidepanelCheckbox'
 ];
+// 在文件顶部添加这个函数
+function loadRecords() {
+	chrome.storage.sync.get('savedRecords', function (data) {
+		allRecords = data.savedRecords || [];
+		displayRecords();
+		setupPagination();
+	});
+}
+
+function displayRecords() {
+	const container = document.getElementById('records-container');
+	if (container) {
+		container.innerHTML = '';
+		const startIndex = (currentPage - 1) * recordsPerPage;
+		const endIndex = startIndex + recordsPerPage;
+		const pageRecords = allRecords.slice(startIndex, endIndex);
+
+		pageRecords.forEach((record, index) => {
+			const recordElement = document.createElement('div');
+			recordElement.className = 'record';
+			recordElement.innerHTML = `
+                <p>${record.text}</p>
+                <small>保存时间: ${new Date(record.timestamp).toLocaleString()}</small>
+                <button class="delete-record" data-index="${startIndex + index}">删除</button>
+            `;
+			container.appendChild(recordElement);
+		});
+	}
+}
+
+function setupPagination() {
+	const paginationContainer = document.getElementById('pagination');
+	if (paginationContainer) {
+		paginationContainer.innerHTML = '';
+		const totalPages = Math.ceil(allRecords.length / recordsPerPage);
+
+		if (totalPages > 1) {
+			// 修改：添加上一页按钮
+			const prevButton = document.createElement('button');
+			prevButton.textContent = '上一页';
+			prevButton.addEventListener('click', () => {
+				if (currentPage > 1) {
+					currentPage--;
+					displayRecords();
+					setupPagination();
+				}
+			});
+			paginationContainer.appendChild(prevButton);
+
+			// 修改：只显示当前页码
+			const currentPageSpan = document.createElement('span');
+			currentPageSpan.textContent = `${currentPage} / ${totalPages}`;
+			paginationContainer.appendChild(currentPageSpan);
+
+			// 修改：添加下一页按钮
+			const nextButton = document.createElement('button');
+			nextButton.textContent = '下一页';
+			nextButton.addEventListener('click', () => {
+				if (currentPage < totalPages) {
+					currentPage++;
+					displayRecords();
+					setupPagination();
+				}
+			});
+			paginationContainer.appendChild(nextButton);
+		}
+	}
+}
+
+function deleteRecord(index) {
+	allRecords.splice(index, 1);
+	chrome.storage.sync.set({ savedRecords: allRecords }, () => {
+		displayRecords();
+		setupPagination();
+	});
+}
+
+function clearAllRecords() {
+	allRecords = [];
+	chrome.storage.sync.set({ savedRecords: [] }, () => {
+		displayRecords();
+		setupPagination();
+	});
+}
+
+
+function exportRecords() {
+	const csvContent = "data:text/csv;charset=utf-8,"
+		+ allRecords.map(record => `"${record.text}","${new Date(record.timestamp).toLocaleString()}"`).join("\n");
+	const encodedUri = encodeURI(csvContent);
+	const link = document.createElement("a");
+	link.setAttribute("href", encodedUri);
+	link.setAttribute("download", "saved_records.csv");
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+}
 
 document.addEventListener('DOMContentLoaded', function () {
+	loadRecords();
+	const actionsWrapper = document.createElement('div');
+	 actionsWrapper.className = 'actions-wrapper';
+	const clearRecordsButton = document.getElementById('clear-records');
+	const confirmDialog = document.getElementById('confirm-dialog');
+	const confirmClearButton = document.getElementById('confirm-clear');
+	const cancelClearButton = document.getElementById('cancel-clear');
+	const exportRecordsButton = document.getElementById('export-records');
+
+	if (clearRecordsButton) {
+		clearRecordsButton.addEventListener('click', function () {
+			if (confirmDialog) {
+				confirmDialog.style.display = 'flex';
+			}
+		});
+	}
+
+	if (confirmClearButton) {
+		confirmClearButton.addEventListener('click', function () {
+			clearAllRecords();
+			if (confirmDialog) {
+				confirmDialog.style.display = 'none';
+			}
+		});
+	}
+
+	if (cancelClearButton) {
+		cancelClearButton.addEventListener('click', function () {
+			if (confirmDialog) {
+				confirmDialog.style.display = 'none';
+			}
+		});
+	}
+
+	if (exportRecordsButton) {
+		exportRecordsButton.addEventListener('click', exportRecords);
+	}
+
+	const recordsContainer = document.getElementById('records-container');
+	if (recordsContainer) {
+		recordsContainer.addEventListener('click', function (e) {
+			if (e.target.classList.contains('delete-record')) {
+				const index = parseInt(e.target.getAttribute('data-index'));
+				deleteRecord(index);
+			}
+		});
+	}
+
 	chrome.storage.sync.get('aiSearchEngines', function (data) {
 		if (data.aiSearchEngines && Array.isArray(data.aiSearchEngines)) {
 			const bottomEngineListContainer = document.getElementById('bottomEngineListContainer');
-			data.aiSearchEngines.forEach(engine => {
-				const item = createEngineItem(engine.name, engine.url);
-				bottomEngineListContainer.appendChild(item);
-			});
+			if (bottomEngineListContainer) {
+				data.aiSearchEngines.forEach(engine => {
+					const item = createEngineItem(engine.name, engine.url);
+					bottomEngineListContainer.appendChild(item);
+				});
+			}
 		}
 	});
 });
+
+// 如果 createEngineItem 函数不存在，请添加此函数
+function createEngineItem(name, url) {
+	const item = document.createElement('div');
+	item.className = 'engine-item';
+	item.innerHTML = `
+        <span>${name}</span>
+        <input type="text" value="${url}" readonly>
+        <button class="edit-engine">编辑</button>
+        <button class="delete-engine">删除</button>
+    `;
+	return item;
+}
+
+
 function updateAISearchEngines(newEngines) {
 	chrome.storage.sync.set({ aiSearchEngines: newEngines }, function () {
 		console.log('AI搜索引擎列表已在选项页面更新');

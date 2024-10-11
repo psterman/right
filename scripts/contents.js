@@ -452,7 +452,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                 }
             },
             {
-                id: 'closeCheckbox', text: '转发手机', action: () => {
+                id: 'closeCheckbox', text: '转发', action: () => {
                     console.log('QR Code generation triggered');
                     const selectedText = window.getSelection().toString().trim();
                     const currentPageUrl = window.location.href;
@@ -533,9 +533,25 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                 }
             },
             {
-                id: 'pasteCheckbox', text: '粘贴', action: () => {
-                    console.log('Paste action triggered');
-                    // 实现粘贴逻辑
+                id: 'pasteCheckbox', text: '保存', action: () => {
+                    console.log('Save record action triggered');
+                    const selectedText = window.getSelection().toString().trim();
+                    if (selectedText) {
+                        chrome.storage.sync.get('savedRecords', function (data) {
+                            const records = data.savedRecords || [];
+                            records.push({
+                                text: selectedText,
+                                timestamp: Date.now()
+                            });
+                            chrome.storage.sync.set({ savedRecords: records }, function () {
+                                console.log('Record saved');
+                                showNotification('记录已保存');
+                            });
+                        });
+                    } else {
+                        console.log('No text selected');
+                        showNotification('请先选择文本');
+                    }
                     removePopup();
                 }
             },

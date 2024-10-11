@@ -260,8 +260,7 @@
 								</path>
 							</g>
 						</svg>
-						<span data-i18n="advancedoptions"></span></a>
-				</li>
+						<span data-i18n="advancedoptions"></span></a> </li>
 
 
 
@@ -913,8 +912,9 @@
 							<div id="searchEngineSettings">
 								<div class="tabs">
 									<button class="tab active" data-category="ai">AI 搜索</button>
-									
-									<button class="tab" data-category="regular">综合搜索</button><button class="tab" data-category="image">图片搜索</button>
+
+									<button class="tab" data-category="regular">综合搜索</button><button class="tab"
+										data-category="image">图片搜索</button>
 									<button class="tab" data-category="custom">自定义搜索</button>
 								</div>
 
@@ -929,15 +929,7 @@
 				</div>
 
 				</section>
-				<section>
-					<label for="search-engines" class="enginecaption">Super drag to search by</label>
-					<select id="search-engines"></select>
 
-					<input type="radio" id="background" name="tabmode" value="background">
-					<label for="background">Background</label>
-					<input type="radio" id="foreground" name="tabmode" value="foreground">
-					<label for="foreground">Foreground</label>
-				</section>
 				<!-- //配合综合按键
 							  <div class="ctrl-shift-alt">
 							    <input type="checkbox" name="ctrl">
@@ -1002,42 +994,42 @@
 					</div>
 				</section>
 				<section>
-				<h2>悬浮窗设置</h2>
-				<div class="tab-container">
-					<div class="tab-buttons">
-						<button class="tab-button active" data-tab="topEngineList">顶部引擎</button>
-						<button class="tab-button" data-tab="bottomEngineList">底部引擎</button>
-						<button class="tab-button" data-tab="multiMenu1">多重菜单1</button>
-						<button class="tab-button" data-tab="multiMenu2">多重菜单2</button>
-					</div>
-					<div class="tab-content">
-						<div id="topEngineList" class="tab-pane active">
-							<h3>顶部引擎列表</h3>
-							<div class="engine-list"></div>
-							<button class="add-engine">添加新引擎</button>
+					<h2>悬浮窗设置</h2>
+					<div class="tab-container">
+						<div class="tab-buttons">
+							<button class="tab-button active" data-tab="topEngineList">顶部引擎</button>
+							<button class="tab-button" data-tab="bottomEngineList">底部引擎</button>
+							<button class="tab-button" data-tab="multiMenu1">多重菜单1</button>
+							<button class="tab-button" data-tab="multiMenu2">多重菜单2</button>
 						</div>
-						<div id="bottomEngineList" class="tab-pane">
-							<h3>底部引擎列表</h3>
-							<div class="engine-list"></div>
-							<button class="add-engine">添加新引擎</button>
-						</div>
-						<div id="multiMenu1" class="tab-pane">
-    <h3>AI搜索引擎列表</h3>
-    <ul class="ai-search-engine-list"></ul>
-    <button id="addAISearchEngine" class="add-menu-item">添加AI搜索引擎</button>
-</div>
-						<div id="multiMenu2" class="tab-pane">
-							<h3>自定义搜索引擎列表</h3>
-							<div>
-								<input type="text" id="customSearchEngineName" placeholder="输入搜索名称">
-								<input type="text" id="customSearchEngineUrl" placeholder="输入搜索网址">
-								<button id="addCustomSearchEngineButton">新增搜索引擎</button>
+						<div class="tab-content">
+							<div id="topEngineList" class="tab-pane active">
+								<h3>顶部引擎列表</h3>
+								<div class="engine-list"></div>
+								<button class="add-engine">添加新引擎</button>
 							</div>
-							<div class="custom-search-engine-list"></div>
-							<!-- <button class="add-menu-item">添加自定义搜索引擎（弹窗）</button> -->
-						</div>
+							<div id="bottomEngineList" class="tab-pane">
+								<h3>底部引擎列表</h3>
+								<div class="engine-list"></div>
+								<button class="add-engine">添加新引擎</button>
+							</div>
+							<div id="multiMenu1" class="tab-pane">
+								<h3>AI搜索引擎列表</h3>
+								<ul class="ai-search-engine-list"></ul>
+								<button id="addAISearchEngine" class="add-menu-item">添加AI搜索引擎</button>
+							</div>
+							<div id="multiMenu2" class="tab-pane">
+								<h3>自定义搜索引擎列表</h3>
+								<div>
+									<input type="text" id="customSearchEngineName" placeholder="输入搜索名称">
+									<input type="text" id="customSearchEngineUrl" placeholder="输入搜索网址">
+									<button id="addCustomSearchEngineButton">新增搜索引擎</button>
+								</div>
+								<div class="custom-search-engine-list"></div>
+								<!-- <button class="add-menu-item">添加自定义搜索引擎（弹窗）</button> -->
+							</div>
 				</section>
-		
+
 				<!-- 模态框 -->
 				<section>
 					<div id="grid-modal" class="modal">
@@ -1061,42 +1053,27 @@
 
 
 			<div id="tab4" class="page hidden">
-				<h2 data-i18n="advancedoptions"></h2>
-				<section>
 
-				</section>
-				<section>
+				<div class="records-wrapper">
+					<h3>保存的记录</h3>
+					<div id="records-container"></div>
+					<div id="pagination"></div>
+					<div class="actions-wrapper">
+						<button id="export-records">导出记录</button>
+						<button id="clear-records">清除所有记录</button>
+					</div>
+				</div>
 
-				</section>
-				<section>
-
-				</section>
-				<section>
-
-				</section>
-				<section>
-
-				</section>
-				<section>
-
-				</section>
-
-				<section>
-
-				</section>
-				<!-- <section>
-						<h3 data-i18n="titelsync"></h3>
-						<div class="grey-text"><span data-i18n="titelsyncbrowser"></span></div>
-					</section>
-					<section>
-						<h3 data-i18n="titelreset"></h3>
-						<div>
-							<label><button id="resetbrowserextension"
-									data-i18n="resetbrowserextension"></button></label>
-						</div>
-					</section> -->
+				<div id="confirm-dialog" class="dialog" style="display: none;">
+					<div class="dialog-content">
+						<p>确定要清除所有记录吗？此操作不可撤销。</p>
+						<button id="confirm-clear">确定</button>
+						<button id="cancel-clear">取消</button>
+					</div>
+				</div>
 
 			</div>
+
 
 			<div id="tab5" class="page hidden">
 				<h2 data-i18n="about"></h2>
@@ -1114,31 +1091,14 @@
 				<section>
 					<div>
 						<h2>功能列表</h2>
-						<label>
-							<input type="checkbox" id="copyCheckbox" /> 复制
-						</label>
-						<label>
-							<input type="checkbox" id="deleteCheckbox" /> 删除
-						</label>
-
-						<label>
-							<input type="checkbox" id="jumpCheckbox" /> 收藏
-						</label>
-						<label>
-							<input type="checkbox" id="closeCheckbox" /> 关闭
-						</label>
-						<label>
-							<input type="checkbox" id="pasteCheckbox" /> 粘贴
-						</label>
-						<label>
-							<input type="checkbox" id="refreshCheckbox" /> 刷新
-						</label>
-						<label>
-							<input type="checkbox" id="downloadCheckbox" /> 下载
-						</label>
-						<label>
-							<input type="checkbox" id="closesidepanelCheckbox" /> 开关
-						</label>
+						<label><input type="checkbox" id="copyCheckbox" /> 复制</label>
+						<label><input type="checkbox" id="deleteCheckbox" /> 删除</label>
+						<label><input type="checkbox" id="jumpCheckbox" /> 收藏</label>
+						<label><input type="checkbox" id="closeCheckbox" /> 关闭</label>
+						<label><input type="checkbox" id="pasteCheckbox" /> 粘贴</label>
+						<label><input type="checkbox" id="refreshCheckbox" /> 刷新</label>
+						<label><input type="checkbox" id="downloadCheckbox" /> 下载</label>
+						<label><input type="checkbox" id="closesidepanelCheckbox" /> 开关</label>
 					</div>
 				</section>
 				<section>
@@ -1147,7 +1107,6 @@
 						<ul id="searchEngineList"></ul>
 					</div>
 				</section>
-
 				<section>
 					<div>
 						<h2>导出搜索引擎列表</h2>
@@ -1156,15 +1115,13 @@
 					</div>
 				</section>
 				<section>
-
 					<h2>说明</h2>
 					<div>
 						<span data-i18n="version"></span>
 						<span id="version_number"></span>
 						<br>
 						<span data-i18n="description"></span>
-						<br>
-						<br>
+						<br><br>
 						<span data-i18n="titelwebsite"></span>: <a
 							href="https://www.stefanvd.net/project/page-sidebar/browser-extension/"
 							target="_blank">www.stefanvd.net/project/page-sidebar/browser-extension/</a>
@@ -1172,12 +1129,11 @@
 						<span data-i18n="titeldeveloper"></span>: <a href="https://www.stefanvd.net"
 							target="_blank">www.stefanvd.net</a>
 					</div>
-					<br>
-					<br>
+					<br><br>
 					<div class="aboutbuttons">
-						<button id="buttonreportissue" data-i18n="reportbug"></button><button id="buttonchangelog"
-							data-i18n="changelog"></button><button id="buttontranslateme"
-							data-i18n="translateme"></button>
+						<button id="buttonreportissue" data-i18n="reportbug"></button>
+						<button id="buttonchangelog" data-i18n="changelog"></button>
+						<button id="buttontranslateme" data-i18n="translateme"></button>
 					</div>
 					<br><br><br><br><br>
 				</section>
@@ -1190,136 +1146,142 @@
 						<span data-i18n="textfoot"></span> <a href="http://creativecommons.org/licenses/GPL/2.0/">GPL
 							2.0</a>.
 					</div>
+				</section>
+			</div>
 
-			</div>
-			</section>
+			<div id="tab6" class="page hidden">
+				<iframe id="welcomeguide" src="" width="100%" height="100%" frameBorder="0" scrolling="no"></iframe>
 
-		</div>
-	</div>
-	<div id="tab6" class="page hidden">
-		<iframe id="welcomeguide" src="" width="100%" height="100%" frameBorder="0" scrolling="no"></iframe>
-	</div>
-	</div>
-	<!-- dialog -->
-	<div id="materialModalYouTube" class="hide" role="dialog" aria-label="Learn more on the YouTube Channel"
-		aria-describedby="materialModalYouTubeTitle" aria-disabled="true">
-		<div id="materialModalYouTubeCentered">
-			<div id="materialModalYouTubeContent">
-				<picture>
-					<source srcset="/images/youtube-blog.webp 1x, /images/youtube-blog@2x.webp 2x" type="image/webp">
-					<source srcset="/images/youtube-blog.png 1x, /images/youtube-blog@2x.png 2x" type="image/png">
-					<img alt="YouTube Stefan Van Damme" loading="lazy" width="117" height="49"
-						src="/images/youtube-blog@2x.png">
-				</picture>
-				<div id="materialModalYouTubeTitle"><span data-i18n="titleyoutube"></span></div>
-				<div id="materialModalYouTubeText">
-					<span data-i18n="desyoutube"></span>
+				<!-- YouTube dialog -->
+				<div id="materialModalYouTube" class="hide" role="dialog" aria-label="Learn more on the YouTube Channel"
+					aria-describedby="materialModalYouTubeTitle" aria-disabled="true">
+					<div id="materialModalYouTubeCentered">
+						<div id="materialModalYouTubeContent">
+							<picture>
+								<source srcset="/images/youtube-blog.webp 1x, /images/youtube-blog@2x.webp 2x"
+									type="image/webp">
+								<source srcset="/images/youtube-blog.png 1x, /images/youtube-blog@2x.png 2x"
+									type="image/png">
+								<img alt="YouTube Stefan Van Damme" loading="lazy" width="117" height="49"
+									src="/images/youtube-blog@2x.png">
+							</picture>
+							<div id="materialModalYouTubeTitle"><span data-i18n="titleyoutube"></span></div>
+							<div id="materialModalYouTubeText">
+								<span data-i18n="desyoutube"></span>
+							</div>
+							<div id="materialModalYouTubeButtons">
+								<div id="materialModalYouTubeButtonOK" class="materialModalButton"><span
+										data-i18n="titlesub"></span></div>
+								<div id="materialModalYouTubeButtonCANCEL" class="materialModalButton"><span
+										data-i18n="titlelater"></span></div>
+							</div>
+						</div>
+					</div>
 				</div>
-				<div id="materialModalYouTubeButtons">
-					<div id="materialModalYouTubeButtonOK" class="materialModalButton"><span
-							data-i18n="titlesub"></span></div>
-					<div id="materialModalYouTubeButtonCANCEL" class="materialModalButton"><span
-							data-i18n="titlelater"></span></div>
+
+				<!-- Rate dialog -->
+				<div id="materialModalRate" class="hide" role="dialog" aria-label="Review this extension"
+					aria-describedby="materialModalRateTitle" aria-disabled="true">
+					<div id="materialModalRateCentered">
+						<div id="materialModalRateContent">
+							<div id="ratepage0">
+								<div class="ratetitle"><span data-i18n="desratetitle"></span></div>
+								<div class="ratedes"><span data-i18n="destapstar"></span></div>
+								<div class="starrating">
+									<div class="rating">
+										<input type="radio" id="star5" name="rating" value="5" /><label for="star5"
+											title="Awesome!">5 stars</label>
+										<input type="radio" id="star4" name="rating" value="4" /><label for="star4"
+											title="Pretty good">4 stars</label>
+										<input type="radio" id="star3" name="rating" value="3" /><label for="star3"
+											title="Meh">3
+											stars</label>
+										<input type="radio" id="star2" name="rating" value="2" /><label for="star2"
+											title="Kinda bad">2 stars</label>
+										<input type="radio" id="star1" name="rating" value="1" /><label for="star1"
+											title="Very bad">1 star</label>
+									</div>
+								</div>
+								<div id="materialModalRateButtons">
+									<div id="materialModalRateButtonCANCEL" class="materialModalButton"><span
+											data-i18n="desratenotnowthanks"></span></div>
+								</div>
+							</div>
+							<div id="ratepage1high" class="hidden">
+								<div class="rateactiontext">
+									<div class="ratetitle"><span data-i18n="desrategoodtitle"></span></div>
+									<div class="desrate">
+										<span data-i18n="desrategood"></span>
+									</div>
+								</div>
+								<div id="materialModalRateButtons">
+									<div id="materialModalRateButtonWriteOK" class="materialModalButton"><span
+											data-i18n="desrategoodaction"></span></div>
+									<div id="materialModalRateButtonWriteCANCEL" class="materialModalButton"><span
+											data-i18n="desratenothanks"></span></div>
+								</div>
+							</div>
+							<div id="ratepage1low" class="hidden">
+								<div class="rateactiontext">
+									<div class="ratetitle"><span data-i18n="desratebadtitle"></span></div>
+									<div class="desrate">
+										<span data-i18n="desratebad"></span>
+									</div>
+								</div>
+								<div id="materialModalRateButtons">
+									<div id="materialModalButtonSupportOK" class="materialModalButton"><span
+											data-i18n="desratebadaction"></span></div>
+									<div id="materialModalButtonSupportCANCEL" class="materialModalButton"><span
+											data-i18n="desratenothanks"></span></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Drop menu -->
+				<div id="dropmenu" class="hide">
+					<ul>
+						<li id="btnactivedarkmodeauto">
+							<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16"
+								viewBox="0 0 24 24" id="icondarkauto">
+								<g>
+									<path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"></path>
+								</g>
+							</svg><span data-i18n="titledarkmodeauto"></span>
+						</li>
+						<li id="btnactivedarkmodeoff">
+							<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16"
+								viewBox="0 0 24 24" id="icondarkoff">
+								<g>
+									<path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"></path>
+								</g>
+							</svg><span data-i18n="titledarkmodeoff"></span>
+						</li>
+						<li id="btnactivedarkmodeon">
+							<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16"
+								viewBox="0 0 24 24" id="icondarkon">
+								<g>
+									<path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"></path>
+								</g>
+							</svg><span data-i18n="titledarkmodeon"></span>
+						</li>
+						<li id="btnsupport" class="topline">
+							<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16"
+								viewBox="0 0 24 24">
+								<g>
+									<path
+										d="M 20 2 L 4 2 C 2.894531 2 2 2.894531 2 4 L 2 22 L 6 18 L 20 18 C 21.105469 18 22 17.105469 22 16 L 22 4 C 22 2.894531 21.105469 2 20 2 Z M 13 14 L 11 14 L 11 12 L 13 12 Z M 15 9 C 15 9.378906 14.789063 9.71875 14.449219 9.890625 L 13 10.621094 L 13 11 L 11 11 L 11 10 C 11 9.621094 11.210938 9.28125 11.550781 9.109375 L 13 8.378906 L 13 7 L 11 7 L 11 8.078125 L 9 8.078125 L 9 6 C 9 5.449219 9.449219 5 10 5 L 14 5 C 14.550781 5 15 5.449219 15 6 Z ">
+									</path>
+								</g>
+							</svg><span data-i18n="titelpopupsupport"></span>
+						</li>
+					</ul>
 				</div>
 			</div>
 		</div>
-	</div>
-	<div id="materialModalRate" class="hide" role="dialog" aria-label="Review this extension"
-		aria-describedby="materialModalRateTitle" aria-disabled="true">
-		<div id="materialModalRateCentered">
-			<div id="materialModalRateContent">
-				<div id="ratepage0">
-					<div class="ratetitle"><span data-i18n="desratetitle"></span></div>
-					<div class="ratedes"><span data-i18n="destapstar"></span></div>
-					<div class="starrating">
-						<div class="rating">
-							<input type="radio" id="star5" name="rating" value="5" /><label for="star5"
-								title="Awesome!">5 stars</label>
-							<input type="radio" id="star4" name="rating" value="4" /><label for="star4"
-								title="Pretty good">4 stars</label>
-							<input type="radio" id="star3" name="rating" value="3" /><label for="star3" title="Meh">3
-								stars</label>
-							<input type="radio" id="star2" name="rating" value="2" /><label for="star2"
-								title="Kinda bad">2 stars</label>
-							<input type="radio" id="star1" name="rating" value="1" /><label for="star1"
-								title="Very bad">1 star</label>
-						</div>
-					</div>
-					<div id="materialModalRateButtons">
-						<div id="materialModalRateButtonCANCEL" class="materialModalButton"><span
-								data-i18n="desratenotnowthanks"></span></div>
-					</div>
-				</div>
-				<div id="ratepage1high" class="hidden">
-					<div class="rateactiontext">
-						<div class="ratetitle"><span data-i18n="desrategoodtitle"></span></div>
-						<div class="desrate">
-							<span data-i18n="desrategood"></span>
-						</div>
-					</div>
-					<div id="materialModalRateButtons">
-						<div id="materialModalRateButtonWriteOK" class="materialModalButton"><span
-								data-i18n="desrategoodaction"></span></div>
-						<div id="materialModalRateButtonWriteCANCEL" class="materialModalButton"><span
-								data-i18n="desratenothanks"></span></div>
-					</div>
-				</div>
-				<div id="ratepage1low" class="hidden">
-					<div class="rateactiontext">
-						<div class="ratetitle"><span data-i18n="desratebadtitle"></span></div>
-						<div class="desrate">
-							<span data-i18n="desratebad"></span>
-						</div>
-					</div>
-					<div id="materialModalRateButtons">
-						<div id="materialModalButtonSupportOK" class="materialModalButton"><span
-								data-i18n="desratebadaction"></span></div>
-						<div id="materialModalButtonSupportCANCEL" class="materialModalButton"><span
-								data-i18n="desratenothanks"></span></div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div id="dropmenu" class="hide">
-		<ul>
-			<li id="btnactivedarkmodeauto">
-				<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16" viewBox="0 0 24 24"
-					id="icondarkauto">
-					<g>
-						<path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"></path>
-					</g>
-				</svg><span data-i18n="titledarkmodeauto"></span>
-			</li>
-			<li id="btnactivedarkmodeoff">
-				<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16" viewBox="0 0 24 24"
-					id="icondarkoff">
-					<g>
-						<path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"></path>
-					</g>
-				</svg><span data-i18n="titledarkmodeoff"></span>
-			</li>
-			<li id="btnactivedarkmodeon">
-				<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16" viewBox="0 0 24 24"
-					id="icondarkon">
-					<g>
-						<path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"></path>
-					</g>
-				</svg><span data-i18n="titledarkmodeon"></span>
-			</li>
-			<li id="btnsupport" class="topline">
-				<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16" viewBox="0 0 24 24">
-					<g>
-						<path
-							d="M 20 2 L 4 2 C 2.894531 2 2 2.894531 2 4 L 2 22 L 6 18 L 20 18 C 21.105469 18 22 17.105469 22 16 L 22 4 C 22 2.894531 21.105469 2 20 2 Z M 13 14 L 11 14 L 11 12 L 13 12 Z M 15 9 C 15 9.378906 14.789063 9.71875 14.449219 9.890625 L 13 10.621094 L 13 11 L 11 11 L 11 10 C 11 9.621094 11.210938 9.28125 11.550781 9.109375 L 13 8.378906 L 13 7 L 11 7 L 11 8.078125 L 9 8.078125 L 9 6 C 9 5.449219 9.449219 5 10 5 L 14 5 C 14.550781 5 15 5.449219 15 6 Z ">
-						</path>
-					</g>
-				</svg><span data-i18n="titelpopupsupport"></span>
-			</li>
-		</ul>
-	</div>
-	</div>
-	<script type="text/javascript" src="scripts/translate.js"></script>
+
+		<script type="text/javascript" src="scripts/translate.js"></script>
 </body>
 
 </html>
