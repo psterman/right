@@ -432,26 +432,95 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                     });
                 }
             },
+            
             {
-                id: 'deleteCheckbox', text: '删除选中文本', action: () => {
-                    console.log('Delete action triggered');
-                    // 实现删除逻辑
-                    removePopup();
-                }
-            },
-            {
-                id: 'jumpCheckbox', text: '收藏', action: () => {
-                    console.log('Jump action triggered');
-                    // 实现收藏逻辑
-                    removePopup();
-                }
-            },
-            {
-                id: 'closeCheckbox', text: '关闭', action: () => {
-                    console.log('Close action triggered');
-                    chrome.runtime.sendMessage({ action: "closeTab" }, () => {
+                id: 'deleteCheckbox', text: '翻译', action: () => {
+                    console.log('Translate action triggered');
+                    const translationUrl = `https://www.deepl.com/en/translator#en/zh-hant/${encodeURIComponent(selectedText)}`;
+                    chrome.runtime.sendMessage({
+                        action: 'setpage',
+                        query: translationUrl,
+                        openSidebar: true // 假设你想在侧边栏打开
+                    }, (response) => {
+                        if (response && response.success) {
+                            console.log('Translation page opened in sidebar');
+                        } else {
+                            console.error('Failed to open translation page');
+                        }
                         removePopup();
                     });
+                }
+            },
+            {
+                id: 'closeCheckbox', text: '转发手机', action: () => {
+                    console.log('QR Code generation triggered');
+                    const selectedText = window.getSelection().toString().trim();
+                    const currentPageUrl = window.location.href;
+
+                    if (selectedText || currentPageUrl) {
+                        // 创建包含选中文本的URL
+                        const textUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedText)}`;
+
+                        // 创建包含当前页面URL的二维码
+                        const pageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(currentPageUrl)}`;
+
+                        // 创建一个HTML页面，其中包含两个二维码图片
+                        const qrCodeHtml = `
+            <!DOCTYPE html>
+            <html lang="zh-CN">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>二维码生成</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f0f0f0; }
+                    .container { max-width: 800px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                    h2 { color: #333; text-align: center; }
+                    .qr-codes { display: flex; justify-content: space-around; flex-wrap: wrap; }
+                    .qr-code { text-align: center; margin: 10px; }
+                    img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; }
+                    p { margin-top: 10px; font-size: 14px; color: #666; max-width: 200px; word-wrap: break-word; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h2>微信扫描二维码，转发到手机</h2>
+                    <div class="qr-codes">
+                        <div class="qr-code">
+                            <img src="${textUrl}" alt="选中文本的二维码">
+                            <p>选中的文本：${selectedText}</p>
+                        </div>
+                        <div class="qr-code">
+                            <img src="${pageUrl}" alt="当前页面的二维码">
+                            <p>当前页面链接：${currentPageUrl}</p>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+            `;
+
+                        // 将HTML内容转换为Blob
+                        const blob = new Blob([qrCodeHtml], { type: 'text/html;charset=utf-8' });
+                        const blobUrl = URL.createObjectURL(blob);
+
+                        // 使用setpage action在侧边栏中打开二维码页面
+                        chrome.runtime.sendMessage({
+                            action: 'setpage',
+                            query: blobUrl,
+                            openSidebar: true
+                        }, (response) => {
+                            if (response && response.success) {
+                                console.log('QR Code page opened in sidebar');
+                            } else {
+                                console.error('Failed to open QR Code page');
+                            }
+                            removePopup();
+                        });
+                    } else {
+                        console.log('No text selected and no page URL available');
+                        showNotification('无法生成二维码，请选择文本或确保页面已加载');
+                    }
                 }
             },
             {
@@ -673,33 +742,29 @@ chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'clos
                 console.error('复制失败:', err);
                 showNotification('复制失败，请重试', 3000);
             });
-        });
+        }); removePopup();
         searchLinksContainer.appendChild(copyLink);
     }
 
-    // 以下是在文本框上右键点击时显示的上下文菜单中的删除链接
-    // 修改后的 deleteSelectedText 函数
-    function deleteSelectedText(inputElement) {
-        var start = inputElement.selectionStart;
-        var end = inputElement.selectionEnd;
-        if (start !== end) {
-            var newValue = inputElement.value.substring(0, start) + inputElement.value.substring(end);
-            inputElement.value = newValue;
-            inputElement.focus(); // 确保输入框仍然获得焦点
-            // 将光标移至删除后的位置
-            inputElement.setSelectionRange(start, start);
-        }
-    }
-
-    // 创建删除选中文本的链接时，确保传递正确的 inputElement
+    // 翻译
     if (showDelete) {
-        var searchLinkCut = createActionLink('删除选中文本', function () {
-            // 调用 deleteSelectedText 函数并传递正确的 inputElement
-            deleteSelectedText(e.target);
-            // 隐藏弹出菜单
-            hideInputContextMenu();
+        var searchLinkTranslate = createActionLink('翻译', function () {
+            console.log('Translate action triggered');
+            const translationUrl = `https://www.deepl.com/en/translator#en/zh-hant/${encodeURIComponent(selectedText)}`;
+            chrome.runtime.sendMessage({
+                action: 'setpage',
+                query: translationUrl,
+                openSidebar: true // 假设你想在侧边栏打开
+            }, (response) => {
+                if (response && response.success) {
+                    console.log('Translation page opened in sidebar');
+                } else {
+                    console.error('Failed to open translation page');
+                }
+                removePopup();
+            });
         });
-        searchLinksContainer.appendChild(searchLinkCut);
+        searchLinksContainer.appendChild(searchLinkTranslate);
     }
     if (showJump) {
 
