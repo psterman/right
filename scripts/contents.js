@@ -376,7 +376,18 @@ function handleTextSelection(e) {
         currentPopup = null;
     }
 }
+// 新增: 添加这两个变量到文件顶部
+let lastPopupTime = 0;
+const POPUP_COOLDOWN = 2000; // 5秒冷却时间
+
 function showSearchLinks(selectedText, x, y, currentEngine) {
+    // 新增: 添加时间检查逻辑
+    const currentTime = Date.now();
+    if (currentTime - lastPopupTime < POPUP_COOLDOWN) {
+        console.log('悬浮窗冷却中，请稍后再试');
+        return; // 如果冷却时间未到，直接返回
+    }
+
     console.log('showSearchLinks called with:', { selectedText, x, y, currentEngine });
 
     if (currentPopup) {
@@ -570,7 +581,13 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                 }
             }
         ];
-
+        document.addEventListener('keydown', function escListener(e) {
+            if (e.key === 'Escape') {
+                removePopup();
+                // 移除事件监听器，避免多次添加
+                document.removeEventListener('keydown', escListener);
+            }
+        });
         console.log('Before adding action links');
         actions.forEach(({ id, text, action }) => {
             console.log(`Checking ${id}: ${items[id]}`);
@@ -587,6 +604,8 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         popup.appendChild(searchLinksContainer);
         document.body.appendChild(popup);
         currentPopup = popup;
+        // 新增: 更新最后显示悬浮窗的时间
+        lastPopupTime = currentTime;
 
         console.log('Popup added to body');
         console.log('Popup content:', popup.innerHTML); // 新增：显示整个弹出窗口的内容
@@ -601,18 +620,31 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     });
 }
 
-
+// 添加全局键盘事件监听器
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        removePopup();
+        console.log('Popup closed by ESC key');
+    }
+});
 function removePopup() {
-    console.log('Removing popup');
+    console.log('Attempting to remove popup');
     if (currentPopup) {
-        document.body.removeChild(currentPopup);
+        if (document.body.contains(currentPopup)) {
+            try {
+                document.body.removeChild(currentPopup);
+                console.log('Popup successfully removed from DOM');
+            } catch (error) {
+                console.error('Error removing popup:', error);
+            }
+        } else {
+            console.warn('Popup not found in DOM');
+        }
         currentPopup = null;
-        console.log('Popup removed');
     } else {
         console.log('No popup to remove');
     }
 }
-
 function adjustPopupPosition(popup, x, y) {
     var screenWidth = window.innerWidth;
     var menuWidth = 300;
