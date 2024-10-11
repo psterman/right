@@ -2452,14 +2452,14 @@ function restoreCheckboxStates() {
 // 更新搜索引擎选项
 chrome.runtime.sendMessage({
 	action: 'updateSearchEngines',
-	/* copyOption: copyCheckbox.checked,
+	copyOption: copyCheckbox.checked,
 	deleteOption: deleteCheckbox.checked,
 	jumpOption: jumpCheckbox.checked,
 	closeOption: closeCheckbox.checked,
 	refreshOption: refreshCheckbox.checked,
 	downloadOption: downloadCheckbox.checked,
 	pasteOption: pasteCheckbox.checked,
-	closesidepanelOption: closesidepanelCheckbox.checked */
+	closesidepanelOption: closesidepanelCheckbox.checked 
 });
 // 定义搜索引擎数据数组
 var searchEngineData = [
