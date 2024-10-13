@@ -378,15 +378,15 @@ function handleTextSelection(e) {
 }
 // 新增: 添加这两个变量到文件顶部
 let lastPopupTime = 0;
-const POPUP_COOLDOWN = 100; // 5秒冷却时间
+const POPUP_COOLDOWN = 2000; // 5秒冷却时间
 
 function showSearchLinks(selectedText, x, y, currentEngine) {
-    /* // 新增: 添加时间检查逻辑
+    // 新增: 添加时间检查逻辑
     const currentTime = Date.now();
     if (currentTime - lastPopupTime < POPUP_COOLDOWN) {
         console.log('悬浮窗冷却中，请稍后再试');
         return; // 如果冷却时间未到，直接返回
-    } */
+    }
 
     console.log('showSearchLinks called with:', { selectedText, x, y, currentEngine });
 
@@ -443,7 +443,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                     });
                 }
             },
-            
+
             {
                 id: 'deleteCheckbox', text: '翻译', action: () => {
                     console.log('Translate action triggered');
@@ -605,7 +605,7 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
         document.body.appendChild(popup);
         currentPopup = popup;
         // 新增: 更新最后显示悬浮窗的时间
-        /* lastPopupTime = currentTime; */
+        lastPopupTime = currentTime;
 
         console.log('Popup added to body');
         console.log('Popup content:', popup.innerHTML); // 新增：显示整个弹出窗口的内容
@@ -1002,10 +1002,7 @@ function showInputContextMenu(inputElement, x, y) {
 
     popup.style.maxWidth = 'auto';
     popup.style.overflow = 'auto';
-    // 新增: 阻止悬浮窗的点击事件冒泡
-    popup.addEventListener('click', function (e) {
-        e.stopPropagation();
-    });
+
     const screenWidth = window.innerWidth;
     const menuWidth = 300;
     const menuOffset = 10;
@@ -1868,8 +1865,6 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     popup.appendChild(bottomEngineListContainer);
     document.body.appendChild(popup);
     currentPopup = popup;
-    // 新增: 更新最后显示悬浮窗的时间
-    lastPopupTime = currentTime;
     // 修改 5: 添加 setTimeout 来重新计算初始位置
     setTimeout(() => {
         const rect = popup.getBoundingClientRect();
