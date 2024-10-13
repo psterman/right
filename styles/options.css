@@ -2701,14 +2701,26 @@ button {
   border: none;
   padding: 5px 10px;
   cursor: pointer;
-}#tab4 {
+}
+#tab3 {
+flex-direction: column;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+#tab4 {
 
   flex-direction: column;
   height: 100%;
   padding: 20px;
   box-sizing: border-box;
 }
-
+#tab5 {
+flex-direction: column;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
 .records-wrapper {
   width: 100%;
   max-width: 1000px;
