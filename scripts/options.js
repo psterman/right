@@ -114,6 +114,21 @@ function exportRecords() {
 
 document.addEventListener('DOMContentLoaded', function () {
 	loadRecords();
+	const popupMenuToggle = document.getElementById('popupMenuToggle');
+
+	// 从存储中获取开关状态
+	chrome.storage.sync.get('popupMenuEnabled', function (data) {
+		popupMenuToggle.checked = data.popupMenuEnabled || false;
+	});
+
+	// 监听开关状态变化
+	popupMenuToggle.addEventListener('change', function () {
+		const isEnabled = popupMenuToggle.checked;
+		chrome.storage.sync.set({ popupMenuEnabled: isEnabled }, function () {
+			console.log('Popup menu enabled:', isEnabled);
+			// 可以在这里添加其他逻辑，比如通知其他脚本更新状态
+		});
+	});
 	const actionsWrapper = document.createElement('div');
 	 actionsWrapper.className = 'actions-wrapper';
 	const clearRecordsButton = document.getElementById('clear-records');
@@ -2340,14 +2355,7 @@ directionSearchToggle.addEventListener('change', function () {
 		chrome.storage.sync.set({ "darkmode": 1 }); // 保存主题设置
 	});
 	var searchEngineList = document.getElementById('searchEngineList');
-	// 获取按钮元素
-	var exportButton = document.getElementById('export-json-button');
-	var importButton = document.getElementById('import-json-button');
-	importButton.addEventListener('click', importWebsiteListFromJSON);
-	// 为按钮添加点击事件监听器
-	exportButton.addEventListener('click', function () {
-		exportWebsiteListAsJSON(); // 调用导出函数
-	});
+
 	restoreCheckboxStatus().then(selectedEngines => {
 		searchEngineData.forEach(function (engine) {
 			var label = document.createElement('label');
@@ -2467,10 +2475,7 @@ directionSearchToggle.addEventListener('change', function () {
 		});
 	});
 	loadWebsiteList(); // 使用修正后的 loadWebsiteList 函数加载已保存的网站列表
-	let addWebsiteButton = document.getElementById('addWebsiteButton');
-	let websiteNameInput = document.getElementById('websiteNameInput');
-	let websiteUrlInput = document.getElementById('websiteUrlInput');
-	let websiteListContainer = document.getElementById('websiteListContainer');
+
 	document.querySelectorAll('.filter-checkbox').forEach((checkbox, index) => {
 		checkbox.addEventListener('change', function () {
 			let isChecked = this.checked;
@@ -2491,30 +2496,7 @@ directionSearchToggle.addEventListener('change', function () {
 	}
 
 
-	// 添加新网站并保存addWe
-	addWebsiteButton.addEventListener('click', function () {
-		let websiteName = websiteNameInput.value.trim();
-		let websiteUrl = websiteUrlInput.value.trim();
-
-		if (websiteName && websiteUrl) {
-			// 从存储中读取最新数据
-			chrome.storage.sync.get('websiteList', function (result) {
-				let websites = result.websiteList || [];
-				websites.push({ name: websiteName, url: websiteUrl });
-				chrome.storage.sync.set({ websiteList: websites }, function () {
-					if (chrome.runtime.lastError) {
-						console.error(chrome.runtime.lastError.message);
-					} else {
-						loadWebsiteList(); // 使用最新数据重新加载网站列表
-						websiteNameInput.value = '';
-						websiteUrlInput.value = '';
-					}
-				});
-			});
-		} else {
-			alert('Please enter both a name and a URL.');
-		}
-	});
+	
 	function addWebsiteToList(name, url, index) {
 		var listItem = document.createElement('li');
 		var nameSpan = document.createElement('span');

@@ -1,9 +1,9 @@
 {
    "about": {
-      "message": "About"
+      "message": "弹搜"
    },
    "advancedoptions": {
-      "message": "高级"
+      "message": "收藏"
    },
    "areyouhappy": {
       "message": "Are you happy about 右拐?"
@@ -137,7 +137,7 @@
    "guide": {
       "message": "悬浮窗"
    },
-   "tababout":{
+   "tababout": {
       "message": "关于"
    },
    "head2": {

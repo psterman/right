@@ -292,6 +292,27 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 chrome.runtime.sendMessage({ action: 'getSettings' });
 // 当文档加载时从 Chrome 存储中加载 selectedEngines
 document.addEventListener('DOMContentLoaded', function () {
+    //可控制弹搜开关
+    const popupMenuToggle = document.getElementById('popupMenuToggle');
+
+    // 从存储中获取开关状态
+    chrome.storage.sync.get('popupMenuEnabled', function (data) {
+        popupMenuToggle.checked = data.popupMenuEnabled || false;
+    });
+
+    // 监听开关状态变化
+    popupMenuToggle.addEventListener('change', function () {
+        const isEnabled = popupMenuToggle.checked;
+        chrome.storage.sync.set({ popupMenuEnabled: isEnabled }, function () {
+            console.log('Popup menu enabled:', isEnabled);
+            // 发送消息给 content.js
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                if (tabs[0]) {
+                    chrome.tabs.sendMessage(tabs[0].id, { action: 'togglePopupMenu', enabled: isEnabled });
+                }
+            });
+        });
+    });
     var sidebarUrl = document.getElementById('preview') ? document.getElementById('preview').src : '';
     chrome.storage.sync.set({ 'initialSidebarUrl': sidebarUrl }, function () {
         console.log('Initial sidebar URL saved to storage.');
@@ -379,8 +400,43 @@ function handleTextSelection(e) {
 // 新增: 添加这两个变量到文件顶部
 let lastPopupTime = 0;
 const POPUP_COOLDOWN = 2000; // 5秒冷却时间
+let isPopupMenuEnabled = false;
 
+// 初始化时从存储中获取状态
+chrome.storage.sync.get('popupMenuEnabled', function (data) {
+    isPopupMenuEnabled = data.popupMenuEnabled || false;
+});
+
+// 监听来自 options.js 的消息
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.action === 'togglePopupMenu') {
+        isPopupMenuEnabled = request.enabled;
+        if (!isPopupMenuEnabled) {
+            disablePopupMenu();
+        }
+    }
+});
+
+function enablePopupMenu() {
+    console.log('Popup menu enabled');
+    // 启用相关功能
+}
+
+function disablePopupMenu() {
+    console.log('Popup menu disabled');
+    // 禁用相关功能
+    // 例如，移除当前显示的悬浮菜单
+    if (currentPopup) {
+        document.body.removeChild(currentPopup);
+        currentPopup = null;
+    }
+}
 function showSearchLinks(selectedText, x, y, currentEngine) {
+    if (!isPopupMenuEnabled) {
+        console.log('Popup menu is disabled, not showing search links');
+        return;
+    }
+    // 继续执行显示悬浮菜单的逻辑
     // 新增: 添加时间检查逻辑
     const currentTime = Date.now();
     if (currentTime - lastPopupTime < POPUP_COOLDOWN) {
@@ -1318,6 +1374,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             removeDragNotification();
         }
     });
+    
     // 修改 drop 函数
     function drop(e) {
         if (bypass(e.target)) return false;
@@ -2197,6 +2254,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPopup = null;
     }
 });
+
 // 新增: 全局变量
 let mouseDownTimer;
 let isMouseDown = false;
