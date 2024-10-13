@@ -16,12 +16,38 @@ const checkboxIds = [
 ];
 // 在文件顶部添加这个函数
 function loadRecords() {
+	const recordsContainer = document.getElementById('records-container');
+	recordsContainer.innerHTML = ''; // 清空现有内容
+
 	chrome.storage.sync.get('savedRecords', function (data) {
-		allRecords = data.savedRecords || [];
-		displayRecords();
-		setupPagination();
+		const records = data.savedRecords || [];
+		records.forEach((record, index) => {
+			const recordElement = document.createElement('div');
+			recordElement.className = 'record-item';
+			recordElement.innerHTML = `
+                <p><strong>保存文字:</strong> ${record.text}</p>
+                <p><strong>保存网址:</strong> <a href="${record.url || '#'}" target="_blank">${record.url || 'No URL'}</a></p>
+                <p><strong>保存时间:</strong> ${new Date(record.timestamp).toLocaleString()}</p>
+                <button class="delete-record" data-index="${index}">删除</button>
+                <hr>
+            `;
+			recordsContainer.appendChild(recordElement);
+		});
+
+		// 添加删除按钮的事件监听器
+		recordsContainer.addEventListener('click', function (event) {
+			if (event.target.classList.contains('delete-record')) {
+				const index = event.target.getAttribute('data-index');
+				records.splice(index, 1);
+				chrome.storage.sync.set({ savedRecords: records }, function () {
+					console.log('Record deleted');
+					loadRecords(); // 重新加载并渲染记录列表
+				});
+			}
+		});
 	});
 }
+
 
 function displayRecords() {
 	const container = document.getElementById('records-container');

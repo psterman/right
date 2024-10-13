@@ -603,15 +603,18 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
                 id: 'pasteCheckbox', text: '保存', action: () => {
                     console.log('Save record action triggered');
                     const selectedText = window.getSelection().toString().trim();
+                    const currentUrl = window.location.href; // 获取当前页面的 URL
+
                     if (selectedText) {
                         chrome.storage.sync.get('savedRecords', function (data) {
                             const records = data.savedRecords || [];
                             records.push({
                                 text: selectedText,
+                                url: currentUrl, // 确保这里保存了 URL
                                 timestamp: Date.now()
                             });
                             chrome.storage.sync.set({ savedRecords: records }, function () {
-                                console.log('Record saved');
+                                console.log('Record saved:', { text: selectedText, url: currentUrl });
                                 showNotification('记录已保存');
                             });
                         });
