@@ -454,11 +454,10 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     var popup = document.createElement('div');
     popup.style.position = 'fixed';
     popup.style.zIndex = '2147483647';
-    popup.style.borderRadius = '20px';
-    popup.style.backgroundColor = 'black';
+    popup.style.borderRadius = '18px'; // 调整圆角
     popup.className = 'search-popup flex-container';
-    popup.style.maxWidth = 'auto';
-    popup.style.overflow = 'auto';
+    popup.style.overflow = 'hidden'; // 隐藏溢出内容
+    popup.style.padding = '0px'; // 添加内边距
 
     var searchLinksContainer = document.createElement('div');
     searchLinksContainer.style.display = 'flex';
