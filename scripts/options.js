@@ -139,19 +139,113 @@ function exportRecords() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+	const body = document.body;
 	const cursorImages = document.querySelectorAll('.cursor-image');
-	const contentArea = document.getElementById('content-area');
 	const resetButton = document.getElementById('reset-cursor');
+	let customCursor = null;
+	let isCustomCursorActive = false;
+	let lastKnownMousePosition = { x: 0, y: 0 };
+	let isUpdating = false;
+
+	function debounce(func, wait) {
+		let timeout;
+		return function executedFunction(...args) {
+			const later = () => {
+				clearTimeout(timeout);
+				func(...args);
+			};
+			clearTimeout(timeout);
+			timeout = setTimeout(later, wait);
+		};
+	}
+
+	function createOrUpdateCustomCursor(cursorUrl) {
+		if (!customCursor) {
+			customCursor = document.createElement('div');
+			customCursor.id = 'custom-cursor';
+			body.appendChild(customCursor);
+		}
+
+		customCursor.style.cssText = `
+      position: fixed;
+      pointer-events: none;
+      width: 32px;
+      height: 32px;
+      background-image: url('${cursorUrl}');
+      background-size: contain;
+      background-repeat: no-repeat;
+      z-index: 9999;
+      display: none;
+      left: ${lastKnownMousePosition.x}px;
+      top: ${lastKnownMousePosition.y}px;
+    `;
+	}
+
+	function updateCursor(cursorUrl) {
+		if (isUpdating) return;
+		isUpdating = true;
+
+		const img = new Image();
+		img.onload = () => {
+			createOrUpdateCustomCursor(cursorUrl);
+			body.classList.add('custom-cursor');
+			isCustomCursorActive = true;
+			showCursor();
+			isUpdating = false;
+		};
+		img.src = cursorUrl;
+
+		if (!isCustomCursorActive) {
+			document.addEventListener('mousemove', moveCursor);
+			document.addEventListener('mouseenter', showCursor);
+			document.addEventListener('mouseleave', hideCursor);
+		}
+	}
+
+	const debouncedUpdateCursor = debounce(updateCursor, 200);
+
+	function moveCursor(e) {
+		lastKnownMousePosition = { x: e.clientX, y: e.clientY };
+		if (customCursor && isCustomCursorActive) {
+			customCursor.style.left = `${e.clientX}px`;
+			customCursor.style.top = `${e.clientY}px`;
+		}
+	}
+
+	function showCursor() {
+		if (customCursor && isCustomCursorActive) {
+			customCursor.style.display = 'block';
+		}
+	}
+
+	function hideCursor() {
+		if (customCursor) {
+			customCursor.style.display = 'none';
+		}
+	}
 
 	cursorImages.forEach(img => {
 		img.addEventListener('click', () => {
-			contentArea.style.cursor = `url('${img.src}'), auto`;
+			cursorImages.forEach(i => i.classList.remove('selected'));
+			img.classList.add('selected');
+			debouncedUpdateCursor(img.src);
 		});
 	});
 
 	resetButton.addEventListener('click', () => {
-		contentArea.style.cursor = 'default';
+		if (customCursor) {
+			customCursor.remove();
+			customCursor = null;
+		}
+		body.classList.remove('custom-cursor');
+		isCustomCursorActive = false;
+		document.removeEventListener('mousemove', moveCursor);
+		document.removeEventListener('mouseenter', showCursor);
+		document.removeEventListener('mouseleave', hideCursor);
+		cursorImages.forEach(img => img.classList.remove('selected'));
 	});
+
+	document.addEventListener('mousemove', moveCursor);
 	loadRecords();
 	const popupMenuToggle = document.getElementById('popupMenuToggle');
 
