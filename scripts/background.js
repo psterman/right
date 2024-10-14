@@ -604,9 +604,9 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 	if (message.action === 'openSidebar') {
-      
+
 		var sidebarUrl = message.sidebarUrl;
-        
+
 		// 打开侧边栏并直接加载 URL
 		chrome.sidePanel.open({ windowId: sender.tab.windowId }, function () {
 			setTimeout(function () {
@@ -786,22 +786,22 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
 // 监听来自背景脚本的消息，以便处理 'openHomepageAndSidebar' 动作
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-    if (message.action === 'openSidebarWithURLs') {
-        // 打开侧边栏并加载消息中提供的 URLs
-        chrome.sidePanel.open({
-            url: message.sidebarUrl, // 使用消息中提供的侧边栏 URL
-            windowId: sender.tab.windowId
-        }, function () {
-            // 可以在这里添加打开后要执行的代码，例如发送当前页面 URL 到 panel 中
-            // 这里使用了 setTimeout 来确保侧边栏加载完成
-            setTimeout(function () {
-                chrome.runtime.sendMessage({
-                    action: 'updateMainPage', // 假设这是 panel 中需要执行的动作
-                    value: message.currentUrl // 发送当前页面的 URL
-                });
-            }, 500);
-        });
-    }
+	if (message.action === 'openSidebarWithURLs') {
+		// 打开侧边栏并加载消息中提供的 URLs
+		chrome.sidePanel.open({
+			url: message.sidebarUrl, // 使用消息中提供的侧边栏 URL
+			windowId: sender.tab.windowId
+		}, function () {
+			// 可以在这里添加打开后要执行的代码，例如发送当前页面 URL 到 panel 中
+			// 这里使用了 setTimeout 来确保侧边栏加载完成
+			setTimeout(function () {
+				chrome.runtime.sendMessage({
+					action: 'updateMainPage', // 假设这是 panel 中需要执行的动作
+					value: message.currentUrl // 发送当前页面的 URL
+				});
+			}, 500);
+		});
+	}
 });
 
 // 存储的 previousUrl
@@ -822,7 +822,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 		sendResponse({ ready: true });
 	} else if (message.action === 'loadSidebarUrl') {
 		// 加载存储的 previousUrl 到侧边栏
-		var urlToLoad = previousUrl ;
+		var urlToLoad = previousUrl;
 		chrome.tabs.update(sender.tab.id, { url: urlToLoad });
 	}
 });
@@ -886,7 +886,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 		return true;  // 保持消息通道开放,以便异步发送响应
 	}
 });
-<<<<<<< HEAD
 // 当新标签页打开或更新时，应用当前的光标设置
 function applyCursorToTab(tabId) {
 	chrome.storage.sync.get('selectedCursor', (data) => {
@@ -933,40 +932,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		});
 		return true; // 保持消息通道开放
 	}
-=======
-let currentCursorUrl = null;
-
-// 当扩展安装或更新时，检查是否有保存的光标设置
-chrome.runtime.onInstalled.addListener(() => {
-	chrome.storage.sync.get('customCursorUrl', function (data) {
-		if (data.customCursorUrl) {
-			currentCursorUrl = data.customCursorUrl;
-		}
-	});
-});
-function updateAllTabs(cursorUrl) {  // 添加这个新函数
-	chrome.tabs.query({}, (tabs) => {
-		tabs.forEach((tab) => {
-			chrome.tabs.sendMessage(tab.id, { action: "updateCursor", cursorUrl: cursorUrl })
-				.catch(error => console.log("Error sending message to tab:", tab.id, error));
-		});
-	});
-}
-// 监听存储变化
-chrome.storage.onChanged.addListener((changes, namespace) => {
-	if (namespace === 'sync' && changes.customCursorUrl) {
-		const cursorUrl = changes.customCursorUrl.newValue;
-		updateAllTabs(cursorUrl);  // 使用新函数
-	}
-});
-
-// 当新标签页创建时，发送当前的光标设置
-chrome.tabs.onCreated.addListener((tab) => {
-	chrome.storage.sync.get('customCursorUrl', function (data) {
-		if (data.customCursorUrl) {
-			chrome.tabs.sendMessage(tab.id, { action: "updateCursor", cursorUrl: data.customCursorUrl })
-				.catch(error => console.log("Error sending message to new tab:", tab.id, error));
-		}
-	});
->>>>>>> 532e7a2fa324b7f79448811b51a79e65932fddda
 });

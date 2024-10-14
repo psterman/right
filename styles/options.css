@@ -2913,28 +2913,10 @@ button {
   transform: scale(1.1);
 }
 
-<<<<<<< HEAD
 body.custom-cursor {
   cursor: none !important;
 }
 
 body.custom-cursor * {
   cursor: inherit !important;
-=======
-body.custom-cursor,
-body.custom-cursor * {
-  cursor: none !important;
-}
-
-#custom-cursor {
-  pointer-events: none;
-  position: fixed;
-  z-index: 9999;
-  width: 32px;
-  /* 添加宽度 */
-  height: 32px;
-  /* 添加高度 */
-  background-size: contain;
-  background-repeat: no-repeat;
->>>>>>> 532e7a2fa324b7f79448811b51a79e65932fddda
 }
