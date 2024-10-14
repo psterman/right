@@ -2913,10 +2913,19 @@ button {
   transform: scale(1.1);
 }
 
-body.custom-cursor {
+body.custom-cursor,
+body.custom-cursor * {
   cursor: none !important;
 }
 
-body.custom-cursor * {
-  cursor: inherit !important;
+#custom-cursor {
+  pointer-events: none;
+  position: fixed;
+  z-index: 9999;
+  width: 32px;
+  /* 添加宽度 */
+  height: 32px;
+  /* 添加高度 */
+  background-size: contain;
+  background-repeat: no-repeat;
 }

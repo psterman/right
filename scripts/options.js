@@ -147,6 +147,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	let lastKnownMousePosition = { x: 0, y: 0 };
 	let isUpdating = false;
 
+	// 从localStorage加载保存的光标URL
+	const savedCursorUrl = localStorage.getItem('customCursorUrl');
+
 	function debounce(func, wait) {
 		let timeout;
 		return function executedFunction(...args) {
@@ -192,6 +195,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			isCustomCursorActive = true;
 			showCursor();
 			isUpdating = false;
+
+			// 保存选择的光标URL到localStorage
+			localStorage.setItem('customCursorUrl', cursorUrl);
 		};
 		img.src = cursorUrl;
 
@@ -243,9 +249,24 @@ document.addEventListener('DOMContentLoaded', function () {
 		document.removeEventListener('mouseenter', showCursor);
 		document.removeEventListener('mouseleave', hideCursor);
 		cursorImages.forEach(img => img.classList.remove('selected'));
+
+		// 清除保存的光标URL
+		localStorage.removeItem('customCursorUrl');
 	});
 
 	document.addEventListener('mousemove', moveCursor);
+
+	// 立即隐藏默认光标
+	body.classList.add('custom-cursor');
+
+	// 如果有保存的光标URL，则恢复它
+	if (savedCursorUrl) {
+		const savedCursorImage = Array.from(cursorImages).find(img => img.src === savedCursorUrl);
+		if (savedCursorImage) {
+			savedCursorImage.classList.add('selected');
+			updateCursor(savedCursorUrl);
+		}
+	}
 	loadRecords();
 	const popupMenuToggle = document.getElementById('popupMenuToggle');
 
