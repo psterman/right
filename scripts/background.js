@@ -886,3 +886,50 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 		return true;  // 保持消息通道开放,以便异步发送响应
 	}
 });
+// 当新标签页打开或更新时，应用当前的光标设置
+function applyCursorToTab(tabId) {
+	chrome.storage.sync.get('selectedCursor', (data) => {
+		if (data.selectedCursor) {
+			chrome.tabs.sendMessage(tabId, { action: 'updateCursor', cursor: data.selectedCursor });
+		}
+	});
+}
+
+// 当新标签页打开时，应用当前的光标设置
+chrome.tabs.onCreated.addListener((tab) => {
+	applyCursorToTab(tab.id);
+});
+
+// 当标签页更新完成时，应用当前的光标设置
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+	if (changeInfo.status === 'complete') {
+		applyCursorToTab(tabId);
+	}
+});
+
+// 监听来自 options.js 的消息，更新光标设置
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+	if (request.action === 'updateCursor') {
+		chrome.storage.sync.set({ selectedCursor: request.cursor }, () => {
+			// 通知所有标签页更新光标
+			chrome.tabs.query({}, (tabs) => {
+				tabs.forEach((tab) => {
+					chrome.tabs.sendMessage(tab.id, { action: 'updateCursor', cursor: request.cursor });
+				});
+			});
+			sendResponse({ success: true });
+		});
+		return true; // 保持消息通道开放
+	} else if (request.action === 'resetCursor') {
+		chrome.storage.sync.remove('selectedCursor', () => {
+			// 通知所有标签页重置光标
+			chrome.tabs.query({}, (tabs) => {
+				tabs.forEach((tab) => {
+					chrome.tabs.sendMessage(tab.id, { action: 'resetCursor' });
+				});
+			});
+			sendResponse({ success: true });
+		});
+		return true; // 保持消息通道开放
+	}
+});

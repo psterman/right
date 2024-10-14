@@ -2904,16 +2904,19 @@ button {
 }
 
 .cursor-image {
-  width: 32px;
-  height: 32px;
-  cursor: pointer;
-  margin-right: 10px;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
 }
 
-#content-area {
-  width: 100%;
-  height: 200px;
-  border: 1px solid #ccc;
-  margin-top: 10px;
-  padding: 10px;
+.cursor-image.selected {
+  border-color: #007bff;
+  transform: scale(1.1);
+}
+
+body.custom-cursor {
+  cursor: none !important;
+}
+
+body.custom-cursor * {
+  cursor: inherit !important;
 }

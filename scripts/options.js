@@ -8,6 +8,7 @@ let customSearchEngines = [];
 let allRecords = [];
 const recordsPerPage = 10;
 let currentPage = 1;
+
 // 在文件顶部添加这段代码
 // 定义要保存状态的复选框ID列表
 const checkboxIds = [
@@ -139,19 +140,153 @@ function exportRecords() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+	const body = document.body;
 	const cursorImages = document.querySelectorAll('.cursor-image');
-	const contentArea = document.getElementById('content-area');
 	const resetButton = document.getElementById('reset-cursor');
+	let customCursor = null;
+	let isCustomCursorActive = false;
+	let lastKnownMousePosition = { x: 0, y: 0 };
+	let isUpdating = false;
 
+	// 加载保存的光标设置
+	loadSavedCursor();
+
+	// 为每个光标图像添加点击事件监听器
 	cursorImages.forEach(img => {
-		img.addEventListener('click', () => {
-			contentArea.style.cursor = `url('${img.src}'), auto`;
+		img.addEventListener('click', function () {
+			selectCursor(this.src);
 		});
 	});
 
+	function loadSavedCursor() {
+		chrome.storage.sync.get('selectedCursor', function (data) {
+			if (data.selectedCursor) {
+				const savedCursor = document.querySelector(`.cursor-image[src="${data.selectedCursor}"]`);
+				if (savedCursor) {
+					selectCursor(data.selectedCursor, false);
+				}
+			}
+		});
+	}
+
+	function selectCursor(cursorUrl, save = true) {
+		cursorImages.forEach(i => i.classList.remove('selected'));
+		const selectedImg = document.querySelector(`.cursor-image[src="${cursorUrl}"]`);
+		if (selectedImg) {
+			selectedImg.classList.add('selected');
+		}
+
+		if (save) {
+			chrome.storage.sync.set({ selectedCursor: cursorUrl }, function () {
+				console.log('Cursor saved:', cursorUrl);
+			});
+		}
+
+		debouncedUpdateCursor(cursorUrl);
+	}
+
+	function debounce(func, wait) {
+		let timeout;
+		return function executedFunction(...args) {
+			const later = () => {
+				clearTimeout(timeout);
+				func(...args);
+			};
+			clearTimeout(timeout);
+			timeout = setTimeout(later, wait);
+		};
+	}
+
+	function createOrUpdateCustomCursor(cursorUrl) {
+		if (!customCursor) {
+			customCursor = document.createElement('div');
+			customCursor.id = 'custom-cursor';
+			body.appendChild(customCursor);
+		}
+
+		customCursor.style.cssText = `
+            position: fixed;
+            pointer-events: none;
+            width: 32px;
+            height: 32px;
+            background-image: url('${cursorUrl}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            z-index: 9999;
+            display: none;
+            left: ${lastKnownMousePosition.x}px;
+            top: ${lastKnownMousePosition.y}px;
+        `;
+	}
+
+	function updateCursor(cursorUrl) {
+		if (isUpdating) return;
+		isUpdating = true;
+
+		const img = new Image();
+		img.onload = () => {
+			createOrUpdateCustomCursor(cursorUrl);
+			body.classList.add('custom-cursor');
+			isCustomCursorActive = true;
+			showCursor();
+			isUpdating = false;
+		};
+		img.src = cursorUrl;
+
+		if (!isCustomCursorActive) {
+			document.addEventListener('mousemove', moveCursor);
+			document.addEventListener('mouseenter', showCursor);
+			document.addEventListener('mouseleave', hideCursor);
+		}
+
+		// 发送消息给 background.js 更新其他标签页的光标
+		chrome.runtime.sendMessage({ action: 'updateCursor', cursor: cursorUrl });
+	}
+
+	const debouncedUpdateCursor = debounce(updateCursor, 200);
+
+	function moveCursor(e) {
+		lastKnownMousePosition = { x: e.clientX, y: e.clientY };
+		if (customCursor && isCustomCursorActive) {
+			customCursor.style.left = `${e.clientX}px`;
+			customCursor.style.top = `${e.clientY}px`;
+		}
+	}
+
+	function showCursor() {
+		if (customCursor && isCustomCursorActive) {
+			customCursor.style.display = 'block';
+		}
+	}
+
+	function hideCursor() {
+		if (customCursor) {
+			customCursor.style.display = 'none';
+		}
+	}
+
 	resetButton.addEventListener('click', () => {
-		contentArea.style.cursor = 'default';
+		if (customCursor) {
+			customCursor.remove();
+			customCursor = null;
+		}
+		body.classList.remove('custom-cursor');
+		isCustomCursorActive = false;
+		document.removeEventListener('mousemove', moveCursor);
+		document.removeEventListener('mouseenter', showCursor);
+		document.removeEventListener('mouseleave', hideCursor);
+		cursorImages.forEach(img => img.classList.remove('selected'));
+
+		// 重置存储的光标设置
+		chrome.storage.sync.remove('selectedCursor', function () {
+			console.log('Cursor reset');
+		});
+
+		// 发送消息给 background.js 重置其他标签页的光标
+		chrome.runtime.sendMessage({ action: 'resetCursor' });
 	});
+
+	document.addEventListener('mousemove', moveCursor);
 	loadRecords();
 	const popupMenuToggle = document.getElementById('popupMenuToggle');
 
@@ -169,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 	});
 	const actionsWrapper = document.createElement('div');
-	 actionsWrapper.className = 'actions-wrapper';
+	actionsWrapper.className = 'actions-wrapper';
 	const clearRecordsButton = document.getElementById('clear-records');
 	const confirmDialog = document.getElementById('confirm-dialog');
 	const confirmClearButton = document.getElementById('confirm-clear');
@@ -2223,7 +2358,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	const customSearchEngineList = document.getElementById('customSearchEngineList');
 
 
-	
+
 
 	function renderCustomSearchEngines() {
 		customSearchEngineList.innerHTML = '';
@@ -2325,7 +2460,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	ctrlSelectCheckbox.addEventListener('change', function () {
 		saveSettings();
 	});
-directionSearchToggle.addEventListener('change', function () {
+	directionSearchToggle.addEventListener('change', function () {
 		saveSettings();
 	});
 	function saveSettings() {
@@ -2357,7 +2492,7 @@ directionSearchToggle.addEventListener('change', function () {
 	var addEngineButton = document.getElementById('addEngineButton');
 	addEngineButton.addEventListener('click', addEngine);
 	// 获取复选框元素
-	
+
 	chrome.storage.sync.get('savedPages', function (items) {
 		if (items.savedPages) {
 			var savedPages = items.savedPages;
@@ -2465,7 +2600,7 @@ directionSearchToggle.addEventListener('change', function () {
 			updateCheckboxes(items.selectedEngines);
 		}
 	});
-	
+
 	// 为每个复选框添加 "change" 事件监听器，以保存更改的状态
 	document.querySelectorAll('.engine-checkbox').forEach(checkbox => {
 		checkbox.addEventListener('change', function () {
@@ -2482,7 +2617,7 @@ directionSearchToggle.addEventListener('change', function () {
 			chrome.storage.sync.set({ selectedEngines: searchEngineList });
 		});
 	});
-	
+
 	// 从存储中读取复选框状态
 	chrome.storage.sync.get('websiteList', function (result) {
 		if (result.websiteList) {
@@ -2535,7 +2670,7 @@ directionSearchToggle.addEventListener('change', function () {
 	}
 
 
-	
+
 	function addWebsiteToList(name, url, index) {
 		var listItem = document.createElement('li');
 		var nameSpan = document.createElement('span');
@@ -2645,7 +2780,7 @@ chrome.runtime.sendMessage({
 	refreshOption: refreshCheckbox.checked,
 	downloadOption: downloadCheckbox.checked,
 	pasteOption: pasteCheckbox.checked,
-	closesidepanelOption: closesidepanelCheckbox.checked 
+	closesidepanelOption: closesidepanelCheckbox.checked
 });
 // 定义搜索引擎数据数组
 var searchEngineData = [
@@ -3179,7 +3314,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	// 修改：更新UI函数
 	function updateDirectionSearchUI() {
-    const directionSearchToggle = document.getElementById('directionSearchToggle');
+		const directionSearchToggle = document.getElementById('directionSearchToggle');
 		// 新增: 加载保存的设置
 		chrome.storage.sync.get(['searchEnabled'], function (result) {
 			directionSearchToggle.checked = result.searchEnabled !== false;
@@ -3189,12 +3324,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		directionSearchToggle.addEventListener('change', function () {
 			chrome.storage.sync.set({ searchEnabled: this.checked });
 		});
-    const emojiDirections = document.querySelector('.emoji-directions');
-    if (emojiDirections) {
-        emojiDirections.style.display = directionSearchToggle.checked ? 'grid' : 'none';
-        console.log('方向搜索UI已更新,显示状态:', emojiDirections.style.display);
-    }
-}
+		const emojiDirections = document.querySelector('.emoji-directions');
+		if (emojiDirections) {
+			emojiDirections.style.display = directionSearchToggle.checked ? 'grid' : 'none';
+			console.log('方向搜索UI已更新,显示状态:', emojiDirections.style.display);
+		}
+	}
 
 	// 修改：监听复选框状态变化
 	directionSearchToggle.addEventListener('change', function () {
@@ -3204,7 +3339,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 
 	// 修改：页面加载时初始化设置
-	loadSettings();		
+	loadSettings();
 	loadCurrentSearchEngines();
 	initCustomSelects();
 	updateAllEngineLists(); // 初始化所有 select-menu

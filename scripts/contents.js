@@ -15,7 +15,101 @@ chrome.storage.sync.get('id2enginemap', function (result) {
 });
 let directionSearchEnabled = false;
 let directionEngines = {};
+let customCursor = null;
 
+// 获取当前选择的光标
+function getCurrentCursor() {
+    return new Promise((resolve) => {
+        chrome.storage.sync.get('selectedCursor', (data) => {
+            resolve(data.selectedCursor || 'default');
+        });
+    });
+}
+
+// 应用光标样式
+async function applyCursor() {
+    const cursorUrl = await getCurrentCursor();
+    if (cursorUrl && cursorUrl !== 'default') {
+        document.body.style.cursor = `url(${cursorUrl}), auto`;
+        createCustomCursor(cursorUrl);
+    } else {
+        document.body.style.cursor = 'default';
+        removeCustomCursor();
+    }
+}
+
+function createCustomCursor(cursorUrl) {
+    if (!customCursor) {
+        customCursor = document.createElement('div');
+        customCursor.id = 'custom-cursor';
+        document.body.appendChild(customCursor);
+    }
+
+    customCursor.style.cssText = `
+        position: fixed;
+        pointer-events: none;
+        width: 32px;
+        height: 32px;
+        background-image: url('${cursorUrl}');
+        background-size: contain;
+        background-repeat: no-repeat;
+        z-index: 9999;
+        display: none;
+    `;
+
+    document.addEventListener('mousemove', moveCursor);
+    document.addEventListener('mouseenter', showCursor);
+    document.addEventListener('mouseleave', hideCursor);
+}
+
+function removeCustomCursor() {
+    if (customCursor) {
+        customCursor.remove();
+        customCursor = null;
+    }
+    document.removeEventListener('mousemove', moveCursor);
+    document.removeEventListener('mouseenter', showCursor);
+    document.removeEventListener('mouseleave', hideCursor);
+}
+
+function moveCursor(e) {
+    if (customCursor) {
+        customCursor.style.left = `${e.clientX}px`;
+        customCursor.style.top = `${e.clientY}px`;
+    }
+}
+
+function showCursor() {
+    if (customCursor) {
+        customCursor.style.display = 'block';
+    }
+}
+
+function hideCursor() {
+    if (customCursor) {
+        customCursor.style.display = 'none';
+    }
+}
+
+// 监听存储变化
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync' && changes.selectedCursor) {
+        applyCursor();
+    }
+});
+
+// 监听来自background.js的消息
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'updateCursor') {
+        applyCursor();
+    } else if (request.action === 'resetCursor') {
+        document.body.style.cursor = 'default';
+        removeCustomCursor();
+    }
+});
+
+// 初始应用光标
+applyCursor();
 chrome.storage.sync.get(['selectedEngines', 'directionSearchEnabled', 'directionEngines', 'id2enginemap'], function (result) {
     selectedEngines = result.selectedEngines || [];
     directionSearchEnabled = result.directionSearchEnabled || false;
