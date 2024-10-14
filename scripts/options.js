@@ -147,14 +147,111 @@ document.addEventListener('DOMContentLoaded', function () {
 	let isCustomCursorActive = false;
 	let lastKnownMousePosition = { x: 0, y: 0 };
 	let isUpdating = false;
+<<<<<<< HEAD
+=======
+
+	// 从localStorage加载保存的光标URL
+	const savedCursorUrl = localStorage.getItem('customCursorUrl');
+
+	function debounce(func, wait) {
+		let timeout;
+		return function executedFunction(...args) {
+			const later = () => {
+				clearTimeout(timeout);
+				func(...args);
+			};
+			clearTimeout(timeout);
+			timeout = setTimeout(later, wait);
+		};
+	}
+
+	function createOrUpdateCustomCursor(cursorUrl) {
+		if (!customCursor) {
+			customCursor = document.createElement('div');
+			customCursor.id = 'custom-cursor';
+			body.appendChild(customCursor);
+		}
+
+		customCursor.style.cssText = `
+      position: fixed;
+      pointer-events: none;
+      width: 32px;
+      height: 32px;
+      background-image: url('${cursorUrl}');
+      background-size: contain;
+      background-repeat: no-repeat;
+      z-index: 9999;
+      display: none;
+      left: ${lastKnownMousePosition.x}px;
+      top: ${lastKnownMousePosition.y}px;
+    `;
+	}
+
+	function updateCursor(cursorUrl) {
+		if (isUpdating) return;
+		isUpdating = true;
+
+		const img = new Image();
+		img.onload = () => {
+			createOrUpdateCustomCursor(cursorUrl);
+			body.classList.add('custom-cursor');
+			isCustomCursorActive = true;
+			showCursor();
+			isUpdating = false;
+
+			// 保存用户的光标选择
+			chrome.storage.sync.set({ customCursorUrl: cursorUrl }, function () {
+				console.log('Cursor preference saved:', cursorUrl);
+				// 立即应用到当前页面
+				applyCustomCursor(cursorUrl);
+			});
+		};
+		img.src = cursorUrl;
+
+		if (!isCustomCursorActive) {
+			document.addEventListener('mousemove', moveCursor);
+			document.addEventListener('mouseenter', showCursor);
+			document.addEventListener('mouseleave', hideCursor);
+		}
+	}
+
+	const debouncedUpdateCursor = debounce(updateCursor, 200);
+
+	function moveCursor(e) {
+		lastKnownMousePosition = { x: e.clientX, y: e.clientY };
+		if (customCursor && isCustomCursorActive) {
+			customCursor.style.left = `${e.clientX}px`;
+			customCursor.style.top = `${e.clientY}px`;
+		}
+	}
+
+	function showCursor() {
+		if (customCursor && isCustomCursorActive) {
+			customCursor.style.display = 'block';
+		}
+	}
+
+	function hideCursor() {
+		if (customCursor) {
+			customCursor.style.display = 'none';
+		}
+	}
+>>>>>>> 532e7a2fa324b7f79448811b51a79e65932fddda
 
 	// 加载保存的光标设置
 	loadSavedCursor();
 
 	// 为每个光标图像添加点击事件监听器
 	cursorImages.forEach(img => {
+<<<<<<< HEAD
 		img.addEventListener('click', function () {
 			selectCursor(this.src);
+=======
+		img.addEventListener('click', () => {
+			cursorImages.forEach(i => i.classList.remove('selected'));
+			img.classList.add('selected');
+			debouncedUpdateCursor(img.src);
+>>>>>>> 532e7a2fa324b7f79448811b51a79e65932fddda
 		});
 	});
 
@@ -277,6 +374,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		document.removeEventListener('mouseleave', hideCursor);
 		cursorImages.forEach(img => img.classList.remove('selected'));
 
+<<<<<<< HEAD
 		// 重置存储的光标设置
 		chrome.storage.sync.remove('selectedCursor', function () {
 			console.log('Cursor reset');
@@ -287,6 +385,28 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 
 	document.addEventListener('mousemove', moveCursor);
+=======
+		
+		// 清除存储的光标选择
+		chrome.storage.sync.remove('customCursorUrl', function () {
+			console.log('Cursor preference cleared');
+		});
+	});
+
+	document.addEventListener('mousemove', moveCursor);
+
+	// 立即隐藏默认光标
+	body.classList.add('custom-cursor');
+
+	// 如果有保存的光标URL，则恢复它
+	if (savedCursorUrl) {
+		const savedCursorImage = Array.from(cursorImages).find(img => img.src === savedCursorUrl);
+		if (savedCursorImage) {
+			savedCursorImage.classList.add('selected');
+			updateCursor(savedCursorUrl);
+		}
+	}
+>>>>>>> 532e7a2fa324b7f79448811b51a79e65932fddda
 	loadRecords();
 	const popupMenuToggle = document.getElementById('popupMenuToggle');
 
