@@ -139,6 +139,19 @@ function exportRecords() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+	const cursorImages = document.querySelectorAll('.cursor-image');
+	const contentArea = document.getElementById('content-area');
+	const resetButton = document.getElementById('reset-cursor');
+
+	cursorImages.forEach(img => {
+		img.addEventListener('click', () => {
+			contentArea.style.cursor = `url('${img.src}'), auto`;
+		});
+	});
+
+	resetButton.addEventListener('click', () => {
+		contentArea.style.cursor = 'default';
+	});
 	loadRecords();
 	const popupMenuToggle = document.getElementById('popupMenuToggle');
 
