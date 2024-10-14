@@ -16,6 +16,78 @@ chrome.storage.sync.get('id2enginemap', function (result) {
 let directionSearchEnabled = false;
 let directionEngines = {};
 
+let customCursor = null;
+let isCustomCursorActive = false;
+
+function createOrUpdateCustomCursor(cursorUrl) {
+    if (!customCursor) {
+        customCursor = document.createElement('div');
+        customCursor.id = 'extension-custom-cursor';
+        document.body.appendChild(customCursor);
+    }
+
+    customCursor.style.cssText = `
+    position: fixed;
+    pointer-events: none;
+    width: 32px;
+    height: 32px;
+    background-image: url('${cursorUrl}');
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 2147483647;
+    display: none;
+  `;
+
+    isCustomCursorActive = true;
+    document.body.style.cursor = 'none';
+    console.log("Custom cursor updated with URL:", cursorUrl);
+}
+
+function moveCursor(e) {
+    if (customCursor && isCustomCursorActive) {
+        customCursor.style.left = `${e.clientX}px`;
+        customCursor.style.top = `${e.clientY}px`;
+        customCursor.style.display = 'block';
+    }
+}
+
+function showCursor() {
+    if (customCursor && isCustomCursorActive) {
+        customCursor.style.display = 'block';
+    }
+}
+
+function hideCursor() {
+    if (customCursor) {
+        customCursor.style.display = 'none';
+    }
+}
+
+function applyCustomCursor(cursorUrl) {
+    createOrUpdateCustomCursor(cursorUrl);
+    document.removeEventListener('mousemove', moveCursor);
+    document.removeEventListener('mouseenter', showCursor);
+    document.removeEventListener('mouseleave', hideCursor);
+    document.addEventListener('mousemove', moveCursor);
+    document.addEventListener('mouseenter', showCursor);
+    document.addEventListener('mouseleave', hideCursor);
+}
+
+// 监听来自 background script 的消息
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "updateCursor") {
+        console.log("Received updateCursor message:", request.cursorUrl);
+        applyCustomCursor(request.cursorUrl);
+    }
+});
+
+// 页面加载时检查是否有保存的光标设置
+chrome.storage.sync.get('customCursorUrl', function (data) {
+    if (data.customCursorUrl) {
+        console.log("Loaded saved cursor URL:", data.customCursorUrl);
+        applyCustomCursor(data.customCursorUrl);
+    }
+});
 chrome.storage.sync.get(['selectedEngines', 'directionSearchEnabled', 'directionEngines', 'id2enginemap'], function (result) {
     selectedEngines = result.selectedEngines || [];
     directionSearchEnabled = result.directionSearchEnabled || false;
@@ -269,16 +341,23 @@ document.addEventListener('DOMContentLoaded', addFloatingIcon);
 
 // 为了确保在动态加载的页面上也能显示悬浮图标，我们可以使用 MutationObserver
 const observer = new MutationObserver((mutations) => {
-    if (!document.getElementById('extension-floating-icon')) {
-        addFloatingIcon();
-    }
+    mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+            const addedNodes = mutation.addedNodes;
+            for (let i = 0; i < addedNodes.length; i++) {
+                const node = addedNodes[i];
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    node.style.cursor = 'none';
+                }
+            }
+        }
+    });
 });
 
 observer.observe(document.body, {
     childList: true,
     subtree: true
 });
-
 // 监听来自 background.js 的消息
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === 'updateSearchSettings') {

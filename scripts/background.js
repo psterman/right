@@ -886,3 +886,38 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 		return true;  // 保持消息通道开放,以便异步发送响应
 	}
 });
+let currentCursorUrl = null;
+
+// 当扩展安装或更新时，检查是否有保存的光标设置
+chrome.runtime.onInstalled.addListener(() => {
+	chrome.storage.sync.get('customCursorUrl', function (data) {
+		if (data.customCursorUrl) {
+			currentCursorUrl = data.customCursorUrl;
+		}
+	});
+});
+function updateAllTabs(cursorUrl) {  // 添加这个新函数
+	chrome.tabs.query({}, (tabs) => {
+		tabs.forEach((tab) => {
+			chrome.tabs.sendMessage(tab.id, { action: "updateCursor", cursorUrl: cursorUrl })
+				.catch(error => console.log("Error sending message to tab:", tab.id, error));
+		});
+	});
+}
+// 监听存储变化
+chrome.storage.onChanged.addListener((changes, namespace) => {
+	if (namespace === 'sync' && changes.customCursorUrl) {
+		const cursorUrl = changes.customCursorUrl.newValue;
+		updateAllTabs(cursorUrl);  // 使用新函数
+	}
+});
+
+// 当新标签页创建时，发送当前的光标设置
+chrome.tabs.onCreated.addListener((tab) => {
+	chrome.storage.sync.get('customCursorUrl', function (data) {
+		if (data.customCursorUrl) {
+			chrome.tabs.sendMessage(tab.id, { action: "updateCursor", cursorUrl: data.customCursorUrl })
+				.catch(error => console.log("Error sending message to new tab:", tab.id, error));
+		}
+	});
+});

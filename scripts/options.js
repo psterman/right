@@ -196,8 +196,12 @@ document.addEventListener('DOMContentLoaded', function () {
 			showCursor();
 			isUpdating = false;
 
-			// 保存选择的光标URL到localStorage
-			localStorage.setItem('customCursorUrl', cursorUrl);
+			// 保存用户的光标选择
+			chrome.storage.sync.set({ customCursorUrl: cursorUrl }, function () {
+				console.log('Cursor preference saved:', cursorUrl);
+				// 立即应用到当前页面
+				applyCustomCursor(cursorUrl);
+			});
 		};
 		img.src = cursorUrl;
 
@@ -250,8 +254,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		document.removeEventListener('mouseleave', hideCursor);
 		cursorImages.forEach(img => img.classList.remove('selected'));
 
-		// 清除保存的光标URL
-		localStorage.removeItem('customCursorUrl');
+		
+		// 清除存储的光标选择
+		chrome.storage.sync.remove('customCursorUrl', function () {
+			console.log('Cursor preference cleared');
+		});
 	});
 
 	document.addEventListener('mousemove', moveCursor);
