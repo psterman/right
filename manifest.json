@@ -40,7 +40,7 @@
          "matches": [
             "<all_urls>"
          ],
-         "run_at": "document_start"
+         "run_at": "document_end"
       }
    ],
    "web_accessible_resources": [ 
