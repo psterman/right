@@ -3,7 +3,6 @@ let currentPopup = null;
 // 从存储中检索选中的搜索引擎
 // 假设这是在 contents.js 中的现有代码
 let selectedEngines = []; // 声明全局变量
-let isFirstClickOutside = false;
 let longPressEnabled = true;
 let ctrlSelectEnabled = true;
 let currentNotification = null; // 全局变量，用于跟踪当前显示的通知
@@ -16,66 +15,7 @@ chrome.storage.sync.get('id2enginemap', function (result) {
 });
 let directionSearchEnabled = false;
 let directionEngines = {};
-let cursorStyleElement = null;
 
-// 获取当前选择的光标
-function getCurrentCursor() {
-    return new Promise((resolve) => {
-        chrome.storage.sync.get('selectedCursor', (data) => {
-            resolve(data.selectedCursor || 'default');
-        });
-    });
-}
-
-// 应用光标样式
-async function applyCursor() {
-    const cursorUrl = await getCurrentCursor();
-    if (cursorUrl && cursorUrl !== 'default') {
-        const css = `
-            body, body * {
-                cursor: url(${cursorUrl}), auto !important;
-            }
-        `;
-        applyStyles(css);
-    } else {
-        removeStyles();
-    }
-}
-
-// 应用样式
-function applyStyles(css) {
-    if (!cursorStyleElement) {
-        cursorStyleElement = document.createElement('style');
-        cursorStyleElement.id = 'custom-cursor-style';
-        document.head.appendChild(cursorStyleElement);
-    }
-    cursorStyleElement.textContent = css;
-}
-
-// 移除样式
-function removeStyles() {
-    if (cursorStyleElement) {
-        cursorStyleElement.remove();
-        cursorStyleElement = null;
-    }
-}
-
-// 监听存储变化
-chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'sync' && changes.selectedCursor) {
-        applyCursor();
-    }
-});
-
-// 监听来自background.js的消息
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'updateCursor' || request.action === 'resetCursor') {
-        applyCursor();
-    }
-});
-
-// 初始应用光标
-applyCursor();
 chrome.storage.sync.get(['selectedEngines', 'directionSearchEnabled', 'directionEngines', 'id2enginemap'], function (result) {
     selectedEngines = result.selectedEngines || [];
     directionSearchEnabled = result.directionSearchEnabled || false;
@@ -332,7 +272,6 @@ const observer = new MutationObserver((mutations) => {
     if (!document.getElementById('extension-floating-icon')) {
         addFloatingIcon();
     }
-    applyCursor();
 });
 
 observer.observe(document.body, {
@@ -406,17 +345,10 @@ function sendMessageToBackground(selectedText) {
 // 监听鼠标按下事件，点击页面任意位置关闭弹出菜单
 document.addEventListener('mousedown', function (e) {
     if (currentPopup && !currentPopup.contains(e.target)) {
-        if (!isFirstClickOutside) {
-            // 这是第一次在弹窗外点击
-            isFirstClickOutside = true;
-        }
-        // 不要在这里关闭弹窗
-    } else if (currentPopup) {
-        // 点击在弹窗内，重置标志
-        isFirstClickOutside = false;
+        document.body.removeChild(currentPopup);
+        currentPopup = null;
     }
 });
-
 
 // 在 contents.js 文件中，确保 showSearchLinks 函数在用户选中文本后被调用
 /* document.addEventListener('mouseup', function (e) {
@@ -430,14 +362,9 @@ document.addEventListener('mousedown', function (e) {
     }
 });
  */
-// 新增：文档级mouseup事件监听器
+// 监听鼠标弹起事件，以捕获用户选择的文本
 document.addEventListener('mouseup', function (e) {
-    if (currentPopup && !currentPopup.contains(e.target) && isFirstClickOutside) {
-        // 这是第二次在弹窗外点击（鼠标抬起）
-        currentPopup.remove();
-        currentPopup = null;
-        isFirstClickOutside = false;
-    }
+    handleTextSelection(e);
 });
 
 // 监听 input 和 textarea 的 select 事件
@@ -1449,7 +1376,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             removeDragNotification();
         }
     });
-    
+
     // 修改 drop 函数
     function drop(e) {
         if (bypass(e.target)) return false;
@@ -1652,10 +1579,6 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         document.body.removeChild(currentPopup);
     }
     const popup = document.createElement('div');
-    // 新增：阻止事件冒泡
-    popup.addEventListener('mousedown', function(e) {
-        e.stopPropagation();
-    });
     document.addEventListener('keydown', escListener);
     document.addEventListener('keydown', handleKeyNavigation);
 
@@ -2001,8 +1924,6 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     popup.appendChild(bottomEngineListContainer);
     document.body.appendChild(popup);
     currentPopup = popup;
-    // 新增：重置第一次点击标志
-    isFirstClickOutside = false;
     // 修改 5: 添加 setTimeout 来重新计算初始位置
     setTimeout(() => {
         const rect = popup.getBoundingClientRect();
@@ -2354,16 +2275,22 @@ document.addEventListener('keydown', handleKeyNavigation);
 document.addEventListener('keydown', handleKeyDown);
 
 // 修改鼠标事件处理函数
-// 修改：使用mousedown而不是mouseup来触发搜索弹窗
 function handleMouseDown(e) {
     if (!longPressEnabled || e.button !== 0 || !e.ctrlKey) return;
 
-    console.log('Ctrl+鼠标按下，创建搜索弹窗');
-    const selectedText = window.getSelection().toString().trim();
-    createSearchPopup(selectedText, e.altKey);
-    e.preventDefault();
-    e.stopPropagation();
+    isMouseDown = true;
+    startX = e.clientX;
+    startY = e.clientY;
+
+    mouseDownTimer = setTimeout(() => {
+        if (isMouseDown && !hasMovedBeyondThreshold(e)) {
+            createSearchPopup('', e.altKey);
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, LONG_PRESS_DURATION);
 }
+
 function handleMouseUp(e) {
     isMouseDown = false;
     clearTimeout(mouseDownTimer);
