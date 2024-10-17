@@ -441,6 +441,7 @@ document.querySelectorAll('input, textarea').forEach(element => {
     });
 });
 
+
 function handleTextSelection(e) {
     var selection = window.getSelection();
     var target = e.target;
@@ -456,12 +457,9 @@ function handleTextSelection(e) {
         }
     } else if (!selection.isCollapsed) {
         selectedText = selection.toString().trim();
-        if (selectedText) {
+        if (selectedText && !e.ctrlKey && !e.altKey) {
             showSearchLinks(selectedText, x, y, selectedEngines);
         }
-    } else if (currentPopup) {
-        document.body.removeChild(currentPopup);
-        currentPopup = null;
     }
 }
 // 新增: 添加这两个变量到文件顶部
@@ -2309,41 +2307,34 @@ function onKeyPress(event) {
 let debounceTimer;
 
 function handleGlobalMouseUp(e) {
-    // 添加防抖机制
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-        // 添加日志
-        console.log('handleGlobalMouseUp called');
-        console.log('isPopupJustCreated:', isPopupJustCreated);
-        console.log('currentPopup:', currentPopup);
-        console.log('isFirstClickOutside:', isFirstClickOutside);
+        console.log('Debounced handleGlobalMouseUp called');
+
+        // 处理文本选择
+        handleTextSelection(e);
 
         if (isPopupJustCreated) {
-            // 如果悬浮窗刚刚被创建，不做任何操作
             console.log('Popup just created, returning');
-            isPopupJustCreated = false;  // 重置标志
+            isPopupJustCreated = false;
             return;
         }
 
         if (currentPopup && !currentPopup.contains(e.target)) {
             console.log('Click outside popup');
             if (!isFirstClickOutside) {
-                // 第一次在悬浮窗外释放鼠标，不做任何操作
                 console.log('First click outside, setting isFirstClickOutside to true');
                 isFirstClickOutside = true;
             } else {
-                // 第二次在悬浮窗外释放鼠标，关闭悬浮窗
                 console.log('Second click outside, closing popup');
                 closeSearchPopup();
             }
         } else {
-            // 添加点击在弹窗内部的处理
             console.log('Click inside popup or no popup exists');
-            isFirstClickOutside = false;  // 重置标志
+            isFirstClickOutside = false;
         }
-    }, 50); // 50毫秒的延迟
+    }, 50);
 }
-
 // 修改事件监听器，使用捕获阶段
 document.addEventListener('mouseup', handleGlobalMouseUp, true);
 
@@ -2398,13 +2389,20 @@ document.addEventListener('keydown', handleKeyDown);
 // 修改鼠标事件处理函数
 // 修改：使用mousedown而不是mouseup来触发搜索弹窗
 function handleMouseDown(e) {
-    if (!longPressEnabled || e.button !== 0 || !e.ctrlKey) return;
+    if (!longPressEnabled || e.button !== 0) return;
 
-    console.log('Ctrl+鼠标按下，创建搜索弹窗');
-    const selectedText = window.getSelection().toString().trim();
-    createSearchPopup(selectedText, e.altKey);
-    e.preventDefault();
-    e.stopPropagation();
+    if (e.ctrlKey) {
+        console.log('Ctrl+鼠标按下，创建搜索弹窗');
+        const selectedText = window.getSelection().toString().trim();
+        createSearchPopup(selectedText, e.altKey);
+        e.preventDefault();
+        e.stopPropagation();
+    } else if (e.altKey) {
+        console.log('Alt+鼠标按下，创建搜索弹窗');
+        createSearchPopup('', true);
+        e.preventDefault();
+        e.stopPropagation();
+    }
 }
 
 
