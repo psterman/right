@@ -2307,34 +2307,50 @@ function onKeyPress(event) {
 let debounceTimer;
 
 function handleGlobalMouseUp(e) {
+    // 添加防抖机制
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
         console.log('Debounced handleGlobalMouseUp called');
 
-        // 处理文本选择
+        // 新增：处理 Ctrl 选中文本的情况
+        if (e.shiftKey) {
+            const selectedText = window.getSelection().toString().trim();
+            if (selectedText) {
+                console.log('Ctrl + text selection, creating search popup');
+                createSearchPopup(selectedText, e.altKey);
+                return; // 创建弹窗后直接返回，不执行后续逻辑
+            }
+        }
+
+        // 新增：处理普通文本选择
         handleTextSelection(e);
 
         if (isPopupJustCreated) {
+            // 如果悬浮窗刚刚被创建，不做任何操作
             console.log('Popup just created, returning');
-            isPopupJustCreated = false;
+            isPopupJustCreated = false; // 新增：重置标志
             return;
         }
 
         if (currentPopup && !currentPopup.contains(e.target)) {
-            console.log('Click outside popup');
+            console.log('Click outside popup'); // 新增：日志
             if (!isFirstClickOutside) {
-                console.log('First click outside, setting isFirstClickOutside to true');
+                // 第一次在悬浮窗外释放鼠标，不做任何操作
+                console.log('First click outside, setting isFirstClickOutside to true'); // 新增：日志
                 isFirstClickOutside = true;
             } else {
-                console.log('Second click outside, closing popup');
+                // 第二次在悬浮窗外释放鼠标，关闭悬浮窗
+                console.log('Second click outside, closing popup'); // 新增：日志
                 closeSearchPopup();
             }
         } else {
+            // 新增：处理点击在弹窗内部的情况
             console.log('Click inside popup or no popup exists');
-            isFirstClickOutside = false;
+            isFirstClickOutside = false; // 重置标志
         }
-    }, 50);
+    }, 50); // 50毫秒的延迟
 }
+
 // 修改事件监听器，使用捕获阶段
 document.addEventListener('mouseup', handleGlobalMouseUp, true);
 
