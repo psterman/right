@@ -3,6 +3,7 @@ let currentPopup = null;
 // 从存储中检索选中的搜索引擎
 // 假设这是在 contents.js 中的现有代码
 let selectedEngines = []; // 声明全局变量
+let isPopupJustCreated = false;
 let isFirstClickOutside = false;
 let longPressEnabled = true;
 let ctrlSelectEnabled = true;
@@ -430,32 +431,7 @@ document.addEventListener('mousedown', function (e) {
     }
 });
  */
-// 新增：文档级mouseup事件监听器
-document.addEventListener('mouseup', function (e) {
-    console.log('mouseup event triggered');
 
-    // 首先处理文本选择
-    handleTextSelection(e);
-
-    console.log('Current popup:', currentPopup);
-    console.log('Is first click outside:', isFirstClickOutside);
-
-    // 然后处理悬浮窗的关闭逻辑
-    if (currentPopup && !currentPopup.contains(e.target)) {
-        console.log('Click outside popup');
-        if (!isFirstClickOutside) {
-            console.log('First click outside popup');
-            // 第一次在悬浮窗外释放鼠标，不做任何操作
-            isFirstClickOutside = true;
-        } else {
-            console.log('Second click outside popup, removing popup');
-            // 第二次在弹窗外点击（鼠标抬起）
-            currentPopup.remove();
-            currentPopup = null;
-            isFirstClickOutside = false;
-        }
-    }
-});
 
 
 // 监听 input 和 textarea 的 select 事件
@@ -1467,7 +1443,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             removeDragNotification();
         }
     });
-    
+
     // 修改 drop 函数
     function drop(e) {
         if (bypass(e.target)) return false;
@@ -1666,12 +1642,14 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 })()
 //输入框
 function createSearchPopup(initialText = '', showMultiMenu = false) {
+    console.log('Creating search popup');
     if (currentPopup) {
         document.body.removeChild(currentPopup);
     }
     const popup = document.createElement('div');
+
     // 新增：阻止事件冒泡
-    popup.addEventListener('mousedown', function(e) {
+    popup.addEventListener('mousedown', function (e) {
         e.stopPropagation();
     });
     document.addEventListener('keydown', escListener);
@@ -2019,7 +1997,11 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     popup.appendChild(bottomEngineListContainer);
     document.body.appendChild(popup);
     currentPopup = popup;
+    console.log('Search popup created, currentPopup:', currentPopup);
+    // ... 剩余代码 ...
     // 新增：重置第一次点击标志
+
+    isPopupJustCreated = true;
     isFirstClickOutside = false;
     // 修改 5: 添加 setTimeout 来重新计算初始位置
     setTimeout(() => {
@@ -2027,10 +2009,10 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         popup.style.left = rect.left + 'px';
         popup.style.top = rect.top + 'px';
         popup.style.transform = 'none';
-
+        isPopupJustCreated = false;
         input.focus(); // 新增: 设置输入框焦点
         input.setSelectionRange(input.value.length, input.value.length); // 新增: 将光标移到文本末尾
-    }, 0);
+    }, 100);
     //新增一个搜索列表
     const customEngineListContainer = document.createElement('div');
     customEngineListContainer.style.cssText = `
@@ -2323,17 +2305,59 @@ function onKeyPress(event) {
         }
     }
 }
+// 添加防抖变量
+let debounceTimer;
+
+function handleGlobalMouseUp(e) {
+    // 添加防抖机制
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        // 添加日志
+        console.log('handleGlobalMouseUp called');
+        console.log('isPopupJustCreated:', isPopupJustCreated);
+        console.log('currentPopup:', currentPopup);
+        console.log('isFirstClickOutside:', isFirstClickOutside);
+
+        if (isPopupJustCreated) {
+            // 如果悬浮窗刚刚被创建，不做任何操作
+            console.log('Popup just created, returning');
+            isPopupJustCreated = false;  // 重置标志
+            return;
+        }
+
+        if (currentPopup && !currentPopup.contains(e.target)) {
+            console.log('Click outside popup');
+            if (!isFirstClickOutside) {
+                // 第一次在悬浮窗外释放鼠标，不做任何操作
+                console.log('First click outside, setting isFirstClickOutside to true');
+                isFirstClickOutside = true;
+            } else {
+                // 第二次在悬浮窗外释放鼠标，关闭悬浮窗
+                console.log('Second click outside, closing popup');
+                closeSearchPopup();
+            }
+        } else {
+            // 添加点击在弹窗内部的处理
+            console.log('Click inside popup or no popup exists');
+            isFirstClickOutside = false;  // 重置标志
+        }
+    }, 50); // 50毫秒的延迟
+}
+
+// 修改事件监听器，使用捕获阶段
+document.addEventListener('mouseup', handleGlobalMouseUp, true);
+
 function closeSearchPopup() {
+    console.log('Closing search popup');
     if (currentPopup) {
         document.body.removeChild(currentPopup);
         currentPopup = null;
-        document.removeEventListener('keydown', onKeyDown);
-        document.removeEventListener('keydown', handleKeyNavigation);
-        // 新增：移除 ESC 键监听器
-        document.removeEventListener('keydown', escListener);
+        isFirstClickOutside = false;
     }
+    console.log('Search popup closed, currentPopup:', currentPopup);
 }
 
+document.addEventListener('mouseup', handleGlobalMouseUp);
 // 新增：定义 escListener 函数
 function escListener(e) {
     if (e.key === 'Escape') {
@@ -2382,23 +2406,7 @@ function handleMouseDown(e) {
     e.preventDefault();
     e.stopPropagation();
 }
-function handleMouseUp(e) {
-    isMouseDown = false;
-    clearTimeout(mouseDownTimer);
 
-    if (ctrlSelectEnabled && e.ctrlKey) {
-        const selectedText = window.getSelection().toString().trim();
-        if (selectedText) {
-            createSearchPopup(selectedText, false);
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    } else if (e.altKey) {
-        createSearchPopup('', true);
-        e.preventDefault();
-        e.stopPropagation();
-    }
-}
 
 // 新增: handleMouseMove 函数
 function handleMouseMove(e) {
