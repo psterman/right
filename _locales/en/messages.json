@@ -15,7 +15,7 @@
       "message": "Changelog"
    },
    "desbrowserbookmarks": {
-      "message": "Show your browser bookmarks"
+      "message": "显示谷歌收藏夹"
    },
    "desbrowserextension": {
       "message": "browser extension"
@@ -39,19 +39,19 @@
       "message": "Custom home page"
    },
    "desdefaultzoom": {
-      "message": "Default zoom level for all web pages"
+      "message": "默认页面比例"
    },
    "desdragdrop": {
-      "message": "Drag and drop your link or text here"
+      "message": "拖动链接/文字在此打开"
    },
    "desdragdroppanel": {
-      "message": "Drag and drop zone"
+      "message": "拖动区域"
    },
    "desdropshadow": {
       "message": "Get a shadow effect below the toolbar"
    },
    "desgooglesidepanel": {
-      "message": "Side panel view mode for Google search results"
+      "message": "打开搜索页面模式"
    },
    "deshoverbackground": {
       "message": "Change the background color when you mouse is over a link"
@@ -69,7 +69,7 @@
       "message": "Navigation bar"
    },
    "deslasttime": {
-      "message": "When closing the sidebar, it will save the current URL. Upon reopening the sidebar, the last accessed URL will be loaded automatically"
+      "message": "自动打开您最后访问的页面"
    },
    "desnavbottom": {
       "message": "Bottom"
@@ -81,28 +81,28 @@
       "message": "Top"
    },
    "desnonebookmarks": {
-      "message": "No bookmarks"
+      "message": "不显示收藏夹按钮"
    },
    "desopencopy": {
-      "message": "Show the button to copy the current page URL to the clipboard"
+      "message": "显示粘贴按钮"
    },
    "desopentab": {
-      "message": "Show the button on the navigation bar to open the current page in a new tab"
+      "message": "显示后台打开按钮"
    },
    "despassword": {
       "message": "Lock your notes with a pasword"
    },
    "despermissionbookmark": {
-      "message": "Remove the Bookmarks permission"
+      "message": "打开书签栏权限"
    },
    "desproject": {
       "message": "project"
    },
    "desquickbookmarks": {
-      "message": "Show the button to open your selected bookmark in the sidebar"
+      "message": "显示自定义收藏夹"
    },
    "desratebad": {
-      "message": "Sorry you have had this bad experience. Please let us know on how we can improve our extension for you."
+      "message": "抱歉，让你困惑了，务必让我们知道为什么！再次为您不愉快的经历致歉！"
    },
    "desratebadaction": {
       "message": "Yes, I will give feedback"
@@ -129,16 +129,16 @@
       "message": "Do you love this browser extension?"
    },
    "desrememberpage": {
-      "message": "If this option is enabled, it will not show you the reminder page"
+      "message": "显示提醒"
    },
    "desremrate": {
-      "message": "If you like 右拐™, please do not hesitate to rate this extension to five stars now. This gives us courage to continue to maintain and improve this product for you. Writing a review is recommended, but not mandatory. If you do not have the time to write a review, you can rate it anonymously. It is important to give it ★★★★★. Thank you!"
+      "message": "如果您喜欢这个软件™，请不要犹豫，现在就打五星好评。这将给予我们继续维护和改进的勇气。感谢您给我们提出意见。如果您没有时间写，您只需要5秒就可以评分。务必给它★★★★★。感谢谢谢！"
    },
    "desremyoutube": {
       "message": "Subscribe on YouTube"
    },
    "desstep": {
-      "message": "Steps"
+      "message": "每次缩放比例"
    },
    "destapstar": {
       "message": "Tap a star to rate it on the browser extension store."
@@ -150,10 +150,10 @@
       "message": "Discover and learn more about Stefan's browser extension. Watch it now on YouTube."
    },
    "deszoom": {
-      "message": "Show the floating zoom panel featuring zoom in, and zoom out buttons to manage the scale of the web page."
+      "message": "显示缩放页面工具栏"
    },
    "donatecalltoaction": {
-      "message": "Donate Now!"
+      "message": "批评"
    },
    "donatepromotext": {
       "message": "If you can make a donation of any amount, I'd appreciate it immensely!"
@@ -174,7 +174,7 @@
       "message": "右拐 Guide"
    },
    "head2": {
-      "message": "Choose your favorite 右拐 icon:"
+      "message": "请选择您喜欢的图标"
    },
    "help": {
       "message": "Help"
@@ -393,16 +393,16 @@
       "message": "Text color on mouse hover"
    },
    "titelopencopy": {
-      "message": "Copy current URL"
+      "message": "粘贴到地址栏"
    },
    "titelopentab": {
-      "message": "Open back in tab"
+      "message": "后台打开页面"
    },
    "titelpassword": {
       "message": "Password"
    },
    "titelpermission": {
-      "message": "Permissions"
+      "message": "书签页面申请权限"
    },
    "titelpopupoptions": {
       "message": "Options"

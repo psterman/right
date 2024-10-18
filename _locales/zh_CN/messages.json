@@ -2,8 +2,11 @@
    "about": {
       "message": "弹搜"
    },
+   "advancedoptions1": {
+      "message": "搜索选项"
+   },
    "advancedoptions": {
-      "message": "收藏"
+      "message": "保存页面"
    },
    "areyouhappy": {
       "message": "Are you happy about 右拐?"
@@ -24,19 +27,19 @@
       "message": "Confirm password"
    },
    "descontextmenu": {
-      "message": "Show the context menu to open the current web page in the sidebar"
+      "message": "右键菜单打开侧边栏"
    },
    "description": {
       "message": "右拐"
    },
    "descustompanel": {
-      "message": "Custom home page"
+      "message": "自定义页面"
    },
    "desdragdrop": {
       "message": "Drag and drop your link or text here"
    },
    "desdragdroppanel": {
-      "message": "Drag and drop zone"
+      "message": "拖动搜索区域"
    },
    "desdropshadow": {
       "message": "Get a shadow effect below the toolbar"
@@ -48,22 +51,22 @@
       "message": "Change the font color when you mouse is over a link"
    },
    "designhome": {
-      "message": "Start page"
+      "message": "首页设置"
    },
    "designmarquee": {
       "message": "拖动搜索"
    },
    "designnavigation": {
-      "message": "Navigation bar"
+      "message": "导航栏位置"
    },
    "desnavbottom": {
-      "message": "Bottom"
+      "message": "下方"
    },
    "desnavhidden": {
-      "message": "Hidden"
+      "message": "隐藏"
    },
    "desnavtop": {
-      "message": "Top"
+      "message": "上方"
    },
    "despassword": {
       "message": "Lock your notes with a pasword"
@@ -99,7 +102,7 @@
       "message": "Do you love this browser extension?"
    },
    "desrememberpage": {
-      "message": "If this option is enabled, it will not show you the reminder page"
+      "message": "显示提醒栏"
    },
    "desremrate": {
       "message": "谢谢"
@@ -117,13 +120,13 @@
       "message": "Discover and learn more about Stefan's browser extension. Watch it now on YouTube."
    },
    "donatecalltoaction": {
-      "message": "Donate Now!"
+      "message": "提意见"
    },
    "donatepromotext": {
       "message": "If you can make a donation of any amount, I'd appreciate it immensely!"
    },
    "donatetext": {
-      "message": "Due to the very small number of donations the project may be closed. Please support further development with a Donation."
+      "message": "坚硬如水，我的朋友！"
    },
    "downloadtheapp": {
       "message": "Download the app now"
@@ -141,10 +144,10 @@
       "message": "关于"
    },
    "head2": {
-      "message": "Choose your favorite icon:"
+      "message": "请选择您喜欢的图标:"
    },
    "help": {
-      "message": "弹搜"
+      "message": "弹窗搜索"
    },
    "helptranslate": {
       "message": "Help Translate"
@@ -216,7 +219,7 @@
       }
    },
    "promotitle": {
-      "message": "Tip of the day"
+      "message": "每日提醒"
    },
    "ratedes": {
       "message": "And let everyone know about this great extension!"
@@ -309,7 +312,7 @@
       "message": "Color"
    },
    "titelcontextmenu": {
-      "message": "Context Menu"
+      "message": "右键菜单打开"
    },
    "titeldeveloper": {
       "message": "Developer"
@@ -345,7 +348,7 @@
       "message": "Welcome Guide"
    },
    "titelrememberpage": {
-      "message": "Reminder page"
+      "message": "提醒栏"
    },
    "titelreset": {
       "message": "Reset settings"
@@ -354,7 +357,7 @@
       "message": "Some rights reserved."
    },
    "titelsearchengine": {
-      "message": "Search engine"
+      "message": "默认搜索引擎"
    },
    "titelsharethis": {
       "message": "Share this:"
