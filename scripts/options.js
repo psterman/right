@@ -885,6 +885,35 @@ document.addEventListener('DOMContentLoaded', function () {
 			event.stopPropagation();
 		});
 	});
+	document.querySelectorAll('.select-menu .engine-list li').forEach(option => {
+		option.addEventListener('click', function (e) {
+			e.stopPropagation(); // 阻止事件冒泡
+			const selectedEngineName = this.textContent;
+			const selectedEngineCategory = this.closest('.category').querySelector('h4').textContent;
+			const customSelect = this.closest('.custom-select');
+			const button = customSelect.querySelector('.select-button');
+			const menu = customSelect.querySelector('.select-menu');
+
+			// 更新按钮文本
+			button.textContent = selectedEngineName;
+
+			// 关闭菜单
+			menu.classList.remove('show');
+
+			// 保存选择到存储
+			const direction = customSelect.id;
+			chrome.storage.sync.get('directionEngines', (data) => {
+				const directionEngines = data.directionEngines || {};
+				directionEngines[direction] = {
+					name: selectedEngineName,
+					category: selectedEngineCategory
+				};
+				chrome.storage.sync.set({ directionEngines: directionEngines });
+			});
+
+			console.log(`Selected ${selectedEngineName} (${selectedEngineCategory}) for ${direction}`);
+		});
+	});
 
 	// 恢复保存的方向搜索引擎选择
 	chrome.storage.sync.get(['directionSearchEnabled', 'directionEngines'], (data) => {
