@@ -863,33 +863,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	// 为每个方向的按钮添加点击事件监听器
 	document.querySelectorAll('.select-button').forEach(button => {
-		button.addEventListener('click', (event) => {
-			const menu = event.target.nextElementSibling;
-
-			if (openMenu && openMenu !== menu) {
-				// 如果有其他打开的菜单，先关闭它
-				hideSelectMenu(openMenu);
-			}
-
-			if (menu.style.display === 'block') {
-				// 如果点击的是当前打开的菜单，则关闭它
-				hideSelectMenu(menu);
-				openMenu = null;
-			} else {
-				// 否则，打开新的菜单
-				showSelectMenu(menu);
-				openMenu = menu;
-			}
-
-			event.stopPropagation();
+		button.addEventListener('click', function (e) {
+			e.stopPropagation(); // 阻止事件冒泡
+			const menu = this.nextElementSibling;
+			menu.classList.toggle('show');
 		});
 	});
 
-	// 点击页面其他地方时隐藏菜单
-	document.addEventListener('click', () => {
-		if (openMenu) {
-			hideSelectMenu(openMenu);
-			openMenu = null;
+	// 点击外部区域关闭菜单
+	document.addEventListener('click', function (e) {
+		if (!e.target.closest('.custom-select')) {
+			document.querySelectorAll('.select-menu.show').forEach(menu => {
+				menu.classList.remove('show');
+			});
 		}
 	});
 
