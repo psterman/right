@@ -57,7 +57,11 @@
    "description": "__MSG_description__",
    "host_permissions": [
       "http://*/*",
-      "https://*/*"
+      "https://*/*",
+      "https://wx.qq.com/*",
+      "https://web.wechat.com/*",
+      "https://wx2.qq.com/*",
+      "https://wx8.qq.com/*"
    ],
    "icons": {
       "128": "images/icon128.png",
@@ -86,16 +90,13 @@
       "contextMenus",
       "storage",
       "sidePanel",
+      "declarativeNetRequest",
       "declarativeNetRequestWithHostAccess",
       "activeTab",
       "clipboardRead",
       "bookmarks",
       "webRequest",
-      "webRequestBlocking",
-      "https://wx.qq.com/*",
-      "https://web.wechat.com/*",
-      "https://wx2.qq.com/*",
-      "https://wx8.qq.com/*"
+      "webRequestBlocking"
    ],
    "short_name": "__MSG_name__",
    "side_panel": {
