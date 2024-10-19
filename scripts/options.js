@@ -885,6 +885,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			event.stopPropagation();
 		});
 	});
+
 	document.querySelectorAll('.select-menu .engine-list li').forEach(option => {
 		option.addEventListener('click', function (e) {
 			e.stopPropagation(); // 阻止事件冒泡
@@ -904,30 +905,36 @@ document.addEventListener('DOMContentLoaded', function () {
 			const direction = customSelect.id;
 			chrome.storage.sync.get('directionEngines', (data) => {
 				const directionEngines = data.directionEngines || {};
-				directionEngines[direction] = {
-					name: selectedEngineName,
-					category: selectedEngineCategory
-				};
-				chrome.storage.sync.set({ directionEngines: directionEngines });
+				directionEngines[direction] = selectedEngineCategory === '禁用' ? 'disabled' : selectedEngineName;
+				chrome.storage.sync.set({ directionEngines: directionEngines }, () => {
+					console.log(`Selected ${selectedEngineName} for ${direction}`);
+				});
 			});
 
-			console.log(`Selected ${selectedEngineName} (${selectedEngineCategory}) for ${direction}`);
+			// 如果选择了禁用，添加视觉反馈
+			if (selectedEngineCategory === '禁用') {
+				button.classList.add('disabled');
+			} else {
+				button.classList.remove('disabled');
+			}
 		});
 	});
 
 	// 恢复保存的方向搜索引擎选择
 	chrome.storage.sync.get(['directionSearchEnabled', 'directionEngines'], (data) => {
-		const directionSearchEnabled = data.directionSearchEnabled;
 		const directionEngines = data.directionEngines || {};
 
-		// 设置方向搜索开关状态
-		document.getElementById('directionSearchToggle').checked = directionSearchEnabled;
-
-		// 设置每个方向的搜索引擎
 		Object.keys(directionEngines).forEach(direction => {
 			const button = document.querySelector(`#${direction} .select-button`);
 			if (button) {
-				button.textContent = directionEngines[direction];
+				const engineValue = directionEngines[direction];
+				if (engineValue === 'disabled') {
+					button.textContent = '禁用';
+					button.classList.add('disabled');
+				} else {
+					button.textContent = engineValue;
+					button.classList.remove('disabled');
+				}
 			}
 		});
 	});
