@@ -9,6 +9,7 @@ let longPressEnabled = true;
 let ctrlSelectEnabled = true;
 let currentNotification = null; // 全局变量，用于跟踪当前显示的通知
 let id2enginemap = {};// 在初始化函数中（例如 DOMContentLoaded 事件监听器中）添加
+
 chrome.storage.sync.get('id2enginemap', function (result) {
     if (result.id2enginemap) {
         id2enginemap = result.id2enginemap;
@@ -1808,11 +1809,14 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     function createEngineItem(name, url, iconPath) {
         const item = document.createElement('div');
         item.style.cssText = `
-        width: 32px; // 图标的宽度
-        height: 32px; // 图标的高度
+        width: 16px;
+        height: 16px;
         cursor: pointer;
         display: inline-block;
         margin: 5px;
+        border-radius: 50%;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+        position: relative; // 确保提示框相对于图标定位
     `;
 
         const icon = document.createElement('img');
@@ -1821,20 +1825,56 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         icon.style.cssText = `
         width: 100%;
         height: 100%;
+        object-fit: contain;
+        border-radius: 50%;
     `;
 
         item.appendChild(icon);
+        // 添加到engineItems数组
+        engineItems.push({ element: item, url: url });
+
+        item.addEventListener('click', () => performSearch(input.value.trim(), url));
+
+        // 创建提示框
+        const tooltip = document.createElement('div');
+        tooltip.textContent = name;
+        tooltip.style.cssText = `
+        position: absolute;
+        bottom: 100%; // 在图标上方显示
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 5px;
+        border-radius: 3px;
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none; // 确保提示框不影响鼠标事件
+    `;
+
+        item.appendChild(tooltip);
+
+        // 添加鼠标事件
+        item.addEventListener('mouseover', () => {
+            tooltip.style.opacity = '1';
+        });
+
+        item.addEventListener('mouseout', () => {
+            tooltip.style.opacity = '0';
+        });
+
         item.addEventListener('click', () => performSearch(input.value.trim(), url));
 
         return item;
     }
 
     // 添加百度搜索引擎
-    const baiduItem = createEngineItem('', 'https://www.baidu.com/s?wd=', '/images/baidu.png');
+    const baiduItem = createEngineItem('百度', 'https://www.baidu.com/s?wd=', 'https://cdn-icons-png.flaticon.com/128/2190/2190464.png');
     engineList.appendChild(baiduItem);
 
     // 添加 Bing 搜索引擎
-    const bingItem = createEngineItem('', 'https://www.bing.com/search?q=', '/images/bing.png');
+    const bingItem = createEngineItem('bing', 'https://www.bing.com/search?q=', 'https://cdn-icons-png.flaticon.com/128/732/732186.png');
     engineList.appendChild(bingItem);
     popup.appendChild(engineList);
 
