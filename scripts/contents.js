@@ -1804,14 +1804,38 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     }
 
 
+    // 创建搜索引擎项目的函数
+    function createEngineItem(name, url, iconPath) {
+        const item = document.createElement('div');
+        item.style.cssText = `
+        width: 32px; // 图标的宽度
+        height: 32px; // 图标的高度
+        cursor: pointer;
+        display: inline-block;
+        margin: 5px;
+    `;
+
+        const icon = document.createElement('img');
+        icon.src = iconPath;
+        icon.alt = name;
+        icon.style.cssText = `
+        width: 100%;
+        height: 100%;
+    `;
+
+        item.appendChild(icon);
+        item.addEventListener('click', () => performSearch(input.value.trim(), url));
+
+        return item;
+    }
+
     // 添加百度搜索引擎
-    const baiduItem = createEngineItem('百度搜索', 'https://www.baidu.com/s?wd=');
+    const baiduItem = createEngineItem('', 'https://www.baidu.com/s?wd=', '/images/baidu.png');
     engineList.appendChild(baiduItem);
 
     // 添加 Bing 搜索引擎
-    const bingItem = createEngineItem('Bing 搜索', 'https://www.bing.com/search?q=');
+    const bingItem = createEngineItem('', 'https://www.bing.com/search?q=', '/images/bing.png');
     engineList.appendChild(bingItem);
-
     popup.appendChild(engineList);
 
 
@@ -2058,7 +2082,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         if (searchText && shouldShowEngineList) {
             chrome.storage.sync.get('id2enginemap', function (data) {
                 const engines = data.id2enginemap || {};
-                topEngineListContainer.innerHTML = '';
+                /* topEngineListContainer.innerHTML = '';
                 bottomEngineListContainer.innerHTML = '';
                 engineItems = [];
 
@@ -2082,13 +2106,13 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
 
                 topEngineListContainer.style.display = 'block';
                 bottomEngineListContainer.style.display = 'block';
-                selectedIndex = -1;
+                selectedIndex = -1; */
             });
         } else {
-            topEngineListContainer.style.display = 'none';
+        /*     topEngineListContainer.style.display = 'none';
             bottomEngineListContainer.style.display = 'none';
             engineItems = [];
-            selectedIndex = -1;
+            selectedIndex = -1; */
         }
     }
 
