@@ -949,17 +949,24 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 // 监听来自 options.js 的消息，更新光标设置
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	if (request.action === 'updateCursor') {
-		chrome.storage.sync.set({ selectedCursor: request.cursor }, () => {
-			// 通知所有标签页更新光标
-			chrome.tabs.query({}, (tabs) => {
-				tabs.forEach((tab) => {
-					chrome.tabs.sendMessage(tab.id, { action: 'updateCursor', cursor: request.cursor });
+		chrome.storage.sync.get('selectedCursor', (data) => {
+			if (data.selectedCursor !== request.cursor) {
+				chrome.storage.sync.set({ selectedCursor: request.cursor }, () => {
+					// 通知所有标签页更新光标
+					chrome.tabs.query({}, (tabs) => {
+						tabs.forEach((tab) => {
+							chrome.tabs.sendMessage(tab.id, { action: 'updateCursor', cursor: request.cursor });
+						});
+					});
+					sendResponse({ success: true });
 				});
-			});
-			sendResponse({ success: true });
+			} else {
+				sendResponse({ success: false, message: 'Cursor already set to this value.' });
+			}
 		});
 		return true; // 保持消息通道开放
 	} else if (request.action === 'resetCursor') {
+		// 移除存储中的光标设置
 		chrome.storage.sync.remove('selectedCursor', () => {
 			// 通知所有标签页重置光标
 			chrome.tabs.query({}, (tabs) => {

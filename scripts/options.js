@@ -147,6 +147,17 @@ document.addEventListener('DOMContentLoaded', function () {
 	let isCustomCursorActive = false;
 	let lastKnownMousePosition = { x: 0, y: 0 };
 	let isUpdating = false;
+	// 为重置按钮添加点击事件监听器
+	resetButton.addEventListener('click', () => {
+		// 发送重置光标的命令到 background.js
+		chrome.runtime.sendMessage({ action: 'resetCursor' }, (response) => {
+			if (response.success) {
+				console.log('Cursor reset command sent successfully.');
+			} else {
+				console.error('Failed to reset cursor:', response.message);
+			}
+		});
+	});
 	// 为每个光标图像添加点击事件监听器
 	document.querySelectorAll('.cursor-image').forEach(img => {
 		img.addEventListener('click', function () {

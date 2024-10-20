@@ -28,21 +28,40 @@ function getCurrentCursor() {
     });
 }
 
-// 应用光标样式
-async function applyCursor() {
-    const cursorUrl = await getCurrentCursor();
-    if (cursorUrl && cursorUrl !== 'default') {
-        const css = `
-            body, body * {
-                cursor: url(${cursorUrl}), auto !important;
+let lastCursorUrl = null; // 用于存储上一次应用的光标URL
+
+function applyCursor() {
+    getCurrentCursor().then(cursorUrl => {
+        console.log('Applying cursor:', cursorUrl);
+
+        if (cursorUrl !== lastCursorUrl) { // 只有在光标URL发生变化时才应用新的样式
+            if (cursorUrl && cursorUrl !== 'default') {
+                const css = `
+                    body, body * {
+                        cursor: url(${cursorUrl}), auto !important;
+                    }
+                `;
+                console.log('Applying custom cursor style.');
+                applyStyles(css);
+            } else {
+                console.log('Removing custom cursor style.');
+                removeStyles();
             }
-        `;
-        applyStyles(css);
-    } else {
-        removeStyles();
-    }
+            lastCursorUrl = cursorUrl; // 更新上一次应用的光标URL
+        } else {
+            console.log('Cursor URL has not changed, no action taken.');
+        }
+    }).catch(error => {
+        console.error('Error getting current cursor:', error);
+    });
 }
 
+// 在重置光标的逻辑中，确保更新 lastCursorUrl
+function resetCursor() {
+    lastCursorUrl = null; // 重置 lastCursorUrl
+    removeStyles(); // 移除自定义光标样式
+    console.log('Cursor has been reset to default.');
+}
 // 应用样式
 function applyStyles(css) {
     if (!cursorStyleElement) {
@@ -64,14 +83,23 @@ function removeStyles() {
 // 监听存储变化
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'sync' && changes.selectedCursor) {
+        console.log('Storage change detected:', changes.selectedCursor);
         applyCursor();
     }
 });
-
 // 监听来自background.js的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'updateCursor' || request.action === 'resetCursor') {
-        applyCursor();
+    switch (request.action) {
+        case 'updateCursor':
+            console.log('Update cursor command received.');
+            applyCursor(); // 更新光标
+            break;
+        case 'resetCursor':
+            console.log('Reset cursor command received.');
+            resetCursor(); // 重置光标
+            break;
+        default:
+            console.log('Unknown action:', request.action);
     }
 });
 
