@@ -1717,8 +1717,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     // 新增：上方搜索引擎列表容器
     const topEngineListContainer = document.createElement('div');
     topEngineListContainer.style.cssText = `
-        padding: 10px;
-        border-bottom: 1px solid #ccc;
+       
     `;
     popup.appendChild(topEngineListContainer);
 
@@ -1786,7 +1785,6 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
         cursor: pointer;
         color: black;
         font-size: 14px;
-        border-bottom: 1px solid #eee;
     `;
         item.addEventListener('click', () => performSearch(input.value.trim(), url));
         // 添加鼠标悬停效果
@@ -2084,8 +2082,7 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
     // 下方搜索引擎列表容器
     const bottomEngineListContainer = document.createElement('div');
     bottomEngineListContainer.style.cssText = `
-         padding: 10px;
-        border-top: 1px solid #ccc;
+        
     `;
     popup.appendChild(bottomEngineListContainer);
     document.body.appendChild(popup);
@@ -2152,10 +2149,10 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
                 selectedIndex = -1; */
             });
         } else {
-        /*     topEngineListContainer.style.display = 'none';
-            bottomEngineListContainer.style.display = 'none';
-            engineItems = [];
-            selectedIndex = -1; */
+            /*     topEngineListContainer.style.display = 'none';
+                bottomEngineListContainer.style.display = 'none';
+                engineItems = [];
+                selectedIndex = -1; */
         }
     }
 
@@ -2332,79 +2329,6 @@ function handleSearchClick(event) {
         globalSearchInput.focus();
     }
 }
-document.addEventListener('keydown', (e) => {
-    const input = document.querySelector('input');
-    
-    const isInputFocused = document.activeElement === input;
-
-    if (isInputFocused) {
-        const cursorPosition = input.selectionStart;
-        const inputLength = input.value.length;
-
-        console.log('Cursor Position:', cursorPosition);
-        console.log('Input Length:', inputLength);
-
-        if (e.key === 'ArrowUp' && cursorPosition === 0) {
-            console.log('Switching to icon switch mode');
-            if (searchEngineIcons.length > 0) {
-                isIconSwitchMode = true;
-                currentSelectedIndex = 0; // 从第一个图标开始
-                highlightSelectedItem();
-            } else {
-                console.error('searchEngineIcons is empty or undefined');
-            }
-            e.preventDefault();
-        } else if (e.key === 'ArrowDown' && cursorPosition === inputLength) {
-            console.log('Switching to icon switch mode');
-            if (searchEngineIcons.length > 0) {
-                isIconSwitchMode = true;
-                currentSelectedIndex = 0; // 从第一个图标开始
-                highlightSelectedItem();
-            } else {
-                console.error('searchEngineIcons is empty or undefined');
-            }
-            e.preventDefault();
-        }
-    } else if (isIconSwitchMode) {
-        switch (e.key) {
-            case 'ArrowRight':
-                if (searchEngineIcons.length > 0) {
-                    currentSelectedIndex = (currentSelectedIndex + 1) % searchEngineIcons.length;
-                } else {
-                    console.error('searchEngineIcons is empty or undefined');
-                }
-                e.preventDefault();
-                break;
-            case 'ArrowLeft':
-                if (searchEngineIcons.length > 0) {
-                    currentSelectedIndex = (currentSelectedIndex - 1 + searchEngineIcons.length) % searchEngineIcons.length;
-                } else {
-                    console.error('searchEngineIcons is empty or undefined');
-                }
-                e.preventDefault();
-                break;
-            case 'ArrowUp':
-            case 'ArrowDown':
-                isIconSwitchMode = false;
-                currentSelectedIndex = -1;
-                highlightSelectedItem();
-                input.focus();
-                return;
-            case 'Enter':
-                if (currentSelectedIndex !== -1 && searchEngineIcons.length > 0) {
-                    const selectedEngine = searchEngineIcons[currentSelectedIndex];
-                    performSearch(input.value.trim(), selectedEngine.url);
-                } else {
-                    console.error('searchEngineIcons is empty or undefined');
-                }
-                return;
-            default:
-                return;
-        }
-
-        highlightSelectedItem();
-    }
-});
 
 
 function highlightSelectedItem() {
@@ -2418,17 +2342,7 @@ function highlightSelectedItem() {
         }
     });
 }
-function setupInputListener() {
-    const input = document.querySelector('input'); // 假设输入框是页面上的一个input元素
-    if (input) {
-        input.addEventListener('focus', () => {
-            // 退出图标切换模式
-            isIconSwitchMode = false;
-            currentSelectedIndex = -1;
-            highlightSelectedItem();
-        });
-    }
-}
+
 function handleKeyNavigation(event) {
     // 检查事件目标是否是输入框
     const isInputFocused = document.activeElement.tagName.toLowerCase() === 'input';
