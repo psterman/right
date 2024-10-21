@@ -9,6 +9,7 @@ let longPressEnabled = true;
 let ctrlSelectEnabled = true;
 let currentNotification = null; // 全局变量，用于跟踪当前显示的通知
 let id2enginemap = {};// 在初始化函数中（例如 DOMContentLoaded 事件监听器中）添加
+let engineItems = [];
 
 chrome.storage.sync.get('id2enginemap', function (result) {
     if (result.id2enginemap) {
@@ -124,7 +125,9 @@ function getIdToEngineMap(callback) {
 }
 
 let selectedIndex = -1;
-let engineItems = [];
+
+
+const searchEngineIcons = []; // 存储所有搜索引擎图标的元素
 function saveAISearchEngines() {
     chrome.storage.sync.set({ aiSearchEngines: aiSearchEngines }, function () {
         console.log('AI搜索引擎已保存:', aiSearchEngines);
@@ -2215,6 +2218,8 @@ function performSearch(searchText, engineUrl) {
 }
 let globalSearchInput;
 let currentSelectedIndex = -1;
+let isIconSwitchMode = false; // 标记是否处于图标切换模式
+
 function createMultiMenu(start, end) {
     const menu = document.createElement('div');
     menu.className = 'multi-menu';
@@ -2327,21 +2332,112 @@ function handleSearchClick(event) {
         globalSearchInput.focus();
     }
 }
+document.addEventListener('keydown', (e) => {
+    const input = document.querySelector('input');
+    
+    const isInputFocused = document.activeElement === input;
+
+    if (isInputFocused) {
+        const cursorPosition = input.selectionStart;
+        const inputLength = input.value.length;
+
+        console.log('Cursor Position:', cursorPosition);
+        console.log('Input Length:', inputLength);
+
+        if (e.key === 'ArrowUp' && cursorPosition === 0) {
+            console.log('Switching to icon switch mode');
+            if (searchEngineIcons.length > 0) {
+                isIconSwitchMode = true;
+                currentSelectedIndex = 0; // 从第一个图标开始
+                highlightSelectedItem();
+            } else {
+                console.error('searchEngineIcons is empty or undefined');
+            }
+            e.preventDefault();
+        } else if (e.key === 'ArrowDown' && cursorPosition === inputLength) {
+            console.log('Switching to icon switch mode');
+            if (searchEngineIcons.length > 0) {
+                isIconSwitchMode = true;
+                currentSelectedIndex = 0; // 从第一个图标开始
+                highlightSelectedItem();
+            } else {
+                console.error('searchEngineIcons is empty or undefined');
+            }
+            e.preventDefault();
+        }
+    } else if (isIconSwitchMode) {
+        switch (e.key) {
+            case 'ArrowRight':
+                if (searchEngineIcons.length > 0) {
+                    currentSelectedIndex = (currentSelectedIndex + 1) % searchEngineIcons.length;
+                } else {
+                    console.error('searchEngineIcons is empty or undefined');
+                }
+                e.preventDefault();
+                break;
+            case 'ArrowLeft':
+                if (searchEngineIcons.length > 0) {
+                    currentSelectedIndex = (currentSelectedIndex - 1 + searchEngineIcons.length) % searchEngineIcons.length;
+                } else {
+                    console.error('searchEngineIcons is empty or undefined');
+                }
+                e.preventDefault();
+                break;
+            case 'ArrowUp':
+            case 'ArrowDown':
+                isIconSwitchMode = false;
+                currentSelectedIndex = -1;
+                highlightSelectedItem();
+                input.focus();
+                return;
+            case 'Enter':
+                if (currentSelectedIndex !== -1 && searchEngineIcons.length > 0) {
+                    const selectedEngine = searchEngineIcons[currentSelectedIndex];
+                    performSearch(input.value.trim(), selectedEngine.url);
+                } else {
+                    console.error('searchEngineIcons is empty or undefined');
+                }
+                return;
+            default:
+                return;
+        }
+
+        highlightSelectedItem();
+    }
+});
+
 
 function highlightSelectedItem() {
-    const allGridItems = document.querySelectorAll('.grid-item');
-    allGridItems.forEach((item, index) => {
+    searchEngineIcons.forEach((item, index) => {
         if (index === currentSelectedIndex) {
-            item.style.backgroundColor = '#e0e0e0';
-            item.style.border = '2px solid #007bff';
+            item.element.style.transform = 'scale(1.2)';
+            item.element.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.3)';
         } else {
-            item.style.backgroundColor = 'white';
-            item.style.border = '1px solid #ccc';
+            item.element.style.transform = 'scale(1)';
+            item.element.style.boxShadow = 'none';
         }
     });
 }
-
+function setupInputListener() {
+    const input = document.querySelector('input'); // 假设输入框是页面上的一个input元素
+    if (input) {
+        input.addEventListener('focus', () => {
+            // 退出图标切换模式
+            isIconSwitchMode = false;
+            currentSelectedIndex = -1;
+            highlightSelectedItem();
+        });
+    }
+}
 function handleKeyNavigation(event) {
+    // 检查事件目标是否是输入框
+    const isInputFocused = document.activeElement.tagName.toLowerCase() === 'input';
+
+    if (isInputFocused) {
+        // 如果输入框有焦点，不做任何处理，允许默认行为
+        return;
+    }
+
     const allGridItems = document.querySelectorAll('.grid-item');
     const totalItems = allGridItems.length;
     const columns = 4;
