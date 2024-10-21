@@ -380,20 +380,74 @@ function loadData() {
 		multiMenu1 = result.multiMenu1 || [];
 		multiMenu2 = result.multiMenu2 || [];
 
-		// 将 id2enginemap 转换为 topEngineListContainer 和 bottomEngineListContainer
+		// 清空现有的引擎列表
 		topEngineListContainer = [];
 		bottomEngineListContainer = [];
 
-		// 假设前10个引擎为顶部引擎,其余为底部引擎
-		let count = 0;
-		for (let [name, url] of Object.entries(id2enginemap)) {
-			if (count < 10) {
-				topEngineListContainer.push({ name, url });
-			} else {
-				bottomEngineListContainer.push({ name, url });
-			}
-			count++;
-		}
+		// AI 搜索引擎
+		const aiSearchEngines = [
+			{ name: "ChatGPT", url: "https://chatgpt.com/?q=%s" },
+			{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s" },
+			{ name: "360AI搜索", url: "https://www.sou.com/?q=%s" },
+			{ name: "百小度", url: "https://ying.baichuan-ai.com/chat" },
+			{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail" },
+			{ name: "海螺", url: "https://hailuoai.com/" },
+			{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s" },
+			{ name: "WebPilot", url: "https://www.webpilot.ai/search?q=%s" },
+			{ name: "私塔", url: "https://metaso.cn/?q=%s" },
+			{ name: "Devv", url: "https://devv.ai/" },
+			{ name: "豆包", url: "https://www.doubao.com/" },
+			{ name: "开搜AI", url: "https://kaisouai.com/?q=%s" },
+			{ name: "文心一言", url: "https://yiyan.baidu.com/" },
+			{ name: "Consensus", url: "https://consensus.app/results/?q=%s" },
+			{ name: "YOU", url: "https://you.com/search?q=%s" },
+			{ name: "phind", url: "https://www.phind.com/search?q=%s" },
+			{ name: "SEMANTIC SCHOLAR", url: "https://www.semanticscholar.org/search?q=%s" },
+			{ name: "Genspark", url: "https://www.genspark.ai/search?query=%s" },
+			{ name: "Felo Search", url: "https://felo.ai/?q=%s" },
+			{ name: "Miku", url: "https://hellomiku.com/search?q=%s" },
+			{ name: "kFind", url: "https://kfind.kmind.com/search?q=%s" },
+			{ name: "MenFree", url: "https://www.memfree.me/search?q=%s" },
+			{ name: "Monica", url: "https://s.monica.im/search?q=%s" },
+			{ name: "MERGEEK", url: "https://mergeek.com/search" },
+			{ name: "Xanswer", url: "https://www.xanswer.com/" },
+			{ name: "exa", url: "https://exa.ai/search?q=%s" }
+		];
+
+		// 传统搜索引擎
+		const regularSearchEngines = [
+			{ name: "Google", url: "https://www.google.com/search?q=%s" },
+			{ name: "Bing", url: "https://www.bing.com/search?q=%s" },
+			{ name: "百度", url: "https://www.baidu.com/s?wd=%s" },
+			{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
+			{ name: "Yandex", url: "https://yandex.com/search/?text=%s" },
+			{ name: "搜狗", url: "https://www.sogou.com/web?query=%s" },
+			{ name: "360搜索", url: "https://www.so.com/s?q=%s" },
+			{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s" },
+			{ name: "小红书", url: "https://www.xiaohongshu.com/search_result?keyword=%s" },
+			{ name: "抖音", url: "https://www.douyin.com/search/%s" },
+			{ name: "X", url: "https://x.com/search?q=%s" },
+			{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" },
+			{ name: "V2EX", url: "https://www.sov2ex.com/?q=%s" },
+			{ name: "Github", url: "https://github.com/search?q=%s" },
+			{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s" },
+			{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s" },
+			{ name: "FaceBook", url: "https://www.facebook.com//search?q=%s" },
+			{ name: "bilibili", url: "https://search.bilibili.com/?keyword=%s" },
+			{ name: "知乎宣客", url: "https://zhida.zhihu.com/" },
+			{ name: "知乎", url: "https://www.zhihu.com/search?q=%s" },
+			{ name: "腾讯元宝", url: "https://yuanbao.tencent.com/chat/" },
+			{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s" },
+			{ name: "微博", url: "https://s.weibo.com/weibo?q=%s" },
+			{ name: "今日头条", url: "https://so.toutiao.com/search?dvpf=pc&keyword=%s" }
+			// 添加更多传统搜索引擎...
+		];
+
+		// 将 AI 搜索引擎添加到顶部引擎列表
+		topEngineListContainer = aiSearchEngines;
+
+		// 将传统搜索引擎添加到底部引擎列表
+		bottomEngineListContainer = regularSearchEngines;
 
 		console.log('Loaded data:', {
 			topEngineListContainer,
