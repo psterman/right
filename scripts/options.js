@@ -370,9 +370,6 @@ function updateAISearchEngines(newEngines) {
 		// 可能需要刷新显示
 	});
 }
-function createEngineItem(name, url) {
-	// 创建和返回搜索引擎列表项的代码
-}
 // 从存储中加载数据
 function loadData() {
 	chrome.storage.sync.get(['id2enginemap', 'multiMenu1', 'multiMenu2'], function (result) {
@@ -459,6 +456,134 @@ function loadData() {
 		initializeTab3();
 	});
 }
+//填充topenginelist
+function loadEngineList() {
+	const engineList = document.querySelector('#topEngineList .engine-list');
+	engineList.innerHTML = '';
+
+	// 修改: 从存储中加载 AI 搜索引擎
+	chrome.storage.sync.get('aiSearchEngines', function (data) {
+		const aiEngines = data.aiSearchEngines || aiSearchEngines;
+		aiEngines.forEach((engine, index) => {
+			const engineItem = createEngineItem(engine, index, false);
+			engineList.appendChild(engineItem);
+		});
+
+		// 加载自定义引擎 (保持不变)
+		chrome.storage.sync.get('customEngines', function (data) {
+			const customEngines = data.customEngines || [];
+			customEngines.forEach((engine, index) => {
+				const engineItem = createEngineItem(engine, index + aiEngines.length, true);
+				engineList.appendChild(engineItem);
+			});
+		});
+	});
+}
+
+// 创建引擎项
+function createEngineItem(engine, index, isCustom) {
+	const item = document.createElement('div');
+	item.className = 'engine-item';
+
+	const checkbox = document.createElement('input');
+	checkbox.type = 'checkbox';
+	checkbox.id = `engine-${index}`;
+	checkbox.checked = engine.enabled !== false;
+
+	const label = document.createElement('label');
+	label.htmlFor = `engine-${index}`;
+	label.textContent = engine.name;
+
+	const urlInput = document.createElement('input');
+	urlInput.type = 'text';
+	urlInput.value = engine.url;
+	urlInput.readOnly = !isCustom;
+
+	item.appendChild(checkbox);
+	item.appendChild(label);
+	item.appendChild(urlInput);
+
+	if (isCustom) {
+		const deleteBtn = document.createElement('button');
+		deleteBtn.textContent = '删除';
+		// 修改: 更新删除按钮的点击事件处理
+		deleteBtn.onclick = () => deleteCustomEngine1(index);
+		item.appendChild(deleteBtn);
+	}
+
+	return item;
+}
+
+// 添加自定义引擎
+function addCustomEngine() {
+	const name = prompt('请输入引擎名称:');
+	const url = prompt('请输入引擎URL (使用 %s 表示搜索词):');
+
+	if (name && url) {
+		chrome.storage.sync.get('customEngines', function (data) {
+			const customEngines = data.customEngines || [];
+			customEngines.push({ name, url, enabled: true });
+			chrome.storage.sync.set({ customEngines }, loadEngineList);
+		});
+	}
+}
+
+// 删除自定义引擎
+function deleteCustomEngine1(index) {
+	chrome.storage.sync.get(['aiSearchEngines', 'customEngines'], function (data) {
+		const aiEngines = data.aiSearchEngines || aiSearchEngines;
+		const customEngines = data.customEngines || [];
+		const customIndex = index - aiEngines.length;
+		if (customIndex >= 0 && customIndex < customEngines.length) {
+			customEngines.splice(customIndex, 1);
+			chrome.storage.sync.set({ customEngines }, loadEngineList);
+		}
+	});
+}
+
+// 保存引擎设置
+function saveEngineSettings() {
+	const engineItems = document.querySelectorAll('.engine-item');
+	const updatedAiEngines = [];
+	const updatedCustomEngines = [];
+
+	chrome.storage.sync.get('aiSearchEngines', function (data) {
+		const aiEngines = data.aiSearchEngines || aiSearchEngines;
+
+		engineItems.forEach((item, index) => {
+			const checkbox = item.querySelector('input[type="checkbox"]');
+			const urlInput = item.querySelector('input[type="text"]');
+			const engine = {
+				name: item.querySelector('label').textContent,
+				url: urlInput.value,
+				enabled: checkbox.checked
+			};
+
+			if (index < aiEngines.length) {
+				updatedAiEngines.push(engine);
+			} else {
+				updatedCustomEngines.push(engine);
+			}
+		});
+
+		chrome.storage.sync.set({
+			aiSearchEngines: updatedAiEngines,
+			customEngines: updatedCustomEngines
+		}, function () {
+			alert('设置已保存');
+			loadEngineList(); // 新增: 重新加载列表以反映更改
+		});
+	});
+}
+
+// 初始化
+
+document.addEventListener('DOMContentLoaded', function () {
+	loadEngineList();
+	document.getElementById('addCustomEngine').addEventListener('click', addCustomEngine);
+	// 假设你有一个保存按钮
+	document.getElementById('saveSettings').addEventListener('click', saveEngineSettings);
+});
 
 // 新的函数重命名为 addNewAISearchEngine
 function addNewAISearchEngine() {
@@ -850,9 +975,7 @@ function loadOptions() {
 	chrome.storage.sync.get(['selectedEngines', 'id2enginemap'], function (result) {
 		let id2enginemap = result.id2enginemap || {};
 
-		// 特别检查闲鱼搜索引擎
-		console.log('加载前闲鱼 URL:', id2enginemap['闲鱼']);
-
+		
 		// 更新 id2enginemap
 		Object.entries(searchEngines).forEach(([category, engines]) => {
 			engines.forEach(engine => {
@@ -860,11 +983,9 @@ function loadOptions() {
 			});
 		});
 
-		console.log('更新后闲鱼 URL:', id2enginemap['闲鱼']);
-
+	
 		// 保存更新后的 id2enginemap
 		chrome.storage.sync.set({ id2enginemap: id2enginemap }, function () {
-			console.log('id2enginemap 已保存，闲鱼 URL:', id2enginemap['闲鱼']);
 		});
 	});
 }
@@ -879,10 +1000,10 @@ function saveOptions() {
 		});
 	});
 
-	console.log('保存前闲鱼 URL:', id2enginemap['闲鱼']);
+
 
 	chrome.storage.sync.set({ id2enginemap: id2enginemap }, function () {
-		console.log('保存后闲鱼 URL:', id2enginemap['闲鱼']);
+		
 	});
 }
 // 确保在页面加载时执行 loadOptions
@@ -3865,17 +3986,10 @@ function initializeTab3() {
 		});
 	});
 
-	loadEngineList('topEngineList', topEngineListContainer);
-	loadEngineList('bottomEngineList', bottomEngineListContainer);
+	
 	loadMultiMenu('multiMenu1', multiMenu1);
 	loadMultiMenu('multiMenu2', multiMenu2);
 
-	document.querySelectorAll('#tab3 .add-engine').forEach(button => {
-		button.addEventListener('click', (e) => {
-			const listId = e.target.closest('.tab-pane').id;
-			addNewEngine(listId);
-		});
-	});
 
 	document.querySelectorAll('#tab3 .add-menu-item').forEach(button => {
 		button.addEventListener('click', (e) => {
@@ -3897,14 +4011,7 @@ function switchTab(tabId) {
 		pane.classList.toggle('active', pane.id === tabId);
 	});
 }
-function loadEngineList(containerId, engineList) {
-	const container = document.querySelector(`#${containerId} .engine-list`);
-	container.innerHTML = '';
-	engineList.forEach((engine, index) => {
-		const item = createEngineItem(engine, index, containerId);
-		container.appendChild(item);
-	});
-}
+
 
 function loadMultiMenu(containerId, menuList) {
 	const container = document.querySelector(`#${containerId} .menu-list`);
@@ -3915,20 +4022,6 @@ function loadMultiMenu(containerId, menuList) {
 	});
 }
 
-function createEngineItem(engine, index, containerId) {
-	const item = document.createElement('div');
-	item.className = 'engine-item';
-	item.innerHTML = `
-        <input type="text" class="engine-name" value="${engine.name}" placeholder="引擎名称">
-        <input type="text" class="engine-url" value="${engine.url}" placeholder="引擎URL">
-        <button class="delete-engine">删除</button>
-    `;
-	item.querySelector('.delete-engine').addEventListener('click', () => deleteEngine(containerId, index));
-	item.querySelectorAll('input').forEach(input => {
-		input.addEventListener('change', () => updateEngine(containerId, index, item));
-	});
-	return item;
-}
 
 function createMenuItem(menu, index, containerId) {
 	const item = document.createElement('div');
@@ -3942,12 +4035,6 @@ function createMenuItem(menu, index, containerId) {
 	return item;
 }
 
-function addNewEngine(listId) {
-	const list = listId === 'topEngineList' ? topEngineListContainer : bottomEngineListContainer;
-	list.push({ name: '', url: '' });
-	loadEngineList(listId, list);
-	saveEngineList(listId, list);
-}
 
 function addNewMenuItem(listId) {
 	const list = listId === 'multiMenu1' ? multiMenu1 : multiMenu2;
@@ -3956,12 +4043,6 @@ function addNewMenuItem(listId) {
 	saveMultiMenu(listId, list);
 }
 
-function deleteEngine(containerId, index) {
-	const list = containerId === 'topEngineList' ? topEngineListContainer : bottomEngineListContainer;
-	list.splice(index, 1);
-	loadEngineList(containerId, list);
-	saveEngineList(containerId, list);
-}
 
 function deleteMenuItem(containerId, index) {
 	const list = containerId === 'multiMenu1' ? multiMenu1 : multiMenu2;
@@ -3970,14 +4051,7 @@ function deleteMenuItem(containerId, index) {
 	saveMultiMenu(containerId, list);
 }
 
-function updateEngine(containerId, index, item) {
-	const list = containerId === 'topEngineList' ? topEngineListContainer : bottomEngineListContainer;
-	list[index] = {
-		name: item.querySelector('.engine-name').value,
-		url: item.querySelector('.engine-url').value
-	};
-	saveEngineList(containerId, list);
-}
+
 
 function updateMenuItem(containerId, index, item) {
 	const list = containerId === 'multiMenu1' ? multiMenu1 : multiMenu2;
@@ -3985,11 +4059,6 @@ function updateMenuItem(containerId, index, item) {
 	saveMultiMenu(containerId, list);
 }
 
-function saveEngineList(containerId, list) {
-	chrome.storage.sync.set({ [containerId]: list }, () => {
-		console.log(`${containerId} saved`);
-	});
-}
 
 function saveMultiMenu(containerId, list) {
 	chrome.storage.sync.set({ [containerId]: list }, () => {
