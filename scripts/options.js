@@ -582,6 +582,31 @@ function deleteEngine(index, isAI) {
 		});
 	}
 }
+
+/* function editEngine(index) {
+	chrome.storage.sync.get('aiSearchEngines', function (data) {
+		let engines = data.aiSearchEngines || [];
+		const newName = prompt('输入新的搜索引擎名称:', engines[index].name);
+		const newUrl = prompt('输入新的搜索引擎URL:', engines[index].url);
+
+		if (newName && newUrl) {
+			engines[index] = { name: newName, url: newUrl };
+			saveAISearchEngines(engines);
+			loadAISearchEngines('multiMenu1'); // 重新加载列表
+		}
+	});
+} */
+
+/* function deleteEngine(index) {
+	chrome.storage.sync.get('aiSearchEngines', function (data) {
+		let engines = data.aiSearchEngines || [];
+		if (confirm('确定要删除这个搜索引擎吗？')) {
+			engines.splice(index, 1);
+			saveAISearchEngines(engines);
+			loadAISearchEngines('multiMenu1'); // 重新加载列表
+		}
+	});
+} */
 function saveEngineState(engineType, index, isEnabled) {
 	chrome.storage.sync.get(engineType, function (data) {
 		let engines = data[engineType] || [];
@@ -752,30 +777,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	loadAISearchEngines('multiMenu1');
 });
 
-/* function editEngine(index) {
-	chrome.storage.sync.get('aiSearchEngines', function (data) {
-		let engines = data.aiSearchEngines || [];
-		const newName = prompt('输入新的搜索引擎名称:', engines[index].name);
-		const newUrl = prompt('输入新的搜索引擎URL:', engines[index].url);
-
-		if (newName && newUrl) {
-			engines[index] = { name: newName, url: newUrl };
-			saveAISearchEngines(engines);
-			loadAISearchEngines('multiMenu1'); // 重新加载列表
-		}
-	});
-} */
-
-/* function deleteEngine(index) {
-	chrome.storage.sync.get('aiSearchEngines', function (data) {
-		let engines = data.aiSearchEngines || [];
-		if (confirm('确定要删除这个搜索引擎吗？')) {
-			engines.splice(index, 1);
-			saveAISearchEngines(engines);
-			loadAISearchEngines('multiMenu1'); // 重新加载列表
-		}
-	});
-} */
 
 function saveAISearchEngines() {
 	chrome.storage.sync.set({ aiSearchEngines: aiSearchEngines }, function () {
