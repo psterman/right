@@ -458,28 +458,29 @@ function loadData() {
 }
 //填充topenginelist
 function loadEngineList() {
-	const topEngineList = document.querySelector('#topEngineList .engine-list');
-	const bottomEngineList = document.querySelector('#bottomEngineList .engine-list');
-	topEngineList.innerHTML = '';
-	bottomEngineList.innerHTML = '';
+  console.log('Loading engine list');
+  const topEngineList = document.querySelector('#topEngineList .engine-list');
+  const bottomEngineList = document.querySelector('#bottomEngineList .engine-list');
+  topEngineList.innerHTML = '';
+  bottomEngineList.innerHTML = '';
 
-	// 加载 AI 搜索引擎到顶部列表
-	chrome.storage.sync.get('aiSearchEngines', function (data) {
-		const aiEngines = data.aiSearchEngines || [];
-		aiEngines.forEach((engine, index) => {
-			const engineItem = createEngineItem(engine, index, true, true); // 所有 AI 引擎都视为自定义
-			topEngineList.appendChild(engineItem);
-		});
-	});
+  chrome.storage.sync.get(['aiSearchEngines', 'regularSearchEngines'], function (data) {
+    console.log('Loaded data from storage:', data);
+    
+    const aiEngines = data.aiSearchEngines || [];
+    console.log('AI engines:', aiEngines);
+    aiEngines.forEach((engine, index) => {
+      const engineItem = createEngineItem(engine, index, true, true);
+      topEngineList.appendChild(engineItem);
+    });
 
-	// 加载常规搜索引擎到底部列表
-	chrome.storage.sync.get('regularSearchEngines', function (data) {
-		const regularEngines = data.regularSearchEngines || [];
-		regularEngines.forEach((engine, index) => {
-			const engineItem = createEngineItem(engine, index, true, false); // 所有常规引擎都视为自定义
-			bottomEngineList.appendChild(engineItem);
-		});
-	});
+    const regularEngines = data.regularSearchEngines || [];
+    console.log('Regular engines:', regularEngines);
+    regularEngines.forEach((engine, index) => {
+      const engineItem = createEngineItem(engine, index, true, false);
+      bottomEngineList.appendChild(engineItem);
+    });
+  });
 }
 // 创建引擎项
 function createEngineItem(engine, index, isCustom, isAI) {
@@ -509,17 +510,27 @@ function createEngineItem(engine, index, isCustom, isAI) {
 	item.appendChild(urlInput);
 
 	// 始终为自定义引擎添加编辑和删除按钮
+
 	if (isCustom) {
 		const editBtn = document.createElement('button');
 		editBtn.textContent = '编辑';
-		editBtn.onclick = () => editEngine(index, isAI);
+		editBtn.onclick = (e) => {
+			e.preventDefault();
+			console.log(`Edit button clicked for ${isAI ? 'AI' : 'regular'} engine at index ${index}`);
+			editEngine(index, isAI);
+		};
 		item.appendChild(editBtn);
 
 		const deleteBtn = document.createElement('button');
 		deleteBtn.textContent = '删除';
-		deleteBtn.onclick = () => deleteEngine(index, isAI);
+		deleteBtn.onclick = (e) => {
+			e.preventDefault();
+			console.log(`Delete button clicked for ${isAI ? 'AI' : 'regular'} engine at index ${index}`);
+			deleteEngine(index, isAI);
+		};
 		item.appendChild(deleteBtn);
 	}
+
 
 	return item;
 }
@@ -543,10 +554,8 @@ function addNewEngine(isAI) {
 }
 function editEngine(index, isAI) {
 	const storageKey = isAI ? 'aiSearchEngines' : 'regularSearchEngines';
-	console.log(`Editing ${isAI ? 'AI' : 'regular'} engine at index ${index}`);
 	chrome.storage.sync.get(storageKey, function (data) {
 		let engines = data[storageKey] || [];
-		console.log('Current engines:', engines);
 		const newName = prompt('输入新的搜索引擎名称:', engines[index].name);
 		const newUrl = prompt('输入新的搜索引擎URL:', engines[index].url);
 
@@ -555,6 +564,7 @@ function editEngine(index, isAI) {
 			chrome.storage.sync.set({ [storageKey]: engines }, function () {
 				console.log(`${isAI ? 'AI' : '常规'}搜索引擎已更新`, engines);
 				loadEngineList(); // 重新加载列表
+				saveEngineSettings(); // 保存所有更改
 			});
 		}
 	});
@@ -618,7 +628,7 @@ function saveEngineSettings() {
 	const updatedAiEngines = [];
 	const updatedRegularEngines = [];
 
-	topEngineItems.forEach((item, index) => {
+	topEngineItems.forEach((item) => {
 		const checkbox = item.querySelector('input[type="checkbox"]');
 		const urlInput = item.querySelector('input[type="text"]');
 		const engine = {
@@ -629,7 +639,7 @@ function saveEngineSettings() {
 		updatedAiEngines.push(engine);
 	});
 
-	bottomEngineItems.forEach((item, index) => {
+	bottomEngineItems.forEach((item) => {
 		const checkbox = item.querySelector('input[type="checkbox"]');
 		const urlInput = item.querySelector('input[type="text"]');
 		const engine = {
@@ -742,7 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	loadAISearchEngines('multiMenu1');
 });
 
-function editEngine(index) {
+/* function editEngine(index) {
 	chrome.storage.sync.get('aiSearchEngines', function (data) {
 		let engines = data.aiSearchEngines || [];
 		const newName = prompt('输入新的搜索引擎名称:', engines[index].name);
@@ -754,7 +764,7 @@ function editEngine(index) {
 			loadAISearchEngines('multiMenu1'); // 重新加载列表
 		}
 	});
-}
+} */
 
 /* function deleteEngine(index) {
 	chrome.storage.sync.get('aiSearchEngines', function (data) {
