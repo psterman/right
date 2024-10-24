@@ -474,7 +474,12 @@ function loadEngineList() {
 
 	// 加载常规搜索引擎到底部列表
 	chrome.storage.sync.get('regularSearchEngines', function (data) {
-		const regularEngines = data.regularSearchEngines || searchEngines.regular;
+		let regularEngines = data.regularSearchEngines;
+		if (!regularEngines || !regularEngines.length) {
+			// 如果存储中没有 regularSearchEngines，使用默认值并保存
+			regularEngines = JSON.parse(JSON.stringify(searchEngines.regular));
+			chrome.storage.sync.set({ regularSearchEngines: regularEngines });
+		}
 		regularEngines.forEach((engine, index) => {
 			const engineItem = createEngineItem(engine, index, false, false);
 			bottomEngineList.appendChild(engineItem);
@@ -484,7 +489,7 @@ function loadEngineList() {
 		chrome.storage.sync.get('customEngines', function (customData) {
 			const customEngines = customData.customEngines || [];
 			customEngines.forEach((engine, index) => {
-				const engineItem = createEngineItem(engine, index + regularEngines.length, true, false);
+				const engineItem = createEngineItem(engine, index, true, false);
 				bottomEngineList.appendChild(engineItem);
 			});
 		});
@@ -529,7 +534,11 @@ function createEngineItem(engine, index, isCustom, isAI) {
 }
 function saveEngineState(engineType, index, isEnabled) {
 	chrome.storage.sync.get(engineType, function (data) {
-		const engines = data[engineType] || [];
+		let engines = data[engineType] || [];
+		if (engineType === 'regularSearchEngines' && !engines.length) {
+			// 如果 regularSearchEngines 为空，使用默认的 searchEngines.regular
+			engines = JSON.parse(JSON.stringify(searchEngines.regular));
+		}
 		if (engines[index]) {
 			engines[index].enabled = isEnabled;
 			chrome.storage.sync.set({ [engineType]: engines }, function () {
@@ -609,8 +618,15 @@ function saveEngineSettings() {
 
 document.addEventListener('DOMContentLoaded', function () {
 	chrome.storage.sync.get(['aiSearchEngines', 'regularSearchEngines', 'customEngines'], function (data) {
-		searchEngines.ai = data.aiSearchEngines || searchEngines.ai;
-		searchEngines.regular = data.regularSearchEngines || searchEngines.regular;
+		if (data.aiSearchEngines) {
+			searchEngines.ai = data.aiSearchEngines;
+		}
+		if (data.regularSearchEngines && data.regularSearchEngines.length) {
+			searchEngines.regular = data.regularSearchEngines;
+		} else {
+			// 如果 regularSearchEngines 不存在或为空，初始化并保存
+			chrome.storage.sync.set({ regularSearchEngines: searchEngines.regular });
+		}
 		searchEngines.custom = data.customEngines || [];
 
 		loadEngineList();
@@ -619,7 +635,6 @@ document.addEventListener('DOMContentLoaded', function () {
 	document.getElementById('addCustomEngine').addEventListener('click', addCustomEngine);
 	document.getElementById('saveSettings').addEventListener('click', saveEngineSettings);
 });
-
 // 新的函数重命名为 addNewAISearchEngine
 function addNewAISearchEngine() {
 	const name = prompt('输入新的搜索引擎名称:');
