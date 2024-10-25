@@ -1131,9 +1131,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	// 为每个方向的按钮添加点击事件监听器
 	document.querySelectorAll('.select-button').forEach(button => {
 		button.addEventListener('click', function (e) {
-			e.stopPropagation(); // 阻止事件冒泡
+			e.stopPropagation();
 			const menu = this.nextElementSibling;
-			// 检查菜单当前是否显示
 			const isMenuVisible = menu.classList.contains('show');
 
 			// 先关闭所有打开的菜单
@@ -1145,58 +1144,12 @@ document.addEventListener('DOMContentLoaded', function () {
 			if (!isMenuVisible) {
 				menu.classList.add('show');
 			}
-			// 如果当前菜单是显示的，上面的代码已经把它关闭了
 		});
 	});
-
-
-	
-	// [新增] 确保 select-menu 默认是隐藏的
-	document.querySelectorAll('.select-menu').forEach(menu => {
-		menu.classList.remove('show');
-		menu.addEventListener('click', (event) => {
-			event.stopPropagation();
-		});
-	});
-	// 阻止在 select-menu 内的点击事件冒泡
-	document.querySelectorAll('.select-menu').forEach(menu => {
-		menu.addEventListener('click', (event) => {
-			event.stopPropagation();
-		});
-	});
-	// [新增] 添加键盘事件支持
-	document.querySelectorAll('.select-button').forEach(button => {
-		button.addEventListener('keydown', function (e) {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
-				this.click();
-			}
-			if (e.key === 'Escape') {
-				const menu = this.nextElementSibling;
-				if (menu.classList.contains('show')) {
-					menu.classList.remove('show');
-				}
-			}
-		});
-	});
-
-	// [新增] 添加焦点管理
-	document.querySelectorAll('.select-menu .engine-list li').forEach(option => {
-		option.setAttribute('tabindex', '0');
-		option.addEventListener('keydown', function (e) {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
-				this.click();
-			}
-		});
-	});
-
-	// [修改] 选择搜索引擎的处理
 	document.querySelectorAll('.select-menu .engine-list li').forEach(option => {
 		option.addEventListener('click', function (e) {
 			e.stopPropagation();
 			const selectedEngineName = this.textContent;
-			const selectedEngineCategory = this.closest('.category').querySelector('h4').textContent;
 			const customSelect = this.closest('.custom-select');
 			const button = customSelect.querySelector('.select-button');
 			const menu = this.closest('.select-menu');
@@ -1204,21 +1157,25 @@ document.addEventListener('DOMContentLoaded', function () {
 			// 更新按钮文本
 			button.textContent = selectedEngineName;
 
-			// 关闭菜单
-			menu.classList.remove('show');
+			// [修改] 直接使用相同的关闭菜单逻辑
+			document.querySelectorAll('.select-menu.show').forEach(menu => {
+				menu.classList.remove('show');
+			});
 
 			// 保存选择到存储
 			const direction = customSelect.id;
 			chrome.storage.sync.get('directionEngines', (data) => {
 				const directionEngines = data.directionEngines || {};
-				directionEngines[direction] = selectedEngineCategory === '禁用' ? 'disabled' : selectedEngineName;
-				chrome.storage.sync.set({ directionEngines: directionEngines }, () => {
-					console.log(`Selected ${selectedEngineName} for ${direction}`);
-				});
+				// 获取类别（如果有）
+				const category = this.closest('.category');
+				const isDisabled = category && category.querySelector('h4').textContent === '禁用';
+
+				directionEngines[direction] = isDisabled ? 'disabled' : selectedEngineName;
+				chrome.storage.sync.set({ directionEngines: directionEngines });
 			});
 
 			// 处理禁用状态
-			if (selectedEngineCategory === '禁用') {
+			if (this.getAttribute('data-value') === 'disabled') {
 				button.classList.add('disabled');
 			} else {
 				button.classList.remove('disabled');
