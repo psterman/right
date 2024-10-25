@@ -2517,6 +2517,13 @@ button {
   max-width: none !important;
   overflow-x: auto !important;
 }
+.select-menu .engine-list li {
+  cursor: pointer;
+}
+.select-menu .engine-list li:focus {
+    outline: 2px solid #007bff;
+    outline-offset: -2px;
+}
 .category {
   flex: 1 0 auto !important;
   /* 不允许收缩，但允许增长 */

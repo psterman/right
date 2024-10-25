@@ -1018,20 +1018,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		addMenuItemButton.addEventListener('click', addCustomSearchEnginePrompt);
 	}
 });
-let openMenu = null; // 用于跟踪当前打开的菜单
-// 在文件顶部添加或更新以下函数
-function showSelectMenu(menu) {
-	// 先隐藏所有其他的 select-menu
-	document.querySelectorAll('.select-menu').forEach(m => {
-		m.style.display = 'none';
-	});
-	menu.style.display = 'block';
-}
 
-function hideSelectMenu(menu) {
-	menu.style.display = 'none';
-}
-// 在文件顶部添加或更新以下代码
 // 开始: 搜索引擎数据
 const searchEngines = {
 	ai: [
@@ -1134,14 +1121,6 @@ function selectEngine(engineName, selectMenu) {
 	hideSelectMenu(selectMenu);
 }
 
-function showSelectMenu(menu) {
-	menu.style.display = 'block';
-}
-
-function hideSelectMenu(menu) {
-	menu.style.display = 'none';
-}
-
 // 在页面加载时初始化所有方向的搜索引擎列表
 document.addEventListener('DOMContentLoaded', function () {
 	chrome.storage.sync.get('id2enginemap', function (data) {
@@ -1154,34 +1133,73 @@ document.addEventListener('DOMContentLoaded', function () {
 		button.addEventListener('click', function (e) {
 			e.stopPropagation(); // 阻止事件冒泡
 			const menu = this.nextElementSibling;
-			menu.classList.toggle('show');
+			// 检查菜单当前是否显示
+			const isMenuVisible = menu.classList.contains('show');
+
+			// 先关闭所有打开的菜单
+			document.querySelectorAll('.select-menu.show').forEach(otherMenu => {
+				otherMenu.classList.remove('show');
+			});
+
+			// 如果当前菜单是隐藏的，就显示它
+			if (!isMenuVisible) {
+				menu.classList.add('show');
+			}
+			// 如果当前菜单是显示的，上面的代码已经把它关闭了
 		});
 	});
 
-	// 点击外部区域关闭菜单
-	document.addEventListener('click', function (e) {
-		if (!e.target.closest('.custom-select')) {
-			document.querySelectorAll('.select-menu.show').forEach(menu => {
-				menu.classList.remove('show');
-			});
-		}
-	});
 
+	
+	// [新增] 确保 select-menu 默认是隐藏的
+	document.querySelectorAll('.select-menu').forEach(menu => {
+		menu.classList.remove('show');
+		menu.addEventListener('click', (event) => {
+			event.stopPropagation();
+		});
+	});
 	// 阻止在 select-menu 内的点击事件冒泡
 	document.querySelectorAll('.select-menu').forEach(menu => {
 		menu.addEventListener('click', (event) => {
 			event.stopPropagation();
 		});
 	});
+	// [新增] 添加键盘事件支持
+	document.querySelectorAll('.select-button').forEach(button => {
+		button.addEventListener('keydown', function (e) {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				this.click();
+			}
+			if (e.key === 'Escape') {
+				const menu = this.nextElementSibling;
+				if (menu.classList.contains('show')) {
+					menu.classList.remove('show');
+				}
+			}
+		});
+	});
 
+	// [新增] 添加焦点管理
+	document.querySelectorAll('.select-menu .engine-list li').forEach(option => {
+		option.setAttribute('tabindex', '0');
+		option.addEventListener('keydown', function (e) {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				this.click();
+			}
+		});
+	});
+
+	// [修改] 选择搜索引擎的处理
 	document.querySelectorAll('.select-menu .engine-list li').forEach(option => {
 		option.addEventListener('click', function (e) {
-			e.stopPropagation(); // 阻止事件冒泡
+			e.stopPropagation();
 			const selectedEngineName = this.textContent;
 			const selectedEngineCategory = this.closest('.category').querySelector('h4').textContent;
 			const customSelect = this.closest('.custom-select');
 			const button = customSelect.querySelector('.select-button');
-			const menu = customSelect.querySelector('.select-menu');
+			const menu = this.closest('.select-menu');
 
 			// 更新按钮文本
 			button.textContent = selectedEngineName;
@@ -1199,13 +1217,22 @@ document.addEventListener('DOMContentLoaded', function () {
 				});
 			});
 
-			// 如果选择了禁用，添加视觉反馈
+			// 处理禁用状态
 			if (selectedEngineCategory === '禁用') {
 				button.classList.add('disabled');
 			} else {
 				button.classList.remove('disabled');
 			}
 		});
+	});
+
+	// [修改] 点击外部区域关闭菜单
+	document.addEventListener('click', function (e) {
+		if (!e.target.closest('.custom-select')) {
+			document.querySelectorAll('.select-menu.show').forEach(menu => {
+				menu.classList.remove('show');
+			});
+		}
 	});
 
 	// 恢复保存的方向搜索引擎选择
@@ -3546,6 +3573,7 @@ directionSearchToggle.addEventListener('change', function () {
 	saveDirectionSearchSetting();
 	updateDirectionSearchUI();
 });
+
 // 初始化
 document.addEventListener('DOMContentLoaded', function () {
 	const directionSearchToggle = document.getElementById('directionSearchToggle');
