@@ -10,6 +10,8 @@ let ctrlSelectEnabled = true;
 let currentNotification = null; // 全局变量，用于跟踪当前显示的通知
 let id2enginemap = {};// 在初始化函数中（例如 DOMContentLoaded 事件监听器中）添加
 let engineItems = [];
+let dragStartPoint = {};
+let direction;
 
 chrome.storage.sync.get('id2enginemap', function (result) {
     if (result.id2enginemap) {
@@ -532,6 +534,11 @@ function showSearchLinks(selectedText, x, y, currentEngine) {
     if (!isPopupMenuEnabled) {
         console.log('Popup menu is disabled, not showing search links');
         return;
+    }
+    // 在创建新弹出菜单前，确保移除旧的
+    if (currentPopup) {
+        document.body.removeChild(currentPopup);
+        currentPopup = null;
     }
     // 继续执行显示悬浮菜单的逻辑
     // 新增: 添加时间检查逻辑
@@ -1346,7 +1353,17 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     function dragstart(e) {
         if (bypass(e.target))
             return false
+        // 新增: 移除当前的搜索弹出菜单
+        if (currentPopup) {
+            document.body.removeChild(currentPopup);
+            currentPopup = null;
+        }
 
+        // 新增: 移除当前的通知
+        if (currentNotification) {
+            document.body.removeChild(currentNotification);
+            currentNotification = null;
+        }
         var data = ''
         if (window.getSelection() && window.getSelection().anchorNode &&
             window.getSelection().anchorNode.parentNode === e.target.parentNode) {
