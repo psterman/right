@@ -1388,17 +1388,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             // 新增: 检查是否为链接
             const isLink = e.dataTransfer.types.includes('text/uri-list');
 
-            if (directionSearchEnabled) {
-                if (isLink) {
-                    // 如果是链接，显示固定的提示
-                    showSearchNotification("在侧边栏打开链接", "", direction);
-                } else if (directionEngines[`direction-${direction}`]) {
-                    // 如果不是链接，保持原有的方向搜索逻辑
-                    const engineName = directionEngines[`direction-${direction}`];
-                    showSearchNotification(engineName, selectedText, direction);
-                }
+          // 检查方向搜索是否启用
+        chrome.storage.sync.get('directionSearchEnabled', function(result) {
+            if (!result.directionSearchEnabled) {
+                // 如果方向搜索被禁用，显示提示信息
+                showSearchNotification("请在设置中打开此方向搜索", "", direction);
+            } else if (isLink) {
+                showSearchNotification("在侧边栏打开链接", "", direction);
+            } else if (directionEngines[`direction-${direction}`]) {
+                const engineName = directionEngines[`direction-${direction}`];
+                showSearchNotification(engineName, selectedText, direction);
             }
-        }
+        });
+    }
 
         return false;
     }
