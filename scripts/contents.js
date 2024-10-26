@@ -1,4 +1,6 @@
 // 在全局范围内添加这些变量
+// 全局变量
+let currentTab = 'write';
 let currentPopup = null;
 // 从存储中检索选中的搜索引擎
 // 假设这是在 contents.js 中的现有代码
@@ -1690,530 +1692,491 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     })
 })()
 //输入框
+// 定义标签配置
+const TAB_CONFIG = [
+    { id: 'write', text: '帮我写作', icon: '✍️', color: '#4CAF50' },
+    { id: 'image', text: '图像生成', icon: '🖼️', color: '#2196F3' },
+    { id: 'ai', text: 'AI 搜索', icon: '🔍', color: '#9C27B0' },
+    { id: 'read', text: '阅读总结', icon: '📚', color: '#FF9800' },
+    { id: 'music', text: '音乐生成', icon: '🎵', color: '#E91E63' },
+    { id: 'solve', text: '解题答疑', icon: '❓', color: '#00BCD4' },
+    { id: 'study', text: '学术搜索', icon: '📖', color: '#795548' },
+    { id: 'more', text: '更多', icon: '⋯', color: '#607D8B' }
+];
+
+// 定义工具按钮配置
+const TOOL_CONFIG = [
+    { icon: '📎', title: '附加文件' },
+    { icon: '📷', title: '截图' },
+    { icon: '✂️', title: '剪切' },
+    { icon: '🎤', title: '语音输入' }
+];
+
 function createSearchPopup(initialText = '', showMultiMenu = false) {
     console.log('Creating search popup');
     if (currentPopup) {
         document.body.removeChild(currentPopup);
     }
+
     const popup = document.createElement('div');
+    popup.id = "searchPopup";
 
-    // 新增：阻止事件冒泡
-    popup.addEventListener('mousedown', function (e) {
-        e.stopPropagation();
-    });
-    document.addEventListener('keydown', escListener);
-    document.addEventListener('keydown', handleKeyNavigation);
-
-
-    // 修改 popup 的样式
+    // 基础样式设置
     popup.style.cssText = `
-       position: fixed;
+        position: fixed;
         left: 50%;
         top: 43%;
         transform: translate(-50%, -50%);
         z-index: 10000;
-        width: 420px;
-        max-height: 90vh;
+        width: 600px;
         background: white;
-        border-radius: 5px;
+        border-radius: 8px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         display: flex;
         flex-direction: column;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 10px; // 添加内边距
-        box-sizing: border-box; // 确保内边距不会增加总宽度
-    `;
-    popup.id = "searchPopup";
-    // 修改 1: 添加 ESC 键监听器
-    document.addEventListener('keydown', function escListener(e) {
-        if (e.key === 'Escape') {
-            closeSearchPopup();
-            // 移除事件监听器，避免多次添加
-            document.removeEventListener('keydown', escListener);
-        }
-    });
-    // 新增：上方搜索引擎列表容器
-    const topEngineListContainer = document.createElement('div');
-    topEngineListContainer.style.cssText = `
-       
-    `;
-    popup.appendChild(topEngineListContainer);
-
-    // 创建九宫格多功能菜单
-    const multiMenu = createMultiMenu();
-    multiMenu.style.display = showMultiMenu ? 'grid' : 'none';
-    // 创建工具栏
-    const toolbar = document.createElement('div');
-    toolbar.style.display = 'flex';
-    toolbar.style.justifyContent = 'space-between';
-    toolbar.style.alignItems = 'center';
-    toolbar.style.padding = '5px';
-    toolbar.style.backgroundColor = 'white'; // 修改：确保背景是白色
-    toolbar.style.borderBottom = 'none'; // 移除底部边框
-    toolbar.style.height = '30px'; // 工具栏高度
-    toolbar.style.width = '100%'; // 确保工具栏宽度为100%
-    toolbar.style.backgroundColor = 'transparent';
-    toolbar.style.borderTopLeftRadius = '5px';
-    toolbar.style.borderTopRightRadius = '5px';
-
-    // 创建关闭按钮
-    const closeButton = document.createElement('button');
-    closeButton.style.cursor = 'pointer';
-    closeButton.style.fontSize = '16px';
-    closeButton.style.color = '#666';
-    closeButton.style.border = 'none';
-    closeButton.style.backgroundColor = 'transparent';
-    closeButton.style.height = '30px';
-    closeButton.style.width = '30px';
-    closeButton.style.lineHeight = '30px';
-    closeButton.style.padding = '0'; // 移除内边距
-    closeButton.style.marginLeft = 'auto'; // 将按钮推到最右边
-    closeButton.style.display = 'flex'; // 使用 flex 布局
-    closeButton.style.justifyContent = 'center'; // 水平居中
-    closeButton.style.alignItems = 'center'; // 垂直居中
-    closeButton.style.borderRadius = '2px';
-    closeButton.textContent = '×';
-    closeButton.onclick = closeSearchPopup;
-
-    // 鼠标悬停效果
-    closeButton.addEventListener('mouseover', function () {
-        closeButton.style.color = 'red';
-    });
-    closeButton.addEventListener('mouseout', function () {
-        closeButton.style.color = '#666';
-    });
-    popup.style.cursor = 'move'; // 添加移动光标样式
-
-
-    // 创建搜索引擎列表
-    const engineList = document.createElement('div');
-    engineList.style.display = 'flex'; // 新增: 使用flex布局
-    engineList.style.justifyContent = 'center'; // 新增: 居中对齐
-    engineList.style.width = '100%'; // 新增: 设置宽度
-    engineList.style.marginTop = '10px'; // 新增: 添加顶部间距
-    engineList.style.padding = '5px';
-    engineList.style.borderTop = 'none'; // 移除顶部边框
-
-    // 创建搜索引擎项目的函数
-    function createEngineItem(name, url) {
-        const item = document.createElement('div');
-        item.textContent = name;
-        item.style.cssText = `
-        padding: 5px 10px;
-        cursor: pointer;
-        color: black;
-        font-size: 14px;
-    `;
-        item.addEventListener('click', () => performSearch(input.value.trim(), url));
-        // 添加鼠标悬停效果
-        item.addEventListener('mouseover', () => {
-            item.style.backgroundColor = '#f0f0f0';
-        });
-        item.addEventListener('mouseout', () => {
-            item.style.backgroundColor = 'white';
-        });
-
-        item.addEventListener('click', () => {
-            const searchText = globalSearchInput.value.trim();
-            if (searchText) {
-                performSearch(searchText, url);
-            }
-        });
-
-        return item;
-    }
-
-
-    // 创建搜索引擎项目的函数
-    function createEngineItem(name, url, iconPath) {
-        const item = document.createElement('div');
-        item.style.cssText = `
-        width: 16px;
-        height: 16px;
-        cursor: pointer;
-        display: inline-block;
-        margin: 5px;
-        border-radius: 50%;
-        transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
-        position: relative; // 确保提示框相对于图标定位
+        overflow: hidden;
+        max-height: 90vh;
     `;
 
-        const icon = document.createElement('img');
-        icon.src = iconPath;
-        icon.alt = name;
-        icon.style.cssText = `
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        border-radius: 50%;
-    `;
+    // 组装界面组件
+    const tabBar = createTabBar();
+    const searchArea = createSearchArea(initialText);
+    const contentArea = createContentArea();
+    const engineListContainer = createEngineListContainer();
 
-        item.appendChild(icon);
-        // 添加到engineItems数组
-        engineItems.push({ element: item, url: url });
-
-        item.addEventListener('click', () => performSearch(input.value.trim(), url));
-
-        // 创建提示框
-        const tooltip = document.createElement('div');
-        tooltip.textContent = name;
-        tooltip.style.cssText = `
-        position: absolute;
-        bottom: 100%; // 在图标上方显示
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 5px;
-        border-radius: 3px;
-        white-space: nowrap;
-        opacity: 0;
-        transition: opacity 0.3s;
-        pointer-events: none; // 确保提示框不影响鼠标事件
-    `;
-
-        item.appendChild(tooltip);
-
-        // 添加鼠标事件
-        item.addEventListener('mouseover', () => {
-            tooltip.style.opacity = '1';
-        });
-
-        item.addEventListener('mouseout', () => {
-            tooltip.style.opacity = '0';
-        });
-
-        item.addEventListener('click', () => performSearch(input.value.trim(), url));
-
-        return item;
-    }
-
-    // 添加百度搜索引擎
-    const baiduItem = createEngineItem('百度', 'https://www.baidu.com/s?wd=', 'https://cdn-icons-png.flaticon.com/128/2190/2190464.png');
-    engineList.appendChild(baiduItem);
-
-    // 添加 Bing 搜索引擎
-    const bingItem = createEngineItem('bing', 'https://www.bing.com/search?q=', 'https://cdn-icons-png.flaticon.com/128/732/732186.png');
-    engineList.appendChild(bingItem);
-    popup.appendChild(engineList);
-
-
-    // 添加拖拽功能
-    let isDragging = false;
-    let startX, startY;
-
-    toolbar.onmousedown = function (e) {
-        isDragging = true;
-        // 修改 3: 计算鼠标相对于弹窗的位置
-        startX = e.clientX - popup.offsetLeft;
-        startY = e.clientY - popup.offsetTop;
-
-        e.preventDefault();
-    };
-
-    document.onmousemove = function (e) {
-        if (!isDragging) return;
-
-        // 修改 4: 直接计算新位置
-        let newLeft = e.clientX - startX;
-        let newTop = e.clientY - startY;
-
-        // 确保弹窗不会被拖出屏幕
-        newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - popup.offsetWidth));
-        newTop = Math.max(0, Math.min(newTop, window.innerHeight - popup.offsetHeight));
-
-        popup.style.left = newLeft + 'px';
-        popup.style.top = newTop + 'px';
-        popup.style.transform = 'none'; // 移除 transform
-    };
-
-
-    document.onmouseup = function () {
-        isDragging = false;
-    };
-    toolbar.appendChild(closeButton);
-    popup.appendChild(toolbar);
-    // 创建搜索区域
-    const searchArea = document.createElement('div');
-    searchArea.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        width: 100%; // 确保宽度为100%
-        box-sizing: border-box; // 添加这一行
-    `;
-    // 新增: 创建输入框容器
-    const inputContainer = document.createElement('div');
-    inputContainer.style.cssText = `
-        padding: 10px;
-        display: flex;
-        align-items: center;
-        // 修改：添加固定定位
-        position: sticky;
-        top: 0;
-        background: white;
-        z-index: 1;
-    `;
-
-    const input = document.createElement('input');
-    const shouldShowEngineList = !showMultiMenu;
-    input.type = 'text';
-    input.placeholder = '输入搜索词...';
-    input.value = initialText; // 新增: 设置初始文本
-    globalSearchInput = input;
-    input.style.cssText = `
-        flex-grow: 1;
-        height: 30px;
-        border: 1px solid #ccc;
-        border-right: none;
-        border-radius: 4px 0 0 4px;
-        padding: 0 10px;
-        font-size: 14px;
-        outline: none;
-    `;
-    input.value = initialText;
-
-    // 修改 1: 更新输入框的键盘事件监听器
-    input.addEventListener('keydown', function (e) {
-        if (topEngineListContainer.style.display === 'block' || bottomEngineListContainer.style.display === 'block') {
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                selectEngineItem((selectedIndex + 1) % engineItems.length);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                selectEngineItem((selectedIndex - 1 + engineItems.length) % engineItems.length);
-            } else if (e.key === 'Enter' && selectedIndex !== -1) {
-                e.preventDefault();
-                const selectedEngine = engineItems[selectedIndex];
-                const engineName = selectedEngine.textContent;
-                chrome.storage.sync.get('id2enginemap', function (data) {
-                    const engineUrl = data.id2enginemap[engineName];
-                    if (engineUrl) {
-                        performSearch(input.value.trim(), engineUrl);
-                    }
-                });
-            }
-        }
-    });
-    // 修改 3: 更新输入框的事件监听器
-    input.addEventListener('input', function () {
-        if (shouldShowEngineList) {
-            updateEngineList();
-        } else {
-            // 在 24 宫格界面，不显示搜索引擎列表
-            if (topEngineListContainer) topEngineListContainer.style.display = 'none';
-            if (bottomEngineListContainer) bottomEngineListContainer.style.display = 'none';
-        }
-    });
-    // 新增: 创建清空按钮
-    const clearButton = document.createElement('button');
-    clearButton.innerHTML = '&#x2715;'; // 使用 ✕ 符号作为图标
-    clearButton.style.position = 'absolute';
-    clearButton.style.right = '105px'; // 修改: 调整位置，避免与搜索按钮重叠
-    clearButton.style.top = '50%';
-    clearButton.style.transform = 'translateY(-50%)';
-    clearButton.style.border = 'none';
-    clearButton.style.background = 'none';
-    clearButton.style.cursor = 'pointer';
-    clearButton.style.fontSize = '16px';
-    clearButton.style.color = '#999';
-    clearButton.style.padding = '0';
-    clearButton.style.width = '20px';
-    clearButton.style.height = '20px';
-    clearButton.style.display = 'flex';
-    clearButton.style.justifyContent = 'center';
-    clearButton.style.alignItems = 'center';
-    clearButton.style.visibility = 'hidden'; // 初始状态隐藏
-
-    // 新增: 清空按钮点击事件
-    clearButton.addEventListener('click', () => {
-        input.value = '';
-        input.focus();
-        clearButton.style.visibility = 'hidden';
-    });
-
-    // 新增: 显示/隐藏清空按钮
-    input.addEventListener('input', () => {
-        clearButton.style.visibility = input.value ? 'visible' : 'hidden';
-    });
-
-    const searchButton = document.createElement('button');
-    searchButton.textContent = '搜索';
-    searchButton.style.cssText = `
-        height: 30px;
-        width: 100px;
-        font-size: 14px;
-        background-color: #007bff;
-        color: white;
-        border: 1px solid #007bff;
-        border-left: none;
-        border-radius: 0 4px 4px 0;
-        cursor: pointer;
-    `;
-
-    // 新增: 添加焦点样式
-    input.addEventListener('focus', () => {
-        input.style.borderColor = '#007bff';
-    });
-
-    input.addEventListener('blur', () => {
-        input.style.borderColor = '#007bff';
-    });
-    searchButton.onclick = () => {
-        const searchText = input.value.trim();
-        if (searchText) {
-            performSearch(searchText, 'https://www.google.com/search?q=');
-        }
-    };
-
-
-    // 创建第一个12宫格菜单（1-12）
-    const multiMenu1 = createMultiMenu(1, 12);
-    multiMenu1.style.display = showMultiMenu ? 'grid' : 'none';
-    multiMenu1.style.width = '100%';
-    multiMenu1.style.marginBottom = '10px';
-    multiMenu1.style.maxWidth = '400px';
-    multiMenu1.style.minWidth = '300px';
-    multiMenu1.style.marginTop = '0'; // 修改：确保没有顶部边距
-    // 创建第二个12宫格菜单（13-24）
-    const multiMenu2 = createMultiMenu(13, 24);
-    multiMenu2.style.display = showMultiMenu ? 'grid' : 'none';
-    multiMenu2.style.width = '100%';
-    multiMenu2.style.maxWidth = '400px';
-    multiMenu2.style.marginTop = '10px';
-    multiMenu2.style.minWidth = '300px';
-    multiMenu2.style.marginTop = '10px'; // 添加一些顶部边距
-    loadEnginesIntoGrid(multiMenu1, multiMenu2);
-
-    searchArea.appendChild(multiMenu1);
-    searchArea.appendChild(inputContainer);
-    searchArea.appendChild(engineList);
+    // 组装界面
+    popup.appendChild(tabBar);
     popup.appendChild(searchArea);
-    searchArea.appendChild(multiMenu2);
-    // 修改: 将输入框和搜索按钮添加到新的容器中
-    inputContainer.appendChild(input);
-    inputContainer.appendChild(clearButton);
-    inputContainer.appendChild(searchButton);
-    popup.appendChild(inputContainer);
+    popup.appendChild(contentArea);
+    popup.appendChild(engineListContainer);
 
-    // 下方搜索引擎列表容器
-    const bottomEngineListContainer = document.createElement('div');
-    bottomEngineListContainer.style.cssText = `
-        
-    `;
-    popup.appendChild(bottomEngineListContainer);
+    // 设置事件监听
+    setupPopupEventListeners(popup);
+
+    // 添加到文档
     document.body.appendChild(popup);
     currentPopup = popup;
-    console.log('Search popup created, currentPopup:', currentPopup);
-    // ... 剩余代码 ...
-    // 新增：重置第一次点击标志
 
-    isPopupJustCreated = true;
-    isFirstClickOutside = false;
-    // 修改 5: 添加 setTimeout 来重新计算初始位置
-    setTimeout(() => {
-        const rect = popup.getBoundingClientRect();
-        popup.style.left = rect.left + 'px';
-        popup.style.top = rect.top + 'px';
-        popup.style.transform = 'none';
-        isPopupJustCreated = false;
-        input.focus(); // 新增: 设置输入框焦点
-        input.setSelectionRange(input.value.length, input.value.length); // 新增: 将光标移到文本末尾
-    }, 100);
-    //新增一个搜索列表
-    const customEngineListContainer = document.createElement('div');
-    customEngineListContainer.style.cssText = `
-         width: 100%;
-        background: white;
-        border-top: 1px solid #ccc;
-        max-height: 200px;
-        overflow-y: auto;
-        display: none;
+    // 初始化
+    initializePopup(popup, initialText);
+
+    return popup;
+}
+
+function createTabBar() {
+    const tabBar = document.createElement('div');
+    tabBar.style.cssText = `
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        gap: 8px;
+        border-bottom: 1px solid #eee;
+        background: #f8f9fa;
+        overflow-x: auto;
+        scrollbar-width: none;
     `;
-    popup.appendChild(customEngineListContainer); // 将列表容器添加到 popup 而不是 inputContainer
-    // 首先，定义 AI 搜索引擎列表（保持不变）
 
-    // 修改 updateEngineList 函数
-    function updateEngineList() {
-        const searchText = input.value.trim();
-        if (searchText && shouldShowEngineList) {
-            chrome.storage.sync.get('id2enginemap', function (data) {
-                const engines = data.id2enginemap || {};
-                /* topEngineListContainer.innerHTML = '';
-                bottomEngineListContainer.innerHTML = '';
-                engineItems = [];
+    TAB_CONFIG.forEach(tab => {
+        tabBar.appendChild(createTabElement(tab));
+    });
 
-                // 填充普通搜索引擎列表（topEngineListContainer）
-                const engineEntries = Object.entries(engines);
-                const displayCount = Math.min(engineEntries.length, 10); // 可以调整显示的普通搜索引擎数量
+    return tabBar;
+}
 
-                for (let i = 0; i < displayCount; i++) {
-                    const [name, url] = engineEntries[i];
-                    const item = createEngineItem(name, url);
-                    topEngineListContainer.appendChild(item);
-                    engineItems.push(item);
-                }
+function createTabElement(tab) {
+    const element = document.createElement('div');
+    element.setAttribute('data-tab', tab.id);
+    element.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 12px;
+        border-radius: 16px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #666;
+        transition: all 0.3s;
+        user-select: none;
+        white-space: nowrap;
+    `;
 
-                // 填充 AI 搜索引擎列表（bottomEngineListContainer）
-                aiSearchEngines.forEach(engine => {
-                    const item = createEngineItem(engine.name, engine.url);
-                    bottomEngineListContainer.appendChild(item);
-                    engineItems.push(item);
-                });
+    element.innerHTML = `
+        <span style="font-size: 16px;">${tab.icon}</span>
+        <span>${tab.text}</span>
+    `;
 
-                topEngineListContainer.style.display = 'block';
-                bottomEngineListContainer.style.display = 'block';
-                selectedIndex = -1; */
-            });
-        } else {
-            /*     topEngineListContainer.style.display = 'none';
-                bottomEngineListContainer.style.display = 'none';
-                engineItems = [];
-                selectedIndex = -1; */
-        }
+    element.addEventListener('click', () => switchTab(tab.id));
+    element.addEventListener('mouseover', () => {
+        element.style.backgroundColor = `${tab.color}22`;
+    });
+    element.addEventListener('mouseout', () => {
+        element.style.backgroundColor = currentTab === tab.id ? `${tab.color}15` : 'transparent';
+    });
+
+    if (currentTab === tab.id) {
+        element.style.backgroundColor = `${tab.color}15`;
+        element.style.color = tab.color;
     }
 
-    function selectEngineItem(index) {
-        if (index >= 0 && index < engineItems.length) {
-            if (selectedIndex !== -1) {
-                engineItems[selectedIndex].style.backgroundColor = 'transparent';
-            }
-            selectedIndex = index;
-            engineItems[selectedIndex].style.backgroundColor = '#f0f0f0';
-            engineItems[selectedIndex].scrollIntoView({ block: 'nearest' });
-        }
+    return element;
+}
+
+function createSearchArea(initialText) {
+    const searchArea = document.createElement('div');
+    searchArea.style.cssText = `
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    `;
+
+    const inputContainer = document.createElement('div');
+    inputContainer.style.cssText = `
+        flex: 1;
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: #f5f6f7;
+        border-radius: 24px;
+        padding: 8px 16px;
+    `;
+
+    const input = createSearchInput(initialText);
+    const toolsContainer = createToolsContainer();
+
+    inputContainer.appendChild(input);
+    inputContainer.appendChild(toolsContainer);
+    searchArea.appendChild(inputContainer);
+
+    return searchArea;
+}
+
+function createContentArea() {
+    const contentArea = document.createElement('div');
+    contentArea.style.cssText = `
+        display: none;  // 始终默认隐藏
+        padding: 16px;
+    `;
+    contentArea.classList.add('content-area');
+    return contentArea;
+}
+
+function createEngineListContainer() {
+    const container = document.createElement('div');
+    container.style.cssText = `
+        width: 100%;
+        background: white;
+        border-top: 1px solid #eee;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;  // 始终默认隐藏
+    `;
+    return container;
+}
+
+function createSearchInput(initialText) {
+    const input = document.createElement('input');
+    input.style.cssText = `
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-size: 14px;
+        outline: none;
+        padding: 0;
+    `;
+    input.placeholder = '搜索或输入问题...';
+    input.value = initialText;
+
+    input.addEventListener('input', handleSearchInput);
+    input.addEventListener('keydown', handleInputKeydown);
+
+    return input;
+}
+
+function createToolsContainer() {
+    const container = document.createElement('div');
+    container.style.cssText = `
+        display: flex;
+        gap: 8px;
+        margin-left: 8px;
+    `;
+
+    TOOL_CONFIG.forEach(tool => {
+        container.appendChild(createToolButton(tool));
+    });
+
+    return container;
+}
+
+function createToolButton(tool) {
+    const button = document.createElement('button');
+    button.style.cssText = `
+        border: none;
+        background: none;
+        cursor: pointer;
+        padding: 4px;
+        font-size: 16px;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+    `;
+
+    button.innerHTML = tool.icon;
+    button.title = tool.title;
+
+    button.addEventListener('mouseover', () => {
+        button.style.backgroundColor = '#e9ecef';
+    });
+
+    button.addEventListener('mouseout', () => {
+        button.style.backgroundColor = 'transparent';
+    });
+
+    return button;
+}
+
+function updateEngineList(searchText) {
+    const container = currentPopup.querySelector('div:last-child');
+
+    if (!searchText) {
+        container.style.display = 'none';
+        engineItems = [];
+        return;
     }
 
-    input.addEventListener('keydown', function (e) {
-        if (customEngineListContainer.style.display === 'block') {
-            if (e.key === 'ArrowDown') {
+    chrome.storage.sync.get(['id2enginemap', 'searchengines'], function (data) {
+        const engines = data.id2enginemap || {};
+        container.innerHTML = '';
+        engineItems = [];
+
+        // 添加普通搜索引擎
+        Object.entries(engines).forEach(([name, url]) => {
+            const item = createEngineItem(name, url);
+            container.appendChild(item);
+            engineItems.push(item);
+        });
+
+        // 添加 AI 搜索引擎
+        const aiEngines = data.searchengines?.ai || [];
+        aiEngines.forEach(engine => {
+            const item = createEngineItem(engine.name, engine.url);
+            container.appendChild(item);
+            engineItems.push(item);
+        });
+
+        container.style.display = engineItems.length ? 'block' : 'none';
+        selectedIndex = -1;
+    });
+}
+
+function createEngineItem(name, url) {
+    const item = document.createElement('div');
+    item.style.cssText = `
+        padding: 8px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background-color 0.3s;
+    `;
+
+    item.innerHTML = `
+        <span style="color: #666;">🔍</span>
+        <span>${name}</span>
+    `;
+
+    item.addEventListener('mouseover', () => {
+        item.style.backgroundColor = '#f5f6f7';
+    });
+
+    item.addEventListener('mouseout', () => {
+        item.style.backgroundColor = 'transparent';
+    });
+
+    item.addEventListener('click', () => {
+        const input = currentPopup.querySelector('input');
+        performSearch(input.value.trim(), url);
+    });
+
+    return item;
+}
+
+function setupPopupEventListeners(popup) {
+    // 阻止冒泡
+    popup.addEventListener('mousedown', e => e.stopPropagation());
+
+    // 修改: 使用具名函数便于移除
+    const escHandler = function (e) {
+        if (e.key === 'Escape') {
+            closeSearchPopup();
+        }
+    };
+
+    // 修改: 使用具名函数便于移除
+    const clickOutsideHandler = function (e) {
+        if (popup && !popup.contains(e.target)) {
+            closeSearchPopup();
+        }
+    };
+
+    // 新增: 存储事件处理函数引用
+    popup._eventHandlers = {
+        escHandler,
+        clickOutsideHandler
+    };
+
+    // 修改: 添加事件监听器
+    document.addEventListener('keydown', escHandler);
+    document.addEventListener('mousedown', clickOutsideHandler);
+}
+
+function handleSearchInput(e) {
+    const searchText = e.target.value.trim();
+    const contentArea = currentPopup.querySelector('.content-area');
+    contentArea.style.display = 'none'; // 输入时始终隐藏内容区域
+
+    // 只在 AI 搜索标签下更新搜索引擎列表
+    if (currentTab === 'ai') {
+        updateEngineList(searchText);
+    }
+}
+function handleInputKeydown(e) {
+    const container = currentPopup.querySelector('div:last-child');
+
+    if (container.style.display === 'block') {
+        switch (e.key) {
+            case 'ArrowDown':
                 e.preventDefault();
                 selectEngineItem((selectedIndex + 1) % engineItems.length);
-            } else if (e.key === 'ArrowUp') {
+                break;
+            case 'ArrowUp':
                 e.preventDefault();
                 selectEngineItem((selectedIndex - 1 + engineItems.length) % engineItems.length);
-            } else if (e.key === 'Enter' && selectedIndex !== -1) {
+                break;
+            case 'Enter':
                 e.preventDefault();
-                const selectedEngine = engineItems[selectedIndex];
-                const engineName = selectedEngine.textContent;
-                chrome.storage.sync.get('id2enginemap', function (data) {
-                    const engineUrl = data.id2enginemap[engineName];
-                    if (engineUrl) {
-                        performSearch(input.value.trim(), engineUrl);
-                    }
-                });
-            }
+                if (selectedIndex !== -1) {
+                    engineItems[selectedIndex].click();
+                }
+                break;
         }
-    });
-    input.addEventListener('input', updateEngineList);
-    // 立即更新搜索引擎列表
-    updateEngineList(topEngineListContainer, bottomEngineListContainer);
-
-
-    // ... 其他代码 ...
+    }
 }
+
+function selectEngineItem(index) {
+    if (selectedIndex !== -1 && engineItems[selectedIndex]) {
+        engineItems[selectedIndex].style.backgroundColor = 'transparent';
+    }
+    selectedIndex = index;
+    if (engineItems[selectedIndex]) {
+        engineItems[selectedIndex].style.backgroundColor = '#f5f6f7';
+        engineItems[selectedIndex].scrollIntoView({ block: 'nearest' });
+    }
+}
+
+function closeSearchPopup() {
+    console.log('Closing search popup');
+    if (currentPopup) {
+        // 移除弹窗相关的事件监听器
+        if (currentPopup._eventHandlers) {
+            document.removeEventListener('keydown', currentPopup._eventHandlers.escHandler);
+            document.removeEventListener('mousedown', currentPopup._eventHandlers.clickOutsideHandler);
+        }
+
+        document.body.removeChild(currentPopup);
+        currentPopup = null;
+        isFirstClickOutside = false;
+    }
+    console.log('Search popup closed, currentPopup:', currentPopup);
+}
+function performSearch(searchText, engineUrl) {
+    const searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
+    chrome.runtime.sendMessage({
+        action: "setpage",
+        query: searchUrl
+    });
+    closeSearchPopup();
+}
+
+function initializePopup(popup, initialText) {
+    setTimeout(() => {
+        const input = popup.querySelector('input');
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+        isPopupJustCreated = false;
+    }, 100);
+}
+
+function switchTab(tabId) {
+    const tabs = document.querySelectorAll('[data-tab]');
+    tabs.forEach(tab => {
+        const isSelected = tab.getAttribute('data-tab') === tabId;
+        tab.style.backgroundColor = isSelected ? `${getTabColor(tabId)}15` : 'transparent';
+        tab.style.color = isSelected ? getTabColor(tabId) : '#666';
+    });
+    currentTab = tabId;
+    updateContentArea(tabId);
+}
+
+function getTabColor(tabId) {
+    const tab = TAB_CONFIG.find(t => t.id === tabId);
+    return tab ? tab.color : '#666';
+}
+
+function updateContentArea(tabId) {
+    const contentArea = currentPopup.querySelector('div:nth-child(3)');
+    // 根据不同标签显示不同内容
+    switch (tabId) {
+        case 'write':
+            contentArea.innerHTML = '写作助手功能开发中...';
+            break;
+        case 'image':
+            contentArea.innerHTML = '图像生成功能开发中...';
+            break;
+        // 可以根据需要添加其他标签的内容
+        default:
+            contentArea.innerHTML = '功能开发中...';
+    }
+    contentArea.style.display = 'block';
+}
+
+// 保留原有的拖拽相关函数
+function dragstart(e) {
+    if (bypass(e.target)) return false;
+    dragStartPoint = { x: e.clientX, y: e.clientY };
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function dragover(e) {
+    if (bypass(e.target)) return false;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+
+    // 计算拖拽方向
+    const dx = e.clientX - dragStartPoint.x;
+    const dy = e.clientY - dragStartPoint.y;
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    if (Math.abs(angle) <= 45) direction = 'right';
+    else if (Math.abs(angle) >= 135) direction = 'left';
+    else if (angle > 45 && angle < 135) direction = 'down';
+    else direction = 'up';
+
+    // 更新拖拽提示
+    updateDragNotification(e);
+    return false;
+}
+
+// 添加消息监听器
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.action === "showPopup") {
+        createSearchPopup();
+    }
+});
 
 function performSearch(searchText, engineUrl) {
     console.log('Performing search:', searchText, 'with engine:', engineUrl);
@@ -2485,7 +2448,6 @@ function closeSearchPopup() {
     console.log('Search popup closed, currentPopup:', currentPopup);
 }
 
-document.addEventListener('mouseup', handleGlobalMouseUp);
 // 新增：定义 escListener 函数
 function escListener(e) {
     if (e.key === 'Escape') {
@@ -2523,26 +2485,51 @@ document.addEventListener('keydown', handleKeyNavigation);
 // 修改: 保留原有的键盘事件监听器
 document.addEventListener('keydown', handleKeyDown);
 
-// 修改鼠标事件处理函数
+
 // 修改：使用mousedown而不是mouseup来触发搜索弹窗
 function handleMouseDown(e) {
-    if (!longPressEnabled || e.button !== 0) return;
+    console.log('Mouse down event triggered', {
+        ctrlKey: e.ctrlKey,
+        button: e.button,
+        target: e.target
+    });
+
+    if (e.button !== 0) return;
 
     if (e.ctrlKey) {
-        console.log('Ctrl+鼠标按下，创建搜索弹窗');
-        const selectedText = window.getSelection().toString().trim();
-        createSearchPopup(selectedText, e.altKey);
+        console.log('Ctrl + click detected, attempting to create popup');
         e.preventDefault();
         e.stopPropagation();
-    } else if (e.altKey) {
-        console.log('Alt+鼠标按下，创建搜索弹窗');
-        createSearchPopup('', true);
-        e.preventDefault();
-        e.stopPropagation();
+
+        // 确保在创建新弹窗前关闭旧弹窗
+        if (currentPopup) {
+            console.log('Closing existing popup before creating new one');
+            closeSearchPopup();
+        }
+
+        // 延迟一帧创建新弹窗，确保清理完成
+        requestAnimationFrame(() => {
+            const selectedText = window.getSelection().toString().trim();
+            console.log('Creating new popup with text:', selectedText);
+            createSearchPopup(selectedText, e.altKey);
+        });
     }
 }
 
 
+// 3. 确保事件监听器只添加一次，并使用正确的选项
+function setupEventListeners() {
+    // 移除可能存在的旧监听器
+    document.removeEventListener('mousedown', handleMouseDown, true);
+
+    // 添加新的监听器，使用捕获阶段
+    document.addEventListener('mousedown', handleMouseDown, true);
+
+    console.log('Event listeners set up');
+}
+
+// 4. 在页面加载时设置事件监听器
+document.addEventListener('DOMContentLoaded', setupEventListeners);
 // 新增: handleMouseMove 函数
 function handleMouseMove(e) {
     if (isMouseDown && hasMovedBeyondThreshold(e)) {
