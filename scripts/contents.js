@@ -1694,7 +1694,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 //输入框
 // 定义标签配置
 const TAB_CONFIG = [
-    { id: 'write', text: '帮我写作', icon: '✍️', color: '#4CAF50' },
+    { id: 'ai', text: '问AI', icon: '🤖', color: '#4CAF50' },  // 将第一项改为"问AI"
     { id: 'image', text: '图像生成', icon: '🖼️', color: '#2196F3' },
     { id: 'ai', text: 'AI 搜索', icon: '🔍', color: '#9C27B0' },
     { id: 'read', text: '阅读总结', icon: '📚', color: '#FF9800' },
@@ -1711,7 +1711,117 @@ const TOOL_CONFIG = [
     { icon: '✂️', title: '剪切' },
     { icon: '🎤', title: '语音输入' }
 ];
+function handleAITabClick(clickedElement) {
+    const searchPopup = document.getElementById('searchPopup');
+    const searchRect = searchPopup.getBoundingClientRect();
 
+    chrome.storage.sync.get(['aiSearchEngines'], function (data) {
+        const engineList = document.createElement('div');
+        engineList.style.cssText = `
+            position: fixed;
+            top: ${searchRect.top - 48}px;
+            left: ${searchRect.left}px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 8px;
+            width: ${searchRect.width}px;
+            z-index: 10001;
+            box-sizing: border-box;
+            height: 40px;
+        `;
+
+        const engineGrid = document.createElement('div');
+        engineGrid.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: space-between;  // 平均分配空间
+            width: 100%;
+            height: 100%;
+        `;
+
+        // 使用顶部引擎列表中的搜索引擎
+        const topEngines = data.aiSearchEngines || [];
+
+        topEngines.forEach(engine => {
+            const engineItem = document.createElement('div');
+            engineItem.style.cssText = `
+                padding: 4px 8px;
+                cursor: pointer;
+                font-size: 13px;
+                color: #666;
+                background: #f5f6f7;
+                border-radius: 4px;
+                text-align: center;
+                transition: all 0.2s;
+                flex: 1;
+                margin: 0 4px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            `;
+            engineItem.textContent = engine.name;  // 只显示名称
+
+            engineItem.addEventListener('mouseover', () => {
+                engineItem.style.background = '#eef2ff';
+                engineItem.style.color = '#333';
+            });
+
+            engineItem.addEventListener('mouseout', () => {
+                engineItem.style.background = '#f5f6f7';
+                engineItem.style.color = '#666';
+            });
+
+            engineItem.addEventListener('click', () => {
+                const input = currentPopup.querySelector('input');
+                if (input && input.value) {
+                    window.open(engine.url.replace('%s', encodeURIComponent(input.value)), '_blank');
+                }
+                closeEngineList();
+            });
+
+            engineGrid.appendChild(engineItem);
+        });
+
+        engineList.appendChild(engineGrid);
+        document.body.appendChild(engineList);
+
+        // 点击外部关闭
+        function handleOutsideClick(e) {
+            if (!engineList.contains(e.target) &&
+                !clickedElement.contains(e.target) &&
+                !searchPopup.contains(e.target)) {
+                closeEngineList();
+            }
+        }
+
+        document.addEventListener('mousedown', handleOutsideClick);
+
+        // 关闭函数
+        function closeEngineList() {
+            if (engineList.parentNode) {
+                document.body.removeChild(engineList);
+            }
+            document.removeEventListener('mousedown', handleOutsideClick);
+        }
+
+        // 当 searchPopup 关闭时，也关闭引擎列表
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList' &&
+                    !document.contains(searchPopup)) {
+                    closeEngineList();
+                    observer.disconnect();
+                }
+            });
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+}
 function createSearchPopup(initialText = '', showMultiMenu = false) {
     console.log('Creating search popup');
     if (currentPopup) {
@@ -1805,7 +1915,14 @@ function createTabElement(tab) {
         <span>${tab.text}</span>
     `;
 
-    element.addEventListener('click', () => switchTab(tab.id));
+    // 修改这里 ⬇️
+    element.addEventListener('click', () => {
+        if (tab.id === 'ai') {
+            handleAITabClick(element);  // 传入被点击的元素
+        } else {
+            switchTab(tab.id);
+        }
+    });
     element.addEventListener('mouseover', () => {
         element.style.backgroundColor = `${tab.color}22`;
     });
