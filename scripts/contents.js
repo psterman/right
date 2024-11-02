@@ -4,7 +4,10 @@ let currentTab = 'write';
 let currentPopup = null;
 // 从存储中检索选中的搜索引擎
 // 假设这是在 contents.js 中的现有代码
-let selectedEngines = []; // 声明全局变量
+let selectedEngines = {
+    top: [],
+    bottom: []
+};
 let isPopupJustCreated = false;
 let isFirstClickOutside = false;
 let longPressEnabled = true;
@@ -424,16 +427,87 @@ document.addEventListener('DOMContentLoaded', function () {
 // 当接收到从 options.js 发送的更新消息时
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === 'updateSelectedEngines') {
-        selectedEngines = request.selectedEngines; // 更新全局变量
-        console.log('Selected engines updated in content script:', selectedEngines);
+        // 1. 更新全局变量
+        selectedEngines = request.selectedEngines;
+        console.log('搜索引擎更新:', selectedEngines);
 
-        // 如果需要，可以在这里调用 showSearchLinks 函数
-        // 例如，如果当前有选中的文本
+        // 2. 如果当前有搜索框显示，更新显示
+        if (currentPopup) {
+            updateSearchEngineDisplay();
+        }
+
+        // 3. 如果当前有选中的文本，更新搜索链接
         const selectedText = window.getSelection().toString().trim();
         if (selectedText) {
-            showSearchLinks(selectedText, window.event.clientX, window.event.clientY, selectedEngines);
+            // 使用当前鼠标位置或存储的位置
+            const position = {
+                x: window.event ? window.event.clientX : lastMousePosition.x,
+                y: window.event ? window.event.clientY : lastMousePosition.y
+            };
+
+            showSearchLinks(selectedText, position.x, position.y, selectedEngines);
+        }
+
+        // 4. 可选：发送响应确认更新完成
+        if (sendResponse) {
+            sendResponse({ success: true });
         }
     }
+});
+
+// 添加鼠标位置跟踪
+let lastMousePosition = { x: 0, y: 0 };
+document.addEventListener('mousemove', function (e) {
+    lastMousePosition.x = e.clientX;
+    lastMousePosition.y = e.clientY;
+});
+// 3. 添加更新搜索引擎显示的函数
+function updateSearchEngineDisplay() {
+    const topGrid = currentPopup.querySelector('.top-grid');
+    const bottomGrid = currentPopup.querySelector('.bottom-grid');
+
+    // 清空现有内容
+    topGrid.innerHTML = '';
+    bottomGrid.innerHTML = '';
+
+    // 添加顶部引擎
+    selectedEngines.top.forEach(engine => {
+        const engineElement = createEngineElement(engine);
+        topGrid.appendChild(engineElement);
+    });
+
+    // 添加底部引擎
+    selectedEngines.bottom.forEach(engine => {
+        const engineElement = createEngineElement(engine);
+        bottomGrid.appendChild(engineElement);
+    });
+}
+// 4. 创建引擎元素的辅助函数
+function createEngineElement(engine) {
+    const div = document.createElement('div');
+    div.className = 'engine-item';
+    div.textContent = engine.name;
+    div.setAttribute('data-url', engine.url);
+    div.setAttribute('data-type', engine.type);
+
+    div.addEventListener('click', () => {
+        const selectedText = window.getSelection().toString().trim();
+        if (selectedText) {
+            const searchUrl = engine.url.replace('%s', encodeURIComponent(selectedText));
+            window.open(searchUrl, '_blank');
+        }
+    });
+
+    return div;
+}
+// 5. 修改初始化加载代码
+document.addEventListener('DOMContentLoaded', function () {
+    chrome.storage.sync.get('selectedEngines', function (result) {
+        if (result.selectedEngines) {
+            selectedEngines = result.selectedEngines;
+            console.log('已加载搜索引擎设置:', selectedEngines);
+        }
+    });
 });
 // 发送选中文本到后台脚本
 function sendMessageToBackground(selectedText) {
@@ -1692,6 +1766,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     })
 })()
 //输入框
+// 1. 修改全局变量定义
+
+
+
 // 定义标签配置
 const TAB_CONFIG = [
     { id: 'ai', text: '问AI', icon: '🤖', color: '#4CAF50' },  // 将第一项改为"问AI"

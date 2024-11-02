@@ -4152,3 +4152,57 @@ function saveMultiMenu(containerId, list) {
 		console.log(`${containerId} saved`);
 	});
 }
+// 1. 添加保存选中引擎的函数
+function saveSelectedEngines() {
+	const selectedTopEngines = [];
+	const selectedBottomEngines = [];
+
+	// 获取顶部选中的引擎
+	document.querySelectorAll('#topEngineList input[type="checkbox"]:checked').forEach(checkbox => {
+		const engineItem = checkbox.closest('.engine-item');
+		selectedTopEngines.push({
+			name: engineItem.querySelector('label').textContent,
+			url: engineItem.querySelector('input[type="text"]').value,
+			type: 'ai'  // 标记为AI搜索引擎
+		});
+	});
+
+	// 获取底部选中的引擎
+	document.querySelectorAll('#bottomEngineList input[type="checkbox"]:checked').forEach(checkbox => {
+		const engineItem = checkbox.closest('.engine-item');
+		selectedBottomEngines.push({
+			name: engineItem.querySelector('label').textContent,
+			url: engineItem.querySelector('input[type="text"]').value,
+			type: 'regular'  // 标记为常规搜索引擎
+		});
+	});
+
+	// 保存到 Chrome Storage
+	chrome.storage.sync.set({
+		selectedEngines: {
+			top: selectedTopEngines,
+			bottom: selectedBottomEngines
+		}
+	}, () => {
+		// 通知 content script 更新
+		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+			if (tabs[0]) {
+				chrome.tabs.sendMessage(tabs[0].id, {
+					action: 'updateSelectedEngines',
+					selectedEngines: {
+						top: selectedTopEngines,
+						bottom: selectedBottomEngines
+					}
+				});
+			}
+		});
+	});
+}
+
+// 2. 为复选框添加事件监听
+function initializeEngineSelectors() {
+	const checkboxes = document.querySelectorAll('#topEngineList input[type="checkbox"], #bottomEngineList input[type="checkbox"]');
+	checkboxes.forEach(checkbox => {
+		checkbox.addEventListener('change', saveSelectedEngines);
+	});
+}
