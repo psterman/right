@@ -372,90 +372,130 @@ function updateAISearchEngines(newEngines) {
 }
 // 从存储中加载数据
 function loadData() {
-	chrome.storage.sync.get(['id2enginemap', 'multiMenu1', 'multiMenu2'], function (result) {
-		id2enginemap = result.id2enginemap || {};
-		multiMenu1 = result.multiMenu1 || [];
-		multiMenu2 = result.multiMenu2 || [];
+	chrome.storage.sync.get(['aiSearchEngines', 'regularSearchEngines', 'id2enginemap', 'multiMenu1', 'multiMenu2'], function (result) {
+		// 检查是否是首次安装（storage中没有数据）
+		if (!result.aiSearchEngines || !result.regularSearchEngines) {
+			console.log('First installation detected, initializing default data...');
 
-		// 清空现有的引擎列表
-		topEngineListContainer = [];
-		bottomEngineListContainer = [];
+			// AI 搜索引擎预设列表
+			const defaultAiEngines = [
+				{ name: "ChatGPT", url: "https://chatgpt.com/?q=%s" },
+				{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s" },
+				{ name: "360AI搜索", url: "https://www.sou.com/?q=%s" },
+				{ name: "百小度", url: "https://ying.baichuan-ai.com/chat" },
+				{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail" },
+				{ name: "海螺", url: "https://hailuoai.com/" },
+				{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s" },
+				{ name: "WebPilot", url: "https://www.webpilot.ai/search?q=%s" },
+				{ name: "私塔", url: "https://metaso.cn/?q=%s" },
+				{ name: "Devv", url: "https://devv.ai/" },
+				{ name: "豆包", url: "https://www.doubao.com/" },
+				{ name: "开搜AI", url: "https://kaisouai.com/?q=%s" },
+				{ name: "文心一言", url: "https://yiyan.baidu.com/" },
+				{ name: "Consensus", url: "https://consensus.app/results/?q=%s" },
+				{ name: "YOU", url: "https://you.com/search?q=%s" },
+				{ name: "phind", url: "https://www.phind.com/search?q=%s" },
+				{ name: "SEMANTIC SCHOLAR", url: "https://www.semanticscholar.org/search?q=%s" },
+				{ name: "Genspark", url: "https://www.genspark.ai/search?query=%s" },
+				{ name: "Felo Search", url: "https://felo.ai/?q=%s" },
+				{ name: "Miku", url: "https://hellomiku.com/search?q=%s" },
+				{ name: "kFind", url: "https://kfind.kmind.com/search?q=%s" },
+				{ name: "MenFree", url: "https://www.memfree.me/search?q=%s" },
+				{ name: "Monica", url: "https://s.monica.im/search?q=%s" },
+				{ name: "MERGEEK", url: "https://mergeek.com/search" },
+				{ name: "Xanswer", url: "https://www.xanswer.com/" },
+				{ name: "exa", url: "https://exa.ai/search?q=%s" }
+			];
 
-		// AI 搜索引擎
-		const aiSearchEngines = [
-			{ name: "ChatGPT", url: "https://chatgpt.com/?q=%s" },
-			{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s" },
-			{ name: "360AI搜索", url: "https://www.sou.com/?q=%s" },
-			{ name: "百小度", url: "https://ying.baichuan-ai.com/chat" },
-			{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail" },
-			{ name: "海螺", url: "https://hailuoai.com/" },
-			{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s" },
-			{ name: "WebPilot", url: "https://www.webpilot.ai/search?q=%s" },
-			{ name: "私塔", url: "https://metaso.cn/?q=%s" },
-			{ name: "Devv", url: "https://devv.ai/" },
-			{ name: "豆包", url: "https://www.doubao.com/" },
-			{ name: "开搜AI", url: "https://kaisouai.com/?q=%s" },
-			{ name: "文心一言", url: "https://yiyan.baidu.com/" },
-			{ name: "Consensus", url: "https://consensus.app/results/?q=%s" },
-			{ name: "YOU", url: "https://you.com/search?q=%s" },
-			{ name: "phind", url: "https://www.phind.com/search?q=%s" },
-			{ name: "SEMANTIC SCHOLAR", url: "https://www.semanticscholar.org/search?q=%s" },
-			{ name: "Genspark", url: "https://www.genspark.ai/search?query=%s" },
-			{ name: "Felo Search", url: "https://felo.ai/?q=%s" },
-			{ name: "Miku", url: "https://hellomiku.com/search?q=%s" },
-			{ name: "kFind", url: "https://kfind.kmind.com/search?q=%s" },
-			{ name: "MenFree", url: "https://www.memfree.me/search?q=%s" },
-			{ name: "Monica", url: "https://s.monica.im/search?q=%s" },
-			{ name: "MERGEEK", url: "https://mergeek.com/search" },
-			{ name: "Xanswer", url: "https://www.xanswer.com/" },
-			{ name: "exa", url: "https://exa.ai/search?q=%s" }
-		];
+			// 传统搜索引擎预设列表
+			const defaultRegularEngines = [
+				{ name: "Google", url: "https://www.google.com/search?q=%s" },
+				{ name: "Bing", url: "https://www.bing.com/search?q=%s" },
+				{ name: "百度", url: "https://www.baidu.com/s?wd=%s" },
+				{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
+				{ name: "Yandex", url: "https://yandex.com/search/?text=%s" },
+				{ name: "搜狗", url: "https://www.sogou.com/web?query=%s" },
+				{ name: "360搜索", url: "https://www.so.com/s?q=%s" },
+				{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s" },
+				{ name: "小红书", url: "https://www.xiaohongshu.com/search_result?keyword=%s" },
+				{ name: "抖音", url: "https://www.douyin.com/search/%s" },
+				{ name: "X", url: "https://x.com/search?q=%s" },
+				{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" },
+				{ name: "V2EX", url: "https://www.sov2ex.com/?q=%s" },
+				{ name: "Github", url: "https://github.com/search?q=%s" },
+				{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s" },
+				{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s" },
+				{ name: "FaceBook", url: "https://www.facebook.com//search?q=%s" },
+				{ name: "bilibili", url: "https://search.bilibili.com/?keyword=%s" },
+				{ name: "知乎宣客", url: "https://zhida.zhihu.com/" },
+				{ name: "知乎", url: "https://www.zhihu.com/search?q=%s" },
+				{ name: "腾讯元宝", url: "https://yuanbao.tencent.com/chat/" },
+				{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s" },
+				{ name: "微博", url: "https://s.weibo.com/weibo?q=%s" },
+				{ name: "今日头条", url: "https://so.toutiao.com/search?dvpf=pc&keyword=%s" }
+			];
 
-		// 传统搜索引擎
-		const regularSearchEngines = [
-			{ name: "Google", url: "https://www.google.com/search?q=%s" },
-			{ name: "Bing", url: "https://www.bing.com/search?q=%s" },
-			{ name: "百度", url: "https://www.baidu.com/s?wd=%s" },
-			{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
-			{ name: "Yandex", url: "https://yandex.com/search/?text=%s" },
-			{ name: "搜狗", url: "https://www.sogou.com/web?query=%s" },
-			{ name: "360搜索", url: "https://www.so.com/s?q=%s" },
-			{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s" },
-			{ name: "小红书", url: "https://www.xiaohongshu.com/search_result?keyword=%s" },
-			{ name: "抖音", url: "https://www.douyin.com/search/%s" },
-			{ name: "X", url: "https://x.com/search?q=%s" },
-			{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" },
-			{ name: "V2EX", url: "https://www.sov2ex.com/?q=%s" },
-			{ name: "Github", url: "https://github.com/search?q=%s" },
-			{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s" },
-			{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s" },
-			{ name: "FaceBook", url: "https://www.facebook.com//search?q=%s" },
-			{ name: "bilibili", url: "https://search.bilibili.com/?keyword=%s" },
-			{ name: "知乎宣客", url: "https://zhida.zhihu.com/" },
-			{ name: "知乎", url: "https://www.zhihu.com/search?q=%s" },
-			{ name: "腾讯元宝", url: "https://yuanbao.tencent.com/chat/" },
-			{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s" },
-			{ name: "微博", url: "https://s.weibo.com/weibo?q=%s" },
-			{ name: "今日头条", url: "https://so.toutiao.com/search?dvpf=pc&keyword=%s" }
-			// 添加更多传统搜索引擎...
-		];
+			// 初始化默认数据
+			const defaultData = {
+				aiSearchEngines: defaultAiEngines,
+				regularSearchEngines: defaultRegularEngines,
+				id2enginemap: {},
+				multiMenu1: [],
+				multiMenu2: []
+			};
 
-		// 将 AI 搜索引擎添加到顶部引擎列表
-		topEngineListContainer = aiSearchEngines;
+			// 保存默认数据到 storage
+			chrome.storage.sync.set(defaultData, function () {
+				console.log('Default data initialized');
 
-		// 将传统搜索引擎添加到底部引擎列表
-		bottomEngineListContainer = regularSearchEngines;
+				// 更新全局变量
+				topEngineListContainer = defaultAiEngines;
+				bottomEngineListContainer = defaultRegularEngines;
 
-		console.log('Loaded data:', {
-			topEngineListContainer,
-			bottomEngineListContainer,
-			multiMenu1,
-			multiMenu2
-		});
+				// 加载引擎列表到界面
+				loadEngineList();
 
-		initializeTab3();
+				if (typeof initializeTab3 === 'function') {
+					initializeTab3();
+				}
+			});
+		} else {
+			// 已有数据，使用现有数据
+			id2enginemap = result.id2enginemap || {};
+			multiMenu1 = result.multiMenu1 || [];
+			multiMenu2 = result.multiMenu2 || [];
+
+			// 更新全局变量
+			topEngineListContainer = result.aiSearchEngines;
+			bottomEngineListContainer = result.regularSearchEngines;
+
+			// 合并自定义引擎
+			if (multiMenu1 && multiMenu1.length) {
+				topEngineListContainer.push(...multiMenu1);
+			}
+			if (multiMenu2 && multiMenu2.length) {
+				bottomEngineListContainer.push(...multiMenu2);
+			}
+
+			console.log('Loaded existing data:', {
+				topEngineListContainer,
+				bottomEngineListContainer,
+				multiMenu1,
+				multiMenu2
+			});
+
+			// 加载引擎列表到界面
+			loadEngineList();
+
+			if (typeof initializeTab3 === 'function') {
+				initializeTab3();
+			}
+		}
 	});
 }
+
+// 确保在选项页面加载时执行
+document.addEventListener('DOMContentLoaded', loadData);
 //填充topenginelist
 function loadEngineList() {
   console.log('Loading engine list');
