@@ -1773,7 +1773,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 // 定义标签配置
 const TAB_CONFIG = [
     { id: 'ai', text: '问AI', icon: '🤖', color: '#4CAF50' },  // 将第一项改为"问AI"
-    { id: 'image', text: '搜索', icon: '🔍', color: '#2196F3' },  // 保持 id 不变
+    { id: 'regularsearch', text: '搜索', icon: '🔍', color: '#2196F3' },  // 保持 id 不变
     { id: 'ai', text: 'AI 搜索', icon: '🔍', color: '#9C27B0' },
     { id: 'read', text: '阅读总结', icon: '📚', color: '#FF9800' },
     { id: 'music', text: '音乐生成', icon: '🎵', color: '#E91E63' },
@@ -1896,7 +1896,7 @@ function createTabElement(tab) {
                 const enabledEngines = engines.filter(engine => settings[engine.name] !== false);
                 showEngineList(element, enabledEngines);
             });
-        } else if (tab.id === 'image') {
+        } else if (tab.id === 'regularsearch') {
             // 处理普通搜索引擎
             chrome.storage.sync.get(['bottomEngineList', 'bottomEngineSettings'], function (data) {
                 const engines = data.bottomEngineList || [];
@@ -2450,12 +2450,12 @@ function createMultiMenu(start, end) {
 // 修改: 加载搜索引擎到 multiMenu1 和 multiMenu2
 function loadEnginesIntoGrid(multiMenu1, multiMenu2) {
     // 加载 AI 和综合搜索引擎到 multiMenu1
-    const loadAIAndGeneralEngines = (menu) => {
+    const loadAIAndRegularEngines = (menu) => {
         chrome.storage.sync.get(['searchengines'], function (data) {
             const engines = data.searchengines || {};
             const aiEngines = engines.ai || [];
-            const generalEngines = engines.综合搜索 || [];
-            const combinedEngines = [...aiEngines, ...generalEngines];
+            const regularEngines = engines.regularsearch || []; // 修改键名
+            const combinedEngines = [...aiEngines, ...regularEngines];
             const gridItems = menu.querySelectorAll('.grid-item');
 
             gridItems.forEach((item, index) => {
@@ -2468,7 +2468,7 @@ function loadEnginesIntoGrid(multiMenu1, multiMenu2) {
                     item.textContent = '';
                     item.removeAttribute('data-url');
                     item.style.cursor = 'default';
-                    item.style.backgroundColor = 'transparent'; // 设置空格子为透明
+                    item.style.backgroundColor = 'transparent';
                 }
             });
         });
