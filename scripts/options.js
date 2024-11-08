@@ -606,13 +606,15 @@ function saveEngineSettings() {
 	const updatedAiEngines = [];
 	const updatedRegularEngines = [];
 
+	// 修改保存逻辑，增加 enabled 状态
 	topEngineItems.forEach((item) => {
 		const checkbox = item.querySelector('input[type="checkbox"]');
 		const urlInput = item.querySelector('input[type="text"]');
 		const engine = {
 			name: item.querySelector('label').textContent,
 			url: urlInput.value,
-			enabled: checkbox.checked
+			enabled: checkbox.checked,
+			type: 'ai'  // 添加类型标识
 		};
 		updatedAiEngines.push(engine);
 	});
@@ -623,17 +625,26 @@ function saveEngineSettings() {
 		const engine = {
 			name: item.querySelector('label').textContent,
 			url: urlInput.value,
-			enabled: checkbox.checked
+			enabled: checkbox.checked,
+			type: 'regular'  // 添加类型标识
 		};
 		updatedRegularEngines.push(engine);
 	});
 
+	// 保存到 Storage
 	chrome.storage.sync.set({
 		aiSearchEngines: updatedAiEngines,
 		regularSearchEngines: updatedRegularEngines
 	}, function () {
+		// 发送消息通知 content.js 更新引擎列表
+		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+			chrome.tabs.sendMessage(tabs[0].id, {
+				action: 'updateSearchEngines',
+				aiEngines: updatedAiEngines,
+				regularEngines: updatedRegularEngines
+			});
+		});
 		alert('设置已保存');
-		loadEngineList();
 	});
 }
 // 初始化

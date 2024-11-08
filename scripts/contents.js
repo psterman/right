@@ -1884,32 +1884,6 @@ function createTabElement(tab) {
         <span>${tab.text}</span>
     `;
 
-    // 修改这里 ⬇️
-    element.addEventListener('click', () => {
-        if (tab.id === 'ai') {
-            // 处理AI搜索引擎
-            chrome.storage.sync.get(['aiSearchEngines', 'aiEngineSettings'], function (data) {
-                const engines = data.aiSearchEngines || [];
-                const settings = data.aiEngineSettings || {};
-
-                // 过滤启用的引擎
-                const enabledEngines = engines.filter(engine => settings[engine.name] !== false);
-                showEngineList(element, enabledEngines);
-            });
-        } else if (tab.id === 'regularsearch') {
-            // 处理普通搜索引擎
-            chrome.storage.sync.get(['bottomEngineList', 'bottomEngineSettings'], function (data) {
-                const engines = data.bottomEngineList || [];
-                const settings = data.bottomEngineSettings || {};
-
-                // 过滤启用的引擎
-                const enabledEngines = engines.filter(engine => settings[engine.name] !== false);
-                showEngineList(element, enabledEngines);
-            });
-        } else {
-            switchTab(tab.id);
-        }
-    });
     element.addEventListener('mouseover', () => {
         element.style.backgroundColor = `${tab.color}22`;
     });
@@ -1924,102 +1898,7 @@ function createTabElement(tab) {
 
     return element;
 }
-// 3. 添加新的 showEngineList 函数
-function showEngineList(clickedElement, engines) {
-    const searchPopup = document.getElementById('searchPopup');
-    const searchRect = searchPopup.getBoundingClientRect();
 
-    // 创建引擎列表容器
-    const engineList = document.createElement('div');
-    engineList.style.cssText = `
-        position: fixed;
-        top: ${searchRect.top - 48}px;
-        left: ${searchRect.left}px;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        padding: 8px;
-        width: ${searchRect.width}px;
-        z-index: 10001;
-        box-sizing: border-box;
-        height: 40px;
-    `;
-
-    // 创建引擎网格容器
-    const engineGrid = document.createElement('div');
-    engineGrid.style.cssText = `
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        height: 100%;
-    `;
-
-    // 遍历并添加每个启用的搜索引擎
-    engines.forEach(engine => {
-        const engineItem = document.createElement('div');
-        engineItem.style.cssText = `
-            padding: 4px 8px;
-            cursor: pointer;
-            font-size: 13px;
-            color: #666;
-            background: #f5f6f7;
-            border-radius: 4px;
-            text-align: center;
-            transition: all 0.2s;
-            flex: 1;
-            margin: 0 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        `;
-        engineItem.textContent = engine.name;
-
-        // 添加悬停效果
-        engineItem.addEventListener('mouseover', () => {
-            engineItem.style.background = '#eef2ff';
-            engineItem.style.color = '#333';
-        });
-
-        engineItem.addEventListener('mouseout', () => {
-            engineItem.style.background = '#f5f6f7';
-            engineItem.style.color = '#666';
-        });
-
-        // 添加点击事件处理
-        engineItem.addEventListener('click', () => {
-            const input = currentPopup.querySelector('input');
-            if (input && input.value) {
-                window.open(engine.url.replace('%s', encodeURIComponent(input.value)), '_blank');
-            }
-            closeEngineList();
-        });
-
-        engineGrid.appendChild(engineItem);
-    });
-
-    engineList.appendChild(engineGrid);
-    document.body.appendChild(engineList);
-
-    // 添加点击外部关闭功能
-    function handleOutsideClick(e) {
-        if (!engineList.contains(e.target) &&
-            !clickedElement.contains(e.target) &&
-            !searchPopup.contains(e.target)) {
-            closeEngineList();
-        }
-    }
-
-    document.addEventListener('mousedown', handleOutsideClick);
-
-    // 关闭引擎列表的函数
-    function closeEngineList() {
-        if (engineList.parentNode) {
-            document.body.removeChild(engineList);
-        }
-        document.removeEventListener('mousedown', handleOutsideClick);
-    }
-}
 function createSearchArea(initialText) {
     const searchArea = document.createElement('div');
     searchArea.style.cssText = `
