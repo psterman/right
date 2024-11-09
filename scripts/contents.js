@@ -1922,9 +1922,19 @@ function createAIEngineMenu(parentPopup) {
                     const searchText = parentPopup.querySelector('input').value.trim();
                     if (searchText) {
                         const searchUrl = engine.url.replace('%s', encodeURIComponent(searchText));
-                        window.open(searchUrl, '_blank');
-                        if (typeof removePopup === 'function') {
-                            removePopup();
+                        // 修改: 使用 setpage 在侧边栏打开
+                        chrome.runtime.sendMessage({
+                            action: 'setpage',
+                            query: searchUrl,
+                            foreground: false // false 表示在侧边栏打开
+                        }, function (response) {
+                            console.log('发送消息后的响应:', response);
+                        });
+
+                        // 关闭搜索弹窗
+                        if (currentPopup) {
+                            document.body.removeChild(currentPopup);
+                            currentPopup = null;
                         }
                     }
                 });
@@ -2020,9 +2030,19 @@ function createRegularSearchMenu(parentPopup) {
                     const searchText = parentPopup.querySelector('input').value.trim();
                     if (searchText) {
                         const searchUrl = engine.url.replace('%s', encodeURIComponent(searchText));
-                        window.open(searchUrl, '_blank');
-                        if (typeof removePopup === 'function') {
-                            removePopup();
+                        // 修改: 使用 setpage 在侧边栏打开
+                        chrome.runtime.sendMessage({
+                            action: 'setpage',
+                            query: searchUrl,
+                            foreground: false // false 表示在侧边栏打开
+                        }, function (response) {
+                            console.log('发送消息后的响应:', response);
+                        });
+
+                        // 关闭搜索弹窗
+                        if (currentPopup) {
+                            document.body.removeChild(currentPopup);
+                            currentPopup = null;
                         }
                     }
                 });
