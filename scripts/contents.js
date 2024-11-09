@@ -140,6 +140,7 @@ function saveAISearchEngines() {
         console.log('AI搜索引擎已保存:', aiSearchEngines);
     });
 }
+/* 
 const aiSearchEngines = [
     { name: 'AI搜索', url: 'https://example.com/ai-search?q=%s' },
     { name: 'Perplexity', url: 'https://www.perplexity.ai/?q=%s' },
@@ -152,7 +153,7 @@ const aiSearchEngines = [
     { name: 'Consensus', url: 'https://consensus.app/search/?q=%s' },
     { name: 'YOU', url: 'https://you.com/search?q=%s' },
     { name: 'phind', url: 'https://www.phind.com/search?q=%s' }
-];
+]; */
 document.addEventListener('DOMContentLoaded', function () {
     console.log('DOM内容已加载，准备保存AI搜索引擎');
     saveAISearchEngines();
@@ -1841,6 +1842,134 @@ function createSearchPopup(initialText = '', showMultiMenu = false) {
 
     return popup;
 }
+function createAIEngineMenu(parentPopup) {
+    const parentRect = parentPopup.getBoundingClientRect();
+
+    const aiMenu = document.createElement('div');
+    aiMenu.style.cssText = `
+        position: fixed;
+        left: ${parentRect.left}px;
+        bottom: ${window.innerHeight - parentRect.top + 10}px;
+        width: ${parentRect.width}px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: ${parseInt(parentPopup.style.zIndex) + 1};
+        padding: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    `;
+
+    // 添加加载提示
+    const loadingTip = document.createElement('div');
+    loadingTip.textContent = '加载中...';
+    loadingTip.style.textAlign = 'center';
+    loadingTip.style.width = '100%';
+    aiMenu.appendChild(loadingTip);
+
+    // 从 storage 获取数据
+    chrome.storage.sync.get(['aiSearchEngines'], function (data) {
+        console.log('Loaded AI engines:', data.aiSearchEngines); // 调试日志
+        aiMenu.innerHTML = ''; // 清除加载提示
+
+        const engines = data.aiSearchEngines || [];
+
+        if (engines.length === 0) {
+            const noDataMsg = document.createElement('div');
+            noDataMsg.textContent = '请先在扩展设置中配置AI搜索引擎';
+            noDataMsg.style.cssText = `
+                width: 100%;
+                text-align: center;
+                padding: 10px;
+                color: #666;
+            `;
+            aiMenu.appendChild(noDataMsg);
+            return;
+        }
+
+        engines.forEach(engine => {
+            if (engine.enabled) {
+                const engineButton = document.createElement('div');
+                engineButton.style.cssText = `
+                    padding: 8px 16px;
+                    background: #f5f6f7;
+                    border-radius: 20px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    color: #333;
+                    transition: all 0.3s;
+                    user-select: none;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    white-space: nowrap;
+                `;
+
+                engineButton.innerHTML = `
+                    <span style="font-size: 16px;">🤖</span>
+                    <span>${engine.name}</span>
+                `;
+
+                engineButton.addEventListener('mouseover', () => {
+                    engineButton.style.backgroundColor = '#e9ecef';
+                });
+                engineButton.addEventListener('mouseout', () => {
+                    engineButton.style.backgroundColor = '#f5f6f7';
+                });
+
+                engineButton.addEventListener('click', () => {
+                    const searchText = parentPopup.querySelector('input').value.trim();
+                    if (searchText) {
+                        const searchUrl = engine.url.replace('%s', encodeURIComponent(searchText));
+                        window.open(searchUrl, '_blank');
+                        if (typeof removePopup === 'function') {
+                            removePopup();
+                        }
+                    }
+                });
+
+                aiMenu.appendChild(engineButton);
+            }
+        });
+    });
+
+    document.body.appendChild(aiMenu);
+    return aiMenu;
+}
+
+// 添加消息监听器来接收更新
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.action === 'updateSearchEngines') {
+        console.log('Received updated engines:', request.aiEngines);
+        // 可以在这里更新本地缓存的引擎列表
+    }
+});
+// 添加一个显示通知的辅助函数
+function showNotification(message, duration = 2000) {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        transition: opacity 0.3s ease-in-out;
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, duration);
+}
 
 function createTabBar() {
     const tabBar = document.createElement('div');
@@ -1856,7 +1985,37 @@ function createTabBar() {
     `;
 
     TAB_CONFIG.forEach(tab => {
-        tabBar.appendChild(createTabElement(tab));
+        const tabElement = createTabElement(tab);
+
+        // 为"问AI"标签添加特殊处理
+        if (tab.id === 'ai') {
+            tabElement.addEventListener('click', () => {
+                // 移除已存在的 AI 菜单
+                const existingMenu = document.querySelector('.ai-engine-menu');
+                if (existingMenu) {
+                    document.body.removeChild(existingMenu);
+                }
+
+                // 创建新的 AI 菜单
+                const aiMenu = createAIEngineMenu(currentPopup);
+                aiMenu.classList.add('ai-engine-menu');
+
+                // 点击其他地方时关闭菜单
+                const closeMenu = (e) => {
+                    if (!aiMenu.contains(e.target) && !tabElement.contains(e.target)) {
+                        document.body.removeChild(aiMenu);
+                        document.removeEventListener('click', closeMenu);
+                    }
+                };
+
+                // 延迟添加事件监听器，避免立即触发
+                setTimeout(() => {
+                    document.addEventListener('click', closeMenu);
+                }, 0);
+            });
+        }
+
+        tabBar.appendChild(tabElement);
     });
 
     return tabBar;

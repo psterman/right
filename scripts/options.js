@@ -605,10 +605,21 @@ function saveEngineSettings() {
 	const bottomEngineItems = document.querySelectorAll('#bottomEngineList .engine-item');
 	const updatedAiEngines = [];
 	const updatedRegularEngines = [];
+	if (checkbox && label && urlInput) {
+		updatedAiEngines.push({
+			name: label.textContent,
+			url: urlInput.value,
+			enabled: checkbox.checked
+		});
+	}
 
+
+// 打印日志查看数据
+console.log('Saving AI engines:', updatedAiEngines);
 	// 修改保存逻辑，增加 enabled 状态
 	topEngineItems.forEach((item) => {
 		const checkbox = item.querySelector('input[type="checkbox"]');
+		const label = item.querySelector('label');
 		const urlInput = item.querySelector('input[type="text"]');
 		const engine = {
 			name: item.querySelector('label').textContent,
@@ -631,22 +642,42 @@ function saveEngineSettings() {
 		updatedRegularEngines.push(engine);
 	});
 
+
 	// 保存到 Storage
 	chrome.storage.sync.set({
-		aiSearchEngines: updatedAiEngines,
-		regularSearchEngines: updatedRegularEngines
+		aiSearchEngines: updatedAiEngines
 	}, function () {
 		// 发送消息通知 content.js 更新引擎列表
 		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-			chrome.tabs.sendMessage(tabs[0].id, {
-				action: 'updateSearchEngines',
-				aiEngines: updatedAiEngines,
-				regularEngines: updatedRegularEngines
-			});
+			if (tabs[0]) {
+				chrome.tabs.sendMessage(tabs[0].id, {
+					action: 'updateSearchEngines',
+					aiEngines: updatedAiEngines
+				});
+			}
 		});
-		alert('设置已保存');
+		console.log('AI搜索引擎已保存');
 	});
 }
+// 确保在页面加载时初始化默认数据
+document.addEventListener('DOMContentLoaded', function () {
+	// 检查是否存在已保存的数据
+	chrome.storage.sync.get('aiSearchEngines', function (data) {
+		if (!data.aiSearchEngines || data.aiSearchEngines.length === 0) {
+			// 如果没有数据，设置默认值
+			const defaultAiEngines = [
+				{ name: "ChatGPT", url: "https://chat.openai.com/", enabled: true },
+				{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s", enabled: true },
+				{ name: "Claude", url: "https://claude.ai/", enabled: true }
+			];
+
+			chrome.storage.sync.set({ aiSearchEngines: defaultAiEngines }, function () {
+				console.log('默认AI搜索引擎已初始化');
+				loadEngineList(); // 加载引擎列表到页面
+			});
+		}
+	});
+});
 // 初始化
 
 document.addEventListener('DOMContentLoaded', function () {
