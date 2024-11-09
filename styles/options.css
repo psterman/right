@@ -2932,3 +2932,62 @@ body.custom-cursor {
 body.custom-cursor * {
   cursor: inherit !important;
 }
+/* 步骤7: 添加样式 */
+.engine-list {
+  padding: 15px;
+}
+
+.engine-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #333;
+  gap: 10px;
+}
+
+.engine-name {
+  width: 120px;
+  color: #fff;
+}
+
+.engine-url {
+  flex: 1;
+  background: #333;
+  color: #fff;
+  border: none;
+  padding: 5px;
+}
+
+.engine-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.add-engine {
+  margin-bottom: 15px;
+  padding: 8px 15px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.edit-engine,
+.delete-engine {
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.edit-engine {
+  background: #2196F3;
+  color: white;
+  border: none;
+}
+
+.delete-engine {
+  background: #f44336;
+  color: white;
+  border: none;
+}
