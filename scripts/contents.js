@@ -1938,6 +1938,103 @@ function createAIEngineMenu(parentPopup) {
     return aiMenu;
 }
 
+function createRegularSearchMenu(parentPopup) {
+    const parentRect = parentPopup.getBoundingClientRect();
+
+    const regularMenu = document.createElement('div');
+    regularMenu.style.cssText = `
+        position: fixed;
+        left: ${parentRect.left}px;
+        bottom: ${window.innerHeight - parentRect.top + 10}px;
+        width: ${parentRect.width}px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: ${parseInt(parentPopup.style.zIndex) + 1};
+        padding: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    `;
+
+    // 添加加载提示
+    const loadingTip = document.createElement('div');
+    loadingTip.textContent = '加载中...';
+    loadingTip.style.textAlign = 'center';
+    loadingTip.style.width = '100%';
+    regularMenu.appendChild(loadingTip);
+
+    // 从 storage 获取数据，只获取已启用的搜索引擎
+    chrome.storage.sync.get(['regularSearchEngines'], function (data) {
+        console.log('Loaded regular engines:', data.regularSearchEngines);
+        regularMenu.innerHTML = ''; // 清除加载提示
+
+        const engines = data.regularSearchEngines || [];
+        // 只过滤出已启用的搜索引擎
+        const enabledEngines = engines.filter(engine => engine.enabled);
+
+        if (enabledEngines.length === 0) {
+            const noDataMsg = document.createElement('div');
+            noDataMsg.textContent = '请先在扩展设置中启用常规搜索引擎';
+            noDataMsg.style.cssText = `
+                width: 100%;
+                text-align: center;
+                padding: 10px;
+                color: #666;
+            `;
+            regularMenu.appendChild(noDataMsg);
+            return;
+        }
+
+        enabledEngines.forEach(engine => {
+            if (engine.enabled) { // 额外检查确保只显示已启用的引擎
+                const engineButton = document.createElement('div');
+                engineButton.style.cssText = `
+                    padding: 8px 16px;
+                    background: #f5f6f7;
+                    border-radius: 20px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    color: #333;
+                    transition: all 0.3s;
+                    user-select: none;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    white-space: nowrap;
+                `;
+
+                engineButton.innerHTML = `
+                    <span style="font-size: 16px;">🔍</span>
+                    <span>${engine.name}</span>
+                `;
+
+                engineButton.addEventListener('mouseover', () => {
+                    engineButton.style.backgroundColor = '#e9ecef';
+                });
+                engineButton.addEventListener('mouseout', () => {
+                    engineButton.style.backgroundColor = '#f5f6f7';
+                });
+
+                engineButton.addEventListener('click', () => {
+                    const searchText = parentPopup.querySelector('input').value.trim();
+                    if (searchText) {
+                        const searchUrl = engine.url.replace('%s', encodeURIComponent(searchText));
+                        window.open(searchUrl, '_blank');
+                        if (typeof removePopup === 'function') {
+                            removePopup();
+                        }
+                    }
+                });
+
+                regularMenu.appendChild(engineButton);
+            }
+        });
+    });
+
+    document.body.appendChild(regularMenu);
+    return regularMenu;
+}
 // 添加消息监听器来接收更新
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.action === 'updateSearchEngines') {
@@ -1987,16 +2084,15 @@ function createTabBar() {
     TAB_CONFIG.forEach(tab => {
         const tabElement = createTabElement(tab);
 
-        // 为"问AI"标签添加特殊处理
+        // 为"问AI"和"搜索"标签添加特殊处理
         if (tab.id === 'ai') {
             tabElement.addEventListener('click', () => {
-                // 移除已存在的 AI 菜单
+                // 移除已存在的菜单
                 const existingMenu = document.querySelector('.ai-engine-menu');
                 if (existingMenu) {
                     document.body.removeChild(existingMenu);
                 }
 
-                // 创建新的 AI 菜单
                 const aiMenu = createAIEngineMenu(currentPopup);
                 aiMenu.classList.add('ai-engine-menu');
 
@@ -2008,7 +2104,29 @@ function createTabBar() {
                     }
                 };
 
-                // 延迟添加事件监听器，避免立即触发
+                setTimeout(() => {
+                    document.addEventListener('click', closeMenu);
+                }, 0);
+            });
+        } else if (tab.id === 'regularsearch') {
+            tabElement.addEventListener('click', () => {
+                // 移除已存在的菜单
+                const existingMenu = document.querySelector('.regular-search-menu');
+                if (existingMenu) {
+                    document.body.removeChild(existingMenu);
+                }
+
+                const regularMenu = createRegularSearchMenu(currentPopup);
+                regularMenu.classList.add('regular-search-menu');
+
+                // 点击其他地方时关闭菜单
+                const closeMenu = (e) => {
+                    if (!regularMenu.contains(e.target) && !tabElement.contains(e.target)) {
+                        document.body.removeChild(regularMenu);
+                        document.removeEventListener('click', closeMenu);
+                    }
+                };
+
                 setTimeout(() => {
                     document.addEventListener('click', closeMenu);
                 }, 0);
