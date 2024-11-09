@@ -403,167 +403,38 @@ function loadData() {
 // 确保在选项页面加载时执行
 document.addEventListener('DOMContentLoaded', loadData);
 //填充topenginelist
-// 步骤1: 添加默认搜索引擎配置
-const defaultEngines = {
-	ai: [
-		{ name: "ChatGPT", url: "https://chat.openai.com/", enabled: true },
-		{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s", enabled: true },
-		{ name: "Claude", url: "https://claude.ai/", enabled: true }
-	],
-	regular: [
-		{ name: "Google", url: "https://www.google.com/search?q=%s", enabled: true },
-		{ name: "Bing", url: "https://www.bing.com/search?q=%s", enabled: true },
-		{ name: "百度", url: "https://www.baidu.com/s?wd=%s", enabled: true }
-	],
-	image: [
-		{ name: "Google图片", url: "https://www.google.com/search?tbm=isch&q=%s", enabled: true },
-		{ name: "Bing图片", url: "https://www.bing.com/images/search?q=%s", enabled: true }
-	],
-	custom: []
-};
-
-// 步骤2: 修改 loadEngineList 函数
 function loadEngineList() {
-	const tabContent = document.getElementById('tabContent');
-	const activeTab = document.querySelector('.tab.active');
-	const category = activeTab.getAttribute('data-category');
+	const topEngineList = document.querySelector('#topEngineList .engine-list');
+	const bottomEngineList = document.querySelector('#bottomEngineList .engine-list');
 
-	chrome.storage.sync.get(`${category}SearchEngines`, (result) => {
-		const engines = result[`${category}SearchEngines`] || defaultEngines[category];
-
-		let html = `
-            <div class="engine-list">
-                <div class="engine-controls">
-                    <button id="add${category}Engine" class="add-engine">添加新搜索引擎</button>
-                </div>
-                <div class="engine-items">
-        `;
-
-		engines.forEach((engine, index) => {
-			html += `
-                <div class="engine-item" data-index="${index}">
-                    <input type="checkbox" 
-                           id="${category}-engine-${index}" 
-                           ${engine.enabled ? 'checked' : ''}>
-                    <span class="engine-name">${engine.name}</span>
-                    <input type="text" 
-                           class="engine-url" 
-                           value="${engine.url}" 
-                           readonly>
-                    <div class="engine-actions">
-                        <button class="edit-engine">编辑</button>
-                        <button class="delete-engine">删除</button>
-                    </div>
-                </div>
-            `;
-		});
-
-		html += `</div></div>`;
-		tabContent.innerHTML = html;
-
-		// 添加事件监听器
-		addEngineEventListeners(category);
-	});
-}
-// 步骤3: 添加标签切换事件监听
-function initializeTabs() {
-	const tabs = document.querySelectorAll('.tab');
-	tabs.forEach(tab => {
-		tab.addEventListener('click', () => {
-			tabs.forEach(t => t.classList.remove('active'));
-			tab.classList.add('active');
-			loadEngineList();
-		});
-	});
-}
-// 步骤4: 修改事件监听器函数
-function addEngineEventListeners(category) {
-	// 添加新搜索引擎按钮
-	const addButton = document.getElementById(`add${category}Engine`);
-	if (addButton) {
-		addButton.addEventListener('click', () => addNewEngine(category));
+	if (!topEngineList || !bottomEngineList) {
+		console.error('Engine list containers not found');
+		return;
 	}
 
-	// 为每个搜索引擎项添加事件
-	document.querySelectorAll('.engine-item').forEach(item => {
-		const index = parseInt(item.getAttribute('data-index'));
+	// 清空现有内容
+	topEngineList.innerHTML = '';
+	bottomEngineList.innerHTML = '';
 
-		// 编辑按钮
-		item.querySelector('.edit-engine').addEventListener('click', () => {
-			editEngine(category, index);
+	// 加载搜索引擎列表
+	chrome.storage.sync.get(['aiSearchEngines', 'regularSearchEngines'], function (data) {
+		console.log('Loading engine lists:', data);
+
+		// 加载 AI 搜索引擎
+		const aiEngines = data.aiSearchEngines || defaultEngineConfig.ai;
+		aiEngines.forEach((engine, index) => {
+			const engineItem = createEngineItem(engine, index, true, true);
+			topEngineList.appendChild(engineItem);
 		});
 
-		// 删除按钮
-		item.querySelector('.delete-engine').addEventListener('click', () => {
-			deleteEngine(category, index);
-		});
-
-		// 启用/禁用复选框
-		item.querySelector('input[type="checkbox"]').addEventListener('change', (e) => {
-			toggleEngine(category, index, e.target.checked);
-		});
-	});
-}
-// 步骤5: 修改引擎操作函数
-function addNewEngine(category) {
-	const name = prompt('请输入搜索引擎名称:');
-	if (!name) return;
-
-	const url = prompt('请输入搜索引擎URL (使用 %s 表示搜索词):');
-	if (!url) return;
-
-	chrome.storage.sync.get(`${category}SearchEngines`, (result) => {
-		const engines = result[`${category}SearchEngines`] || defaultEngines[category];
-		engines.push({ name, url, enabled: true });
-
-		chrome.storage.sync.set({ [`${category}SearchEngines`]: engines }, () => {
-			loadEngineList();
+		// 加载常规搜索引擎
+		const regularEngines = data.regularSearchEngines || defaultEngineConfig.regular;
+		regularEngines.forEach((engine, index) => {
+			const engineItem = createEngineItem(engine, index, true, false);
+			bottomEngineList.appendChild(engineItem);
 		});
 	});
 }
-function editEngine(category, index) {
-	chrome.storage.sync.get(`${category}SearchEngines`, (result) => {
-		const engines = result[`${category}SearchEngines`] || defaultEngines[category];
-		const engine = engines[index];
-
-		const name = prompt('编辑搜索引擎名称:', engine.name);
-		if (!name) return;
-
-		const url = prompt('编辑搜索引擎URL:', engine.url);
-		if (!url) return;
-
-		engines[index] = { ...engine, name, url };
-
-		chrome.storage.sync.set({ [`${category}SearchEngines`]: engines }, () => {
-			loadEngineList();
-		});
-	});
-}
-function deleteEngine(category, index) {
-	if (!confirm('确定要删除这个搜索引擎吗？')) return;
-
-	chrome.storage.sync.get(`${category}SearchEngines`, (result) => {
-		const engines = result[`${category}SearchEngines`] || defaultEngines[category];
-		engines.splice(index, 1);
-
-		chrome.storage.sync.set({ [`${category}SearchEngines`]: engines }, () => {
-			loadEngineList();
-		});
-	});
-}
-function toggleEngine(category, index, enabled) {
-	chrome.storage.sync.get(`${category}SearchEngines`, (result) => {
-		const engines = result[`${category}SearchEngines`] || defaultEngines[category];
-		engines[index].enabled = enabled;
-
-		chrome.storage.sync.set({ [`${category}SearchEngines`]: engines });
-	});
-}
-// 步骤6: 修改初始化代码
-document.addEventListener('DOMContentLoaded', () => {
-	initializeTabs();
-	loadEngineList(); // 默认加载当前激活的标签页内容
-});
 // 创建引擎项
 function createEngineItem(engine, index, isCustom, isAI) {
 	const item = document.createElement('div');
