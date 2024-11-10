@@ -796,18 +796,89 @@ document.addEventListener('DOMContentLoaded', () => {
 	loadAISearchEngines('multiMenu1');
 	document.getElementById('addAISearchEngine1').addEventListener('click', addNewAISearchEngine);
 });
+// ... 现有代码 ...
+
 chrome.storage.sync.get('aiSearchEngines', function (data) {
 	console.log('从存储中获取的AI搜索引擎数据：', data.aiSearchEngines);
-	if (data.aiSearchEngines && Array.isArray(data.aiSearchEngines)) {
-		aiSearchEngines = data.aiSearchEngines;
-		loadAISearchEngines();
-	} else {
-		console.log('未找到有效的AI搜索引擎数据，使用默认值');
-		// 可以在这里设置一些默认的搜索引擎
-		aiSearchEngines = [
-			{ name: "默认AI搜索", url: "https://example.com/search?q=%s" }
+	let engines = data.aiSearchEngines || [];
+
+	if (engines.length === 0) {
+		console.log('未找到保存的AI搜索引擎，使用默认值');
+		engines = [
+			{ name: "ChatGPT", url: "https://chat.openai.com/" },
+			{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s" },
+			{ name: "360AI搜索", url: "https://www.sou.com/?q=%s" },
+			{ name: "百小度", url: "https://ying.baichuan-ai.com/chat" },
+			{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail" },
+			{ name: "海螺", url: "https://hailuoai.com/" },
+			{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s" }
 		];
-		loadAISearchEngines();
+
+		// 保存默认搜索引擎到存储
+		chrome.storage.sync.set({ aiSearchEngines: engines }, function () {
+			console.log('已保存默认AI搜索引擎配置');
+			loadAISearchEngines(); // 重新加载搜索引擎列表
+		});
+	}
+});
+
+// 同样的方式处理常规搜索引擎
+chrome.storage.sync.get('regularSearchEngines', function (data) {
+	console.log('从存储中获取的常规搜索引擎数据：', data.regularSearchEngines);
+	let engines = data.regularSearchEngines || [];
+
+	if (engines.length === 0) {
+		console.log('未找到保存的常规搜索引擎，使用默认值');
+		engines = [
+			{ name: "Google", url: "https://www.google.com/search?q=%s" },
+			{ name: "Bing", url: "https://www.bing.com/search?q=%s" },
+			{ name: "百度", url: "https://www.baidu.com/s?wd=%s" },
+			{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
+			{ name: "搜狗", url: "https://www.sogou.com/web?query=%s" },
+			{ name: "360搜索", url: "https://www.so.com/s?q=%s" },
+			{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s" },
+			{ name: "闲鱼", url: "https://www.goofish.com/search?q=%s&spm=a21ybx.home" },
+			{ name: "抖音", url: "https://www.douyin.com/search/%s" },
+			{ name: "X", url: "https://twitter.com/search?q=%s" },
+			{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" },
+			{ name: "V2EX", url: "https://www.v2ex.com/search?q=%s" },
+			{ name: "Github", url: "https://github.com/search?q=%s" },
+			{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s" },
+			{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s" },
+			{ name: "FaceBook", url: "https://www.facebook.com/search/top/?q=%s" },
+			{ name: "bilibili", url: "https://search.bilibili.com/all?keyword=%s" },
+			{ name: "知乎", url: "https://www.zhihu.com/search?q=%s" },
+			{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s" },
+			{ name: "微博", url: "https://s.weibo.com/weibo/%s" },
+			{ name: "今日头条", url: "https://so.toutiao.com/search?keyword=%s" }
+		];
+
+		// 保存默认搜索引擎到存储
+		chrome.storage.sync.set({ regularSearchEngines: engines }, function () {
+			console.log('已保存默认常规搜索引擎配置');
+			loadRegularSearchEngines(); // 重新加载搜索引擎列表
+		});
+	}
+});
+
+// 图片搜索引擎也采用相同模式
+chrome.storage.sync.get('imageSearchEngines', function (data) {
+	console.log('从存储中获取的图片搜索引擎数据：', data.imageSearchEngines);
+	let engines = data.imageSearchEngines || [];
+
+	if (engines.length === 0) {
+		console.log('未找到保存的图片搜索引擎，使用默认值');
+		engines = [
+			{ name: "谷歌图片", url: "https://images.google.com/search?q=%s" },
+			{ name: "必应图片", url: "https://www.bing.com/images/search?q=%s" },
+			{ name: "百度图片", url: "https://image.baidu.com/search/index?tn=baiduimage&word=%s" }
+		];
+
+		// 保存默认搜索引擎到存储
+		chrome.storage.sync.set({ imageSearchEngines: engines }, function () {
+			console.log('已保存默认图片搜索引擎配置');
+			loadImageSearchEngines(); // 重新加载搜索引擎列表
+		});
 	}
 });
 document.addEventListener('DOMContentLoaded', loadData);
