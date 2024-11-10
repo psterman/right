@@ -1,5 +1,6 @@
 // 定义全局变量存储搜索引擎映射
-
+let topEngineListContainer = [];
+let bottomEngineListContainer = [];
 let multiMenu1 = [];
 let multiMenu2 = [];
 let aiSearchEngines = [];
@@ -173,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			updateCursor(cursorUrl);
 		});
 	});
-	
+
 	function debounce(func, wait) {
 		let timeout;
 		return function executedFunction(...args) {
@@ -371,64 +372,110 @@ function updateAISearchEngines(newEngines) {
 }
 // 从存储中加载数据
 function loadData() {
-	chrome.storage.sync.get(['aiSearchEngines', 'regularSearchEngines'], function (result) {
-		if (!result.aiSearchEngines || !result.regularSearchEngines) {
-			// 首次安装，使用默认配置
-			const defaultData = {
-				aiSearchEngines: defaultEngineConfig.ai,
-				regularSearchEngines: defaultEngineConfig.regular,
-				id2enginemap: {},
-				multiMenu1: [],
-				multiMenu2: []
-			};
+	chrome.storage.sync.get(['id2enginemap', 'multiMenu1', 'multiMenu2'], function (result) {
+		id2enginemap = result.id2enginemap || {};
+		multiMenu1 = result.multiMenu1 || [];
+		multiMenu2 = result.multiMenu2 || [];
 
-			chrome.storage.sync.set(defaultData, function () {
-				console.log('Default data initialized');
-				loadEngineList();
-				if (typeof initializeTab3 === 'function') {
-					initializeTab3();
-				}
-			});
-		} else {
-			// 使用现有数据
-			loadEngineList();
-			if (typeof initializeTab3 === 'function') {
-				initializeTab3();
-			}
-		}
+		// 清空现有的引擎列表
+		topEngineListContainer = [];
+		bottomEngineListContainer = [];
+
+		// AI 搜索引擎
+		const aiSearchEngines = [
+			{ name: "ChatGPT", url: "https://chatgpt.com/?q=%s" },
+			{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s" },
+			{ name: "360AI搜索", url: "https://www.sou.com/?q=%s" },
+			{ name: "百小度", url: "https://ying.baichuan-ai.com/chat" },
+			{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail" },
+			{ name: "海螺", url: "https://hailuoai.com/" },
+			{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s" },
+			{ name: "WebPilot", url: "https://www.webpilot.ai/search?q=%s" },
+			{ name: "私塔", url: "https://metaso.cn/?q=%s" },
+			{ name: "Devv", url: "https://devv.ai/" },
+			{ name: "豆包", url: "https://www.doubao.com/" },
+			{ name: "开搜AI", url: "https://kaisouai.com/?q=%s" },
+			{ name: "文心一言", url: "https://yiyan.baidu.com/" },
+			{ name: "Consensus", url: "https://consensus.app/results/?q=%s" },
+			{ name: "YOU", url: "https://you.com/search?q=%s" },
+			{ name: "phind", url: "https://www.phind.com/search?q=%s" },
+			{ name: "SEMANTIC SCHOLAR", url: "https://www.semanticscholar.org/search?q=%s" },
+			{ name: "Genspark", url: "https://www.genspark.ai/search?query=%s" },
+			{ name: "Felo Search", url: "https://felo.ai/?q=%s" },
+			{ name: "Miku", url: "https://hellomiku.com/search?q=%s" },
+			{ name: "kFind", url: "https://kfind.kmind.com/search?q=%s" },
+			{ name: "MenFree", url: "https://www.memfree.me/search?q=%s" },
+			{ name: "Monica", url: "https://s.monica.im/search?q=%s" },
+			{ name: "MERGEEK", url: "https://mergeek.com/search" },
+			{ name: "Xanswer", url: "https://www.xanswer.com/" },
+			{ name: "exa", url: "https://exa.ai/search?q=%s" }
+		];
+
+		// 传统搜索引擎
+		const regularSearchEngines = [
+			{ name: "Google", url: "https://www.google.com/search?q=%s" },
+			{ name: "Bing", url: "https://www.bing.com/search?q=%s" },
+			{ name: "百度", url: "https://www.baidu.com/s?wd=%s" },
+			{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
+			{ name: "Yandex", url: "https://yandex.com/search/?text=%s" },
+			{ name: "搜狗", url: "https://www.sogou.com/web?query=%s" },
+			{ name: "360搜索", url: "https://www.so.com/s?q=%s" },
+			{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s" },
+			{ name: "小红书", url: "https://www.xiaohongshu.com/search_result?keyword=%s" },
+			{ name: "抖音", url: "https://www.douyin.com/search/%s" },
+			{ name: "X", url: "https://x.com/search?q=%s" },
+			{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" },
+			{ name: "V2EX", url: "https://www.sov2ex.com/?q=%s" },
+			{ name: "Github", url: "https://github.com/search?q=%s" },
+			{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s" },
+			{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s" },
+			{ name: "FaceBook", url: "https://www.facebook.com//search?q=%s" },
+			{ name: "bilibili", url: "https://search.bilibili.com/?keyword=%s" },
+			{ name: "知乎宣客", url: "https://zhida.zhihu.com/" },
+			{ name: "知乎", url: "https://www.zhihu.com/search?q=%s" },
+			{ name: "腾讯元宝", url: "https://yuanbao.tencent.com/chat/" },
+			{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s" },
+			{ name: "微博", url: "https://s.weibo.com/weibo?q=%s" },
+			{ name: "今日头条", url: "https://so.toutiao.com/search?dvpf=pc&keyword=%s" }
+			// 添加更多传统搜索引擎...
+		];
+
+		// 将 AI 搜索引擎添加到顶部引擎列表
+		topEngineListContainer = aiSearchEngines;
+
+		// 将传统搜索引擎添加到底部引擎列表
+		bottomEngineListContainer = regularSearchEngines;
+
+		console.log('Loaded data:', {
+			topEngineListContainer,
+			bottomEngineListContainer,
+			multiMenu1,
+			multiMenu2
+		});
+
+		initializeTab3();
 	});
 }
-
-
-// 确保在选项页面加载时执行
-document.addEventListener('DOMContentLoaded', loadData);
 //填充topenginelist
 function loadEngineList() {
+	console.log('Loading engine list');
 	const topEngineList = document.querySelector('#topEngineList .engine-list');
 	const bottomEngineList = document.querySelector('#bottomEngineList .engine-list');
-
-	if (!topEngineList || !bottomEngineList) {
-		console.error('Engine list containers not found');
-		return;
-	}
-
-	// 清空现有内容
 	topEngineList.innerHTML = '';
 	bottomEngineList.innerHTML = '';
 
-	// 加载搜索引擎列表
 	chrome.storage.sync.get(['aiSearchEngines', 'regularSearchEngines'], function (data) {
-		console.log('Loading engine lists:', data);
+		console.log('Loaded data from storage:', data);
 
-		// 加载 AI 搜索引擎
-		const aiEngines = data.aiSearchEngines || defaultEngineConfig.ai;
+		const aiEngines = data.aiSearchEngines || [];
+		console.log('AI engines:', aiEngines);
 		aiEngines.forEach((engine, index) => {
 			const engineItem = createEngineItem(engine, index, true, true);
 			topEngineList.appendChild(engineItem);
 		});
 
-		// 加载常规搜索引擎
-		const regularEngines = data.regularSearchEngines || defaultEngineConfig.regular;
+		const regularEngines = data.regularSearchEngines || [];
+		console.log('Regular engines:', regularEngines);
 		regularEngines.forEach((engine, index) => {
 			const engineItem = createEngineItem(engine, index, true, false);
 			bottomEngineList.appendChild(engineItem);
@@ -605,27 +652,14 @@ function saveEngineSettings() {
 	const bottomEngineItems = document.querySelectorAll('#bottomEngineList .engine-item');
 	const updatedAiEngines = [];
 	const updatedRegularEngines = [];
-	if (checkbox && label && urlInput) {
-		updatedAiEngines.push({
-			name: label.textContent,
-			url: urlInput.value,
-			enabled: checkbox.checked
-		});
-	}
 
-
-// 打印日志查看数据
-console.log('Saving AI engines:', updatedAiEngines);
-	// 修改保存逻辑，增加 enabled 状态
 	topEngineItems.forEach((item) => {
 		const checkbox = item.querySelector('input[type="checkbox"]');
-		const label = item.querySelector('label');
 		const urlInput = item.querySelector('input[type="text"]');
 		const engine = {
 			name: item.querySelector('label').textContent,
 			url: urlInput.value,
-			enabled: checkbox.checked,
-			type: 'ai'  // 添加类型标识
+			enabled: checkbox.checked
 		};
 		updatedAiEngines.push(engine);
 	});
@@ -636,48 +670,19 @@ console.log('Saving AI engines:', updatedAiEngines);
 		const engine = {
 			name: item.querySelector('label').textContent,
 			url: urlInput.value,
-			enabled: checkbox.checked,
-			type: 'regular'  // 添加类型标识
+			enabled: checkbox.checked
 		};
 		updatedRegularEngines.push(engine);
 	});
 
-
-	// 保存到 Storage
 	chrome.storage.sync.set({
-		aiSearchEngines: updatedAiEngines
+		aiSearchEngines: updatedAiEngines,
+		regularSearchEngines: updatedRegularEngines
 	}, function () {
-		// 发送消息通知 content.js 更新引擎列表
-		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-			if (tabs[0]) {
-				chrome.tabs.sendMessage(tabs[0].id, {
-					action: 'updateSearchEngines',
-					aiEngines: updatedAiEngines
-				});
-			}
-		});
-		console.log('AI搜索引擎已保存');
+		alert('设置已保存');
+		loadEngineList();
 	});
 }
-// 确保在页面加载时初始化默认数据
-document.addEventListener('DOMContentLoaded', function () {
-	// 检查是否存在已保存的数据
-	chrome.storage.sync.get('aiSearchEngines', function (data) {
-		if (!data.aiSearchEngines || data.aiSearchEngines.length === 0) {
-			// 如果没有数据，设置默认值
-			const defaultAiEngines = [
-				{ name: "ChatGPT", url: "https://chat.openai.com/", enabled: true },
-				{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s", enabled: true },
-				{ name: "Claude", url: "https://claude.ai/", enabled: true }
-			];
-
-			chrome.storage.sync.set({ aiSearchEngines: defaultAiEngines }, function () {
-				console.log('默认AI搜索引擎已初始化');
-				loadEngineList(); // 加载引擎列表到页面
-			});
-		}
-	});
-});
 // 初始化
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -1015,34 +1020,51 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // 开始: 搜索引擎数据
-const defaultEngineConfig = {
+const searchEngines = {
 	ai: [
-		{ name: "ChatGPT", url: "https://chatgpt.com/?q=%s" },
-		{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s" },
-		{ name: "360AI搜索", url: "https://www.sou.com/?q=%s" },
-		// ... 其他现有的 AI 搜索引擎
+		{ name: "ChatGPT", url: "https://chat.openai.com/" },
+		{ name: "Bard", url: "https://bard.google.com/" },
+		// 添加更多AI搜索引擎...
+	],
+	image: [
+		{ name: "Google Images", url: "https://images.google.com/search?q=%s" },
+		{ name: "Bing Images", url: "https://www.bing.com/images/search?q=%s" },
+		// 添加更多图片搜索引擎...
 	],
 	regular: [
 		{ name: "Google", url: "https://www.google.com/search?q=%s" },
 		{ name: "Bing", url: "https://www.bing.com/search?q=%s" },
 		{ name: "百度", url: "https://www.baidu.com/s?wd=%s" },
-		// ... 其他现有的常规搜索引擎
+		{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
+		{ name: "Yandex", url: "https://yandex.com/search/?text=%s" },
+		{ name: "搜狗", url: "https://www.sogou.com/web?query=%s" },
+		{ name: "360搜索", url: "https://www.so.com/s?q=%s" },
+		{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s" },
+		{ name: "闲鱼", url: "https://www.goofish.com/search?q=%s&spm=a21ybx.home" },
+		{ name: "抖音", url: "https://www.douyin.com/search/%s" },
+		{ name: "X", url: "https://twitter.com/search?q=%s" },
+		{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" },
+		{ name: "V2EX", url: "https://www.v2ex.com/search?q=%s" },
+		{ name: "Github", url: "https://github.com/search?q=%s" },
+		{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s" },
+		{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s" },
+		{ name: "FaceBook", url: "https://www.facebook.com/search/top/?q=%s" },
+		{ name: "bilibili", url: "https://search.bilibili.com/all?keyword=%s" },
+		{ name: "知乎", url: "https://www.zhihu.com/search?q=%s" },
+		{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s" },
+		{ name: "微博", url: "https://s.weibo.com/weibo/%s" },
+		{ name: "今日头条", url: "https://so.toutiao.com/search?keyword=%s" }
+		// 添加更多综合搜索引擎...
+	],
+	custom: [
+		// 这里可以是空的，或者包含一些默认的自定义搜索引擎
 	]
 };
-
-// ✅ 新增: 统一的引擎管理函数
-function getEngineList(type) {
-	return new Promise((resolve) => {
-		chrome.storage.sync.get([`${type}SearchEngines`], (data) => {
-			resolve(data[`${type}SearchEngines`] || defaultEngineConfig[type]);
-		});
-	});
-}
 function loadOptions() {
 	chrome.storage.sync.get(['selectedEngines', 'id2enginemap'], function (result) {
 		let id2enginemap = result.id2enginemap || {};
 
-		
+
 		// 更新 id2enginemap
 		Object.entries(searchEngines).forEach(([category, engines]) => {
 			engines.forEach(engine => {
@@ -1050,7 +1072,7 @@ function loadOptions() {
 			});
 		});
 
-	
+
 		// 保存更新后的 id2enginemap
 		chrome.storage.sync.set({ id2enginemap: id2enginemap }, function () {
 		});
@@ -1070,7 +1092,7 @@ function saveOptions() {
 
 
 	chrome.storage.sync.set({ id2enginemap: id2enginemap }, function () {
-		
+
 	});
 }
 // 确保在页面加载时执行 loadOptions
@@ -4051,7 +4073,7 @@ function initializeTab3() {
 		});
 	});
 
-	
+
 	loadMultiMenu('multiMenu1', multiMenu1);
 	loadMultiMenu('multiMenu2', multiMenu2);
 
@@ -4128,59 +4150,5 @@ function updateMenuItem(containerId, index, item) {
 function saveMultiMenu(containerId, list) {
 	chrome.storage.sync.set({ [containerId]: list }, () => {
 		console.log(`${containerId} saved`);
-	});
-}
-// 1. 添加保存选中引擎的函数
-function saveSelectedEngines() {
-	const selectedTopEngines = [];
-	const selectedBottomEngines = [];
-
-	// 获取顶部选中的引擎
-	document.querySelectorAll('#topEngineList input[type="checkbox"]:checked').forEach(checkbox => {
-		const engineItem = checkbox.closest('.engine-item');
-		selectedTopEngines.push({
-			name: engineItem.querySelector('label').textContent,
-			url: engineItem.querySelector('input[type="text"]').value,
-			type: 'ai'  // 标记为AI搜索引擎
-		});
-	});
-
-	// 获取底部选中的引擎
-	document.querySelectorAll('#bottomEngineList input[type="checkbox"]:checked').forEach(checkbox => {
-		const engineItem = checkbox.closest('.engine-item');
-		selectedBottomEngines.push({
-			name: engineItem.querySelector('label').textContent,
-			url: engineItem.querySelector('input[type="text"]').value,
-			type: 'regular'  // 标记为常规搜索引擎
-		});
-	});
-
-	// 保存到 Chrome Storage
-	chrome.storage.sync.set({
-		selectedEngines: {
-			top: selectedTopEngines,
-			bottom: selectedBottomEngines
-		}
-	}, () => {
-		// 通知 content script 更新
-		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-			if (tabs[0]) {
-				chrome.tabs.sendMessage(tabs[0].id, {
-					action: 'updateSelectedEngines',
-					selectedEngines: {
-						top: selectedTopEngines,
-						bottom: selectedBottomEngines
-					}
-				});
-			}
-		});
-	});
-}
-
-// 2. 为复选框添加事件监听
-function initializeEngineSelectors() {
-	const checkboxes = document.querySelectorAll('#topEngineList input[type="checkbox"], #bottomEngineList input[type="checkbox"]');
-	checkboxes.forEach(checkbox => {
-		checkbox.addEventListener('change', saveSelectedEngines);
 	});
 }
