@@ -805,13 +805,13 @@ chrome.storage.sync.get('aiSearchEngines', function (data) {
 	if (engines.length === 0) {
 		console.log('未找到保存的AI搜索引擎，使用默认值');
 		engines = [
-			{ name: "ChatGPT", url: "https://chat.openai.com/" },
-			{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s" },
-			{ name: "360AI搜索", url: "https://www.sou.com/?q=%s" },
-			{ name: "百小度", url: "https://ying.baichuan-ai.com/chat" },
-			{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail" },
-			{ name: "海螺", url: "https://hailuoai.com/" },
-			{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s" }
+			{ name: "ChatGPT", url: "https://chat.openai.com/", enabled: false },
+			{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s", enabled: false },
+			{ name: "360AI搜索", url: "https://www.sou.com/?q=%s", enabled: false },
+			{ name: "百小度", url: "https://ying.baichuan-ai.com/chat" , enabled: false},
+			{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail", enabled: false },
+			{ name: "海螺", url: "https://hailuoai.com/", enabled: false },
+			{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s", enabled: false }
 		];
 
 		// 保存默认搜索引擎到存储
@@ -830,27 +830,27 @@ chrome.storage.sync.get('regularSearchEngines', function (data) {
 	if (engines.length === 0) {
 		console.log('未找到保存的常规搜索引擎，使用默认值');
 		engines = [
-			{ name: "Google", url: "https://www.google.com/search?q=%s" },
-			{ name: "Bing", url: "https://www.bing.com/search?q=%s" },
-			{ name: "百度", url: "https://www.baidu.com/s?wd=%s" },
-			{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s" },
-			{ name: "搜狗", url: "https://www.sogou.com/web?query=%s" },
-			{ name: "360搜索", url: "https://www.so.com/s?q=%s" },
-			{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s" },
-			{ name: "闲鱼", url: "https://www.goofish.com/search?q=%s&spm=a21ybx.home" },
-			{ name: "抖音", url: "https://www.douyin.com/search/%s" },
-			{ name: "X", url: "https://twitter.com/search?q=%s" },
-			{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" },
-			{ name: "V2EX", url: "https://www.v2ex.com/search?q=%s" },
-			{ name: "Github", url: "https://github.com/search?q=%s" },
-			{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s" },
-			{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s" },
-			{ name: "FaceBook", url: "https://www.facebook.com/search/top/?q=%s" },
-			{ name: "bilibili", url: "https://search.bilibili.com/all?keyword=%s" },
-			{ name: "知乎", url: "https://www.zhihu.com/search?q=%s" },
-			{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s" },
-			{ name: "微博", url: "https://s.weibo.com/weibo/%s" },
-			{ name: "今日头条", url: "https://so.toutiao.com/search?keyword=%s" }
+			{ name: "Google", url: "https://www.google.com/search?q=%s" , enabled: false},
+			{ name: "Bing", url: "https://www.bing.com/search?q=%s" , enabled: false},
+			{ name: "百度", url: "https://www.baidu.com/s?wd=%s" , enabled: false},
+			{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s", enabled: false },
+			{ name: "搜狗", url: "https://www.sogou.com/web?query=%s" , enabled: false},
+			{ name: "360搜索", url: "https://www.so.com/s?q=%s", enabled: false },
+			{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s" , enabled: false},
+			{ name: "闲鱼", url: "https://www.goofish.com/search?q=%s&spm=a21ybx.home" , enabled: false},
+			{ name: "抖音", url: "https://www.douyin.com/search/%s", enabled: false },
+			{ name: "X", url: "https://twitter.com/search?q=%s" , enabled: false},
+			{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" , enabled: false},
+			{ name: "V2EX", url: "https://www.v2ex.com/search?q=%s" , enabled: false},
+			{ name: "Github", url: "https://github.com/search?q=%s", enabled: false },
+			{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s", enabled: false },
+			{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s" , enabled: false},
+			{ name: "FaceBook", url: "https://www.facebook.com/search/top/?q=%s" , enabled: false},
+			{ name: "bilibili", url: "https://search.bilibili.com/all?keyword=%s", enabled: false},
+			{ name: "知乎", url: "https://www.zhihu.com/search?q=%s", enabled: false },
+			{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s" , enabled: false},
+			{ name: "微博", url: "https://s.weibo.com/weibo/%s", enabled: false },
+			{ name: "今日头条", url: "https://so.toutiao.com/search?keyword=%s", enabled: false }
 		];
 
 		// 保存默认搜索引擎到存储
