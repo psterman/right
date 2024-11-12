@@ -2778,7 +2778,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	chrome.storage.sync.get(['longPressEnabled', 'ctrlSelectEnabled', 'directionSearchEnabled'], function (result) {
 		longPressCheckbox.checked = result.longPressEnabled ?? true;
 		ctrlSelectCheckbox.checked = result.ctrlSelectEnabled ?? true;
-		directionSearchToggle.checked = result.directionSearchEnabled ?? true;  // 添加这一行
+		directionSearchToggle.checked = result.directionSearchEnabled ?? false;  // 添加这一行
 	});
 	// 保存设置变更
 	longPressCheckbox.addEventListener('change', function () {
@@ -3611,27 +3611,24 @@ document.addEventListener('DOMContentLoaded', function () {
 			updateDirectionSearchUI();
 		});
 
-		// 加载保存的设置
-		chrome.storage.sync.get('directionSearchEnabled', (data) => {
-			directionSearchToggle.checked = !!data.directionSearchEnabled;
-			updateDirectionSearchUI(); // 确保UI反映当前状态
+		// 直接设置为未选中状态
+		directionSearchToggle.checked = false;
+
+		// 初始化存储中的设置为 false
+		chrome.storage.sync.set({ directionSearchEnabled: false }, function () {
+			console.log('方向搜索初始化为关闭状态');
+			updateDirectionSearchUI(); // 更新UI显示
 		});
-	}
-	// 修改：加载设置函数
-	function loadSettings() {
-		chrome.storage.sync.get('directionSearchEnabled', function (data) {
+
+		// 后续的设置变更才使用 get
+		chrome.storage.sync.get('directionSearchEnabled', (data) => {
 			if (data.hasOwnProperty('directionSearchEnabled')) {
 				directionSearchToggle.checked = data.directionSearchEnabled;
-			} else {
-				// 如果没有保存的设置，默认设置为打开
-				directionSearchToggle.checked = true;
-				// 保存默认设置
-				saveDirectionSearchSetting();
+				updateDirectionSearchUI();
 			}
-			console.log('方向搜索设置已加载:', directionSearchToggle.checked);
-			updateDirectionSearchUI(); // 确保UI更新反映当前状态
 		});
 	}
+	
 	// 添加这个新函数
 	function saveDirectionSearchSetting() {
 		const directionSearchToggle = document.getElementById('directionSearchToggle');
