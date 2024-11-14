@@ -723,54 +723,64 @@ function addNewAISearchEngine() {
 	});
 }
 
-function loadAISearchEngines(menuId) {
-	console.log('开始加载AI搜索引擎');
-	// 使用 setTimeout 来确保 DOM 完全加载
-	setTimeout(() => {
-		const menuList = document.querySelector('#multiMenu1 .ai-search-engine-list');
-		if (!menuList) {
-			console.error('AI搜索引擎列表元素未找到，选择器：#multiMenu1 .ai-search-engine-list');
-			console.log('当前DOM结构：', document.body.innerHTML);
-			return;
-		}
-		menuList.innerHTML = ''; // 清空现有内容
+function loadAISearchEngines(containerId) {
+	const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
+	if (!container) {
+		console.error('找不到容器:', containerId);
+		return;
+	}
 
-		chrome.storage.sync.get('aiSearchEngines', function (data) {
-			console.log('从存储中获取的AI搜索引擎数据：', data.aiSearchEngines);
-			let engines = data.aiSearchEngines || [];
+	chrome.storage.sync.get(['aiSearchEngines'], function (data) {
+		const engines = data.aiSearchEngines || [];
+		container.innerHTML = ''; // 清空现有内容
 
-			if (engines.length === 0) {
-				console.log('未找到保存的AI搜索引擎，使用默认值');
-				engines = [
-					{ name: "默认AI搜索", url: "https://example.com/search?q=%s" }
-				];
-			}
-
-			engines.forEach((engine, index) => {
-				const itemElement = document.createElement('div');
-				itemElement.classList.add('menu-item');
-				itemElement.innerHTML = `
-                    <span>${engine.name}</span>
-                    <input type="text" value="${engine.url}" readonly>
-                    <button class="edit-engine">编辑</button>
+		engines.forEach((engine, index) => {
+			const li = document.createElement('li');
+			li.className = 'ai-engine-item';
+			li.innerHTML = `
+                <div class="engine-row">
+                    <input type="checkbox" id="ai-engine-${index}" 
+                           class="engine-checkbox" 
+                           ${engine.enabled ? 'checked' : ''}>
+                    <label for="ai-engine-${index}">${engine.name}</label>
+                    <input type="text" class="engine-url" value="${engine.url}">
                     <button class="delete-engine">删除</button>
-                `;
+                </div>
+            `;
 
-				// 添加编辑和删除功能
-				const editButton = itemElement.querySelector('.edit-engine');
-				const deleteButton = itemElement.querySelector('.delete-engine');
-
-				editButton.addEventListener('click', () => editEngine(index));
-				deleteButton.addEventListener('click', () => deleteEngine(index));
-
-				menuList.appendChild(itemElement);
+			// 添加复选框变化事件监听器
+			const checkbox = li.querySelector('.engine-checkbox');
+			checkbox.addEventListener('change', function () {
+				engine.enabled = this.checked;
+				saveAIEngineSettings(engines);
 			});
 
-			console.log(`加载了 ${engines.length} 个 AI 搜索引擎到 multiMenu1`);
+			// 添加URL输入框变化事件监听器
+			const urlInput = li.querySelector('.engine-url');
+			urlInput.addEventListener('change', function () {
+				engine.url = this.value;
+				saveAIEngineSettings(engines);
+			});
+
+			// 添加删除按钮事件监听器
+			const deleteButton = li.querySelector('.delete-engine');
+			deleteButton.addEventListener('click', function () {
+				engines.splice(index, 1);
+				saveAIEngineSettings(engines);
+				loadAISearchEngines(containerId); // 重新加载列表
+			});
+
+			container.appendChild(li);
 		});
-	}, 0);
+	});
 }
 
+// 保存 AI 搜索引擎设置
+function saveAIEngineSettings(engines) {
+	chrome.storage.sync.set({ aiSearchEngines: engines }, function () {
+		console.log('AI搜索引擎设置已保存');
+	});
+}
 // 确保在DOM加载完成后调用loadAISearchEngines
 document.addEventListener('DOMContentLoaded', () => {
 	console.log('DOM内容已加载');

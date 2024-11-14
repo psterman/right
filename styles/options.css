@@ -2991,3 +2991,39 @@ body.custom-cursor * {
   color: white;
   border: none;
 }
+.ai-engine-item {
+  display: flex;
+  margin-bottom: 10px;
+  padding: 5px;
+  border-bottom: 1px solid #eee;
+}
+
+.engine-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.engine-checkbox {
+  margin-right: 10px;
+}
+
+.engine-url {
+  flex-grow: 1;
+  padding: 5px;
+  margin: 0 10px;
+}
+
+.delete-engine {
+  padding: 5px 10px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.delete-engine:hover {
+  background-color: #cc0000;
+}
