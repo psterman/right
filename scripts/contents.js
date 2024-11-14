@@ -1773,7 +1773,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
 // 定义标签配置
 const TAB_CONFIG = [
-    { id: 'ai', text: '问AI', icon: '🤖', color: '#4CAF50' },  // 将第一项改为"问AI"
+    { id: 'askai', text: '问AI', icon: '🤖', color: '#4CAF50' },  // 将第一项改为"问AI"
     { id: 'regularsearch', text: '搜索', icon: '🔍', color: '#2196F3' },  // 保持 id 不变
     { id: 'ai', text: 'AI 搜索', icon: '🔍', color: '#9C27B0' },
     { id: 'read', text: '阅读总结', icon: '📚', color: '#FF9800' },
@@ -2105,7 +2105,7 @@ function createTabBar() {
         const tabElement = createTabElement(tab);
 
         // 为"问AI"和"搜索"标签添加特殊处理
-        if (tab.id === 'ai') {
+        if (tab.id === 'askai') {
             tabElement.addEventListener('click', () => {
                 // 移除已存在的菜单
                 const existingMenu = document.querySelector('.ai-engine-menu');
@@ -2415,7 +2415,7 @@ function handleSearchInput(e) {
     contentArea.style.display = 'none'; // 输入时始终隐藏内容区域
 
     // 只在 AI 搜索标签下更新搜索引擎列表
-    if (currentTab === 'ai') {
+    if (currentTab === 'askai') {
         updateEngineList(searchText);
     }
 }
