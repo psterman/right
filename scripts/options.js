@@ -1337,7 +1337,10 @@ function defaultgetsettings() {
 		if (items["googlesidepanel"] == null) { firstdefaultvalues["googlesidepanel"] = true; }
 		if (items["defaultzoom"] == null) { firstdefaultvalues["defaultzoom"] = 100; }
 		if (items["step"] == null) { firstdefaultvalues["step"] = 5; }
-
+		// 修改默认值逻辑
+		if (items["directionSearchEnabled"] == null) {
+			firstdefaultvalues["directionSearchEnabled"] = true; // 改为默认启用
+		}
 		// Save the init value
 		chrome.storage.sync.set(firstdefaultvalues, function () {
 			// console.log("Settings saved");
@@ -1348,9 +1351,23 @@ function defaultgetsettings() {
 
 // 保存选中的搜索引擎到 Chrome 存储
 function save_options() {
-	chrome.storage.sync.set({ "icon": $("btnpreview").src, "optionskipremember": $("optionskipremember").checked, "contextmenus": $("contextmenus").checked, "searchgoogle": $("searchgoogle").checked, "searchbing": $("searchbing").checked, "searchduckduckgo": $("searchduckduckgo").checked, "searchbaidu": $("searchbaidu").checked, "searchyandex": $("searchyandex").checked, "navtop": $("navtop").checked, "navbottom": $("navbottom").checked, "navhidden": $("navhidden").checked, "typepanelzone": $("typepanelzone").checked, "typepanelcustom": $("typepanelcustom").checked, "typepanellasttime": $("typepanellasttime").checked, "websitezoomname": $("websitezoomname").value, "opentab": $("opentab").checked, "opencopy": $("opencopy").checked, "opennonebookmarks": $("opennonebookmarks").checked, "openbrowserbookmarks": $("openbrowserbookmarks").checked, "openquickbookmarks": $("openquickbookmarks").checked, "websitename1": $("websitename1").value, "websiteurl1": $("websiteurl1").value, "websitename2": $("websitename2").value, "websiteurl2": $("websiteurl2").value, "websitename3": $("websitename3").value, "websiteurl3": $("websiteurl3").value, "websitename4": $("websitename4").value, "websiteurl4": $("websiteurl4").value, "websitename5": $("websitename5").value, "websiteurl5": $("websiteurl5").value, "websitename6": $("websitename6").value, "websiteurl6": $("websiteurl6").value, "websitename7": $("websitename7").value, "websiteurl7": $("websiteurl7").value, "websitename8": $("websitename8").value, "websiteurl8": $("websiteurl8").value, "websitename9": $("websitename9").value, "websiteurl9": $("websiteurl9").value, "websitename10": $("websitename10").value, "websiteurl10": $("websiteurl10").value, "googlesidepanel": $("googlesidepanel").checked, "zoom": $("zoom").checked, "defaultzoom": $("defaultzoom").value, "step": $("step").value });
+	chrome.storage.sync.set({ "icon": $("btnpreview").src, "optionskipremember": $("optionskipremember").checked, "contextmenus": $("contextmenus").checked, "searchgoogle": $("searchgoogle").checked, "searchbing": $("searchbing").checked, "searchduckduckgo": $("searchduckduckgo").checked, "searchbaidu": $("searchbaidu").checked, "searchyandex": $("searchyandex").checked, "navtop": $("navtop").checked, "navbottom": $("navbottom").checked, "navhidden": $("navhidden").checked, "typepanelzone": $("typepanelzone").checked, "typepanelcustom": $("typepanelcustom").checked, "typepanellasttime": $("typepanellasttime").checked, "websitezoomname": $("websitezoomname").value, "opentab": $("opentab").checked, "opencopy": $("opencopy").checked, "opennonebookmarks": $("opennonebookmarks").checked, "openbrowserbookmarks": $("openbrowserbookmarks").checked, "openquickbookmarks": $("openquickbookmarks").checked, "websitename1": $("websitename1").value, "websiteurl1": $("websiteurl1").value, "websitename2": $("websitename2").value, "websiteurl2": $("websiteurl2").value, "websitename3": $("websitename3").value, "websiteurl3": $("websiteurl3").value, "websitename4": $("websitename4").value, "websiteurl4": $("websiteurl4").value, "websitename5": $("websitename5").value, "websiteurl5": $("websiteurl5").value, "websitename6": $("websitename6").value, "websiteurl6": $("websiteurl6").value, "websitename7": $("websitename7").value, "websiteurl7": $("websiteurl7").value, "websitename8": $("websitename8").value, "websiteurl8": $("websiteurl8").value, "websitename9": $("websitename9").value, "websiteurl9": $("websiteurl9").value, "websitename10": $("websitename10").value, "websiteurl10": $("websiteurl10").value, "googlesidepanel": $("googlesidepanel").checked, "zoom": $("zoom").checked, "defaultzoom": $("defaultzoom").value,  "directionSearchEnabled": $("directionSearchToggle").checked,"step": $("step").value });
 }
+// 确保在DOM加载完成后正确初始化复选框状态
+document.addEventListener('DOMContentLoaded', function () {
+	// ... existing code ...
 
+	const directionSearchToggle = $("directionSearchToggle");
+	if (directionSearchToggle) {
+		// 读取存储的值并设置复选框状态
+		chrome.storage.sync.get("directionSearchEnabled", function (items) {
+			directionSearchToggle.checked = items.directionSearchEnabled !== false;
+		});
+
+		// 添加change事件监听器
+		directionSearchToggle.addEventListener('change', save_options);
+	}
+});
 function read_options() {
 	// youtube
 	$("materialModalYouTubeButtonOK").addEventListener("click", function (e) {
@@ -2778,7 +2795,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	chrome.storage.sync.get(['longPressEnabled', 'ctrlSelectEnabled', 'directionSearchEnabled'], function (result) {
 		longPressCheckbox.checked = result.longPressEnabled ?? true;
 		ctrlSelectCheckbox.checked = result.ctrlSelectEnabled ?? true;
-		directionSearchToggle.checked = result.directionSearchEnabled ?? false;  // 添加这一行
+		directionSearchToggle.checked = result.directionSearchEnabled ?? true;  // 添加这一行
 	});
 	// 保存设置变更
 	longPressCheckbox.addEventListener('change', function () {
