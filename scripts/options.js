@@ -738,15 +738,16 @@ function loadAISearchEngines(containerId) {
 			const li = document.createElement('li');
 			li.className = 'ai-engine-item';
 			li.innerHTML = `
-                <div class="engine-row">
-                    <input type="checkbox" id="ai-engine-${index}" 
-                           class="engine-checkbox" 
-                           ${engine.enabled ? 'checked' : ''}>
-                    <label for="ai-engine-${index}">${engine.name}</label>
-                    <input type="text" class="engine-url" value="${engine.url}">
-                    <button class="delete-engine">删除</button>
-                </div>
-            `;
+        <div class="engine-row">
+          <input type="checkbox" id="ai-engine-${index}" 
+                 class="engine-checkbox" 
+                 ${engine.enabled ? 'checked' : ''}>
+          <label for="ai-engine-${index}">${engine.name}</label>
+          <input type="text" class="engine-url" value="${engine.url}" readonly>
+          <button class="edit-engine">编辑</button>
+          <button class="delete-engine">删除</button>
+        </div>
+      `;
 
 			// 添加复选框变化事件监听器
 			const checkbox = li.querySelector('.engine-checkbox');
@@ -755,25 +756,106 @@ function loadAISearchEngines(containerId) {
 				saveAIEngineSettings(engines);
 			});
 
-			// 添加URL输入框变化事件监听器
-			const urlInput = li.querySelector('.engine-url');
-			urlInput.addEventListener('change', function () {
-				engine.url = this.value;
-				saveAIEngineSettings(engines);
+			// 添加编辑按钮事件监听器
+			const editButton = li.querySelector('.edit-engine');
+			editButton.addEventListener('click', function () {
+				const urlInput = li.querySelector('.engine-url');
+				const label = li.querySelector('label');
+
+				// 如果当前是只读状态，切换到编辑状态
+				if (urlInput.readOnly) {
+					urlInput.readOnly = false;
+					urlInput.focus();
+					editButton.textContent = '保存';
+
+					// 创建名称输入框
+					const nameInput = document.createElement('input');
+					nameInput.type = 'text';
+					nameInput.value = label.textContent;
+					nameInput.className = 'engine-name-input';
+					label.replaceWith(nameInput);
+
+				} else {
+					// 保存更改
+					const nameInput = li.querySelector('.engine-name-input');
+					const newName = nameInput.value.trim();
+					const newUrl = urlInput.value.trim();
+
+					if (newName && newUrl) {
+						engine.name = newName;
+						engine.url = newUrl;
+						saveAIEngineSettings(engines);
+
+						// 更新显示
+						urlInput.readOnly = true;
+						editButton.textContent = '编辑';
+
+						// 恢复标签显示
+						const newLabel = document.createElement('label');
+						newLabel.setAttribute('for', `ai-engine-${index}`);
+						newLabel.textContent = newName;
+						nameInput.replaceWith(newLabel);
+					}
+				}
 			});
 
 			// 添加删除按钮事件监听器
 			const deleteButton = li.querySelector('.delete-engine');
 			deleteButton.addEventListener('click', function () {
-				engines.splice(index, 1);
-				saveAIEngineSettings(engines);
-				loadAISearchEngines(containerId); // 重新加载列表
+				if (confirm('确定要删除这个搜索引擎吗？')) {
+					engines.splice(index, 1);
+					saveAIEngineSettings(engines);
+					loadAISearchEngines(containerId); // 重新加载列表
+				}
 			});
 
 			container.appendChild(li);
 		});
 	});
 }
+// 添加相关的 CSS 样式
+const style = document.createElement('style');
+style.textContent = `
+  .engine-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  
+  .engine-url {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .engine-name-input {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 10px;
+  }
+  
+  .edit-engine,
+  .delete-engine {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .edit-engine {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  .delete-engine {
+    background-color: #f44336;
+    color: white;
+  }
+`;
+document.head.appendChild(style);
 
 // 保存 AI 搜索引擎设置
 function saveAIEngineSettings(engines) {
@@ -4206,16 +4288,40 @@ function loadMultiMenu(containerId, menuList) {
 
 
 function createMenuItem(menu, index, containerId) {
-	const item = document.createElement('div');
-	item.className = 'menu-item';
-	item.innerHTML = `
-        <input type="text" class="menu-name" value="${menu}" placeholder="菜单项">
+    const item = document.createElement('div');
+    item.className = 'menu-item';
+    item.innerHTML = `
+        <input type="text" class="menu-name" value="${menu}" placeholder="菜单项" readonly>
+        <button class="edit-menu-item">编辑</button>
         <button class="delete-menu-item">删除</button>
     `;
-	item.querySelector('.delete-menu-item').addEventListener('click', () => deleteMenuItem(containerId, index));
-	item.querySelector('input').addEventListener('change', () => updateMenuItem(containerId, index, item));
-	return item;
+
+    // 获取按钮和输入框元素
+    const editButton = item.querySelector('.edit-menu-item');
+    const deleteButton = item.querySelector('.delete-menu-item');
+    const input = item.querySelector('.menu-name');
+
+    // 编辑按钮点击事件
+    editButton.addEventListener('click', () => {
+        if (editButton.textContent === '编辑') {
+            // 进入编辑模式
+            input.removeAttribute('readonly');
+            input.focus();
+            editButton.textContent = '保存';
+        } else {
+            // 保存更改
+            input.setAttribute('readonly', 'readonly');
+            editButton.textContent = '编辑';
+            updateMenuItem(containerId, index, item);
+        }
+    });
+
+    // 删除按钮点击事件
+    deleteButton.addEventListener('click', () => deleteMenuItem(containerId, index));
+
+    return item;
 }
+
 
 
 function addNewMenuItem(listId) {
@@ -4236,11 +4342,18 @@ function deleteMenuItem(containerId, index) {
 
 
 function updateMenuItem(containerId, index, item) {
-	const list = containerId === 'multiMenu1' ? multiMenu1 : multiMenu2;
-	list[index] = item.querySelector('.menu-name').value;
-	saveMultiMenu(containerId, list);
+    const list = containerId === 'multiMenu1' ? multiMenu1 : multiMenu2;
+    const newValue = item.querySelector('.menu-name').value.trim();
+    
+    if (newValue) {
+        list[index] = newValue;
+        saveMultiMenu(containerId, list);
+    } else {
+        // 如果输入为空，恢复原值
+        item.querySelector('.menu-name').value = list[index];
+        alert('菜单项名称不能为空');
+    }
 }
-
 
 function saveMultiMenu(containerId, list) {
 	chrome.storage.sync.set({ [containerId]: list }, () => {
