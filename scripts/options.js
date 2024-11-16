@@ -954,25 +954,122 @@ chrome.storage.sync.get('regularSearchEngines', function (data) {
 });
 
 // 图片搜索引擎也采用相同模式
+// 修改图片搜索引擎的初始化逻辑
+// 强制更新图片搜索引擎列表
 chrome.storage.sync.get('imageSearchEngines', function (data) {
-	console.log('从存储中获取的图片搜索引擎数据：', data.imageSearchEngines);
-	let engines = data.imageSearchEngines || [];
+	console.log('当前存储的图片搜索引擎：', data.imageSearchEngines);
 
-	if (engines.length === 0) {
-		console.log('未找到保存的图片搜索引擎，使用默认值');
-		engines = [
-			{ name: "谷歌图片", url: "https://images.google.com/search?q=%s" },
-			{ name: "必应图片", url: "https://www.bing.com/images/search?q=%s" },
-			{ name: "百度图片", url: "https://image.baidu.com/search/index?tn=baiduimage&word=%s" }
-		];
+	// 定义完整的图片搜索引擎列表
+	const updatedEngines = [
+		// 主流搜索引擎
+		{ name: "谷歌图片", url: "https://images.google.com/search?q=%s", enabled: true },
+		{ name: "必应图片", url: "https://cn.bing.com/images/search?q=%s", enabled: true },
+		{ name: "百度图片", url: "https://image.baidu.com/search/index?tn=baiduimage&word=%s", enabled: true },
+		{ name: "搜狗图片", url: "https://pic.sogou.com/pics?query=%s", enabled: true },
+		{ name: "360图片", url: "https://image.so.com/i?q=%s", enabled: true },
 
-		// 保存默认搜索引擎到存储
-		chrome.storage.sync.set({ imageSearchEngines: engines }, function () {
-			console.log('已保存默认图片搜索引擎配置');
-			loadImageSearchEngines(); // 重新加载搜索引擎列表
+		// 社交平台
+		{ name: "微博图片", url: "https://s.weibo.com/pic?q=%s", enabled: true },
+		{ name: "知乎图片", url: "https://www.zhihu.com/search?type=content&q=%s", enabled: true },
+		{ name: "小红书", url: "https://www.xiaohongshu.com/search_result?keyword=%s", enabled: true },
+		{ name: "花瓣网", url: "https://huaban.com/search?q=%s", enabled: true },
+		{ name: "堆糖", url: "https://www.duitang.com/search/?kw=%s", enabled: true },
+
+		// 图片素材
+		{ name: "千图网", url: "https://www.58pic.com/piccate/search.html?q=%s", enabled: true },
+		{ name: "包图网", url: "https://ibaotu.com/tupian/search?q=%s", enabled: true },
+		{ name: "摄图网", url: "https://699pic.com/tupian/%s.html", enabled: true },
+		{ name: "昵图网", url: "https://soso.nipic.com/?q=%s", enabled: true },
+		{ name: "全景网", url: "https://www.quanjing.com/search.aspx?q=%s", enabled: true },
+
+		// 壁纸
+		{ name: "彼岸图网", url: "https://pic.netbian.com/e/search/result/?searchid=%s", enabled: true },
+		{ name: "墙纸网", url: "http://www.win4000.com/search.html?q=%s", enabled: true },
+		{ name: "回车桌面", url: "https://www.enterdesk.com/search/%s", enabled: true },
+
+		// 二次元
+		{ name: "动漫图片", url: "https://www.dmtu.net/plus/search.php?keyword=%s", enabled: true },
+		{ name: "半次元", url: "https://bcy.net/search/home?k=%s", enabled: true },
+		{ name: "动漫之家", url: "https://www.dmzj.com/search/%s", enabled: true }
+	];
+
+	// 强制更新存储
+	chrome.storage.sync.set({
+		imageSearchEngines: updatedEngines,
+		forceUpdate: true  // 添加标记表示已强制更新
+	}, function () {
+		console.log('已强制更新图片搜索引擎列表，共', updatedEngines.length, '个引擎');
+		// 如果有回调函数则调用
+		if (typeof loadImageSearchEngines === 'function') {
+			loadImageSearchEngines();
+		}
+	});
+});
+
+// 添加版本控制
+const CURRENT_VERSION = '1.1';  // 增加版本号
+
+// 检查并更新版本
+chrome.storage.sync.get(['version'], function (data) {
+	if (data.version !== CURRENT_VERSION) {
+		// 版本不匹配，强制更新配置
+		chrome.storage.sync.set({ version: CURRENT_VERSION }, function () {
+			console.log('版本已更新至', CURRENT_VERSION);
 		});
 	}
 });
+
+// 添加重置功能
+function resetImageSearchEngines() {
+	chrome.storage.sync.remove(['imageSearchEngines', 'version'], function () {
+		console.log('已清除现有配置，准备重新初始化');
+		// 重新加载页面以触发初始化
+		location.reload();
+	});
+}
+
+// 添加用户自定义图片搜索引擎的函数
+function addCustomImageEngine(name, url) {
+	chrome.storage.sync.get('imageSearchEngines', function (data) {
+		let engines = data.imageSearchEngines || [];
+		engines.push({ name, url, custom: true }); // 标记为自定义引擎
+
+		chrome.storage.sync.set({ imageSearchEngines: engines }, function () {
+			console.log('已添加自定义图片搜索引擎');
+			loadImageSearchEngines();
+		});
+	});
+}
+
+// 删除图片搜索引擎的函数
+function removeImageEngine(index) {
+	chrome.storage.sync.get('imageSearchEngines', function (data) {
+		let engines = data.imageSearchEngines || [];
+		engines.splice(index, 1);
+
+		chrome.storage.sync.set({ imageSearchEngines: engines }, function () {
+			console.log('已删除图片搜索引擎');
+			loadImageSearchEngines();
+		});
+	});
+}
+
+// 编辑图片搜索引擎的函数
+function editImageEngine(index, newName, newUrl) {
+	chrome.storage.sync.get('imageSearchEngines', function (data) {
+		let engines = data.imageSearchEngines || [];
+		engines[index] = {
+			name: newName,
+			url: newUrl,
+			custom: engines[index].custom // 保持自定义标记
+		};
+
+		chrome.storage.sync.set({ imageSearchEngines: engines }, function () {
+			console.log('已编辑图片搜索引擎');
+			loadImageSearchEngines();
+		});
+	});
+}
 document.addEventListener('DOMContentLoaded', loadData);
 var globalId2enginemap = {};
 function updateGlobalId2enginemap(newData) {

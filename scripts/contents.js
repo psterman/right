@@ -2824,7 +2824,29 @@ function createMultiMenu(start, end) {
 
     return menu;
 }
+// 修改加载图片搜索引擎的逻辑
+function loadImageSearchEngines() {
+    chrome.storage.sync.get(['imageSearchEngines', 'forceUpdate'], function (data) {
+        const engines = data.imageSearchEngines || [];
+        console.log('加载的图片搜索引擎数量：', engines.length);
 
+        // 如果引擎数量异常或强制更新标记为true，重新初始化
+        if (engines.length < 5 || data.forceUpdate) {
+            console.log('触发重新初始化图片搜索引擎');
+            // 这里会触发 options.js 中的初始化逻辑
+            chrome.runtime.sendMessage({ action: 'resetImageEngines' });
+        }
+
+        // 使用加载的引擎更新界面
+        updateImageSearchUI(engines);
+    });
+}
+
+// 更新界面显示
+function updateImageSearchUI(engines) {
+    // 这里添加你的UI更新逻辑
+    console.log('可用的图片搜索引擎：', engines);
+}
 
 // 修改: 加载搜索引擎到 multiMenu1 和 multiMenu2
 function loadEnginesIntoGrid(multiMenu1, multiMenu2) {
