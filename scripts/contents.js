@@ -1869,11 +1869,12 @@ function createAIEngineMenu(parentPopup) {
     aiMenu.appendChild(loadingTip);
 
     // 从 storage 获取数据
-    chrome.storage.sync.get(['aiSearchEngines'], function (data) {
-        console.log('Loaded AI engines:', data.aiSearchEngines); // 调试日志
-        aiMenu.innerHTML = ''; // 清除加载提示
+    chrome.storage.sync.get(['multiMenu1Engines', 'aiSearchEngines'], function (data) {
+        console.log('Loaded engines:', data);
+        aiMenu.innerHTML = '';
 
-        const engines = data.aiSearchEngines || [];
+        const engines = data.multiMenu1Engines || data.aiSearchEngines || [];
+
 
         if (engines.length === 0) {
             const noDataMsg = document.createElement('div');
@@ -2048,12 +2049,12 @@ function createRegularSearchMenu(parentPopup) {
     regularMenu.appendChild(loadingTip);
 
     // 从 storage 获取数据，只获取已启用的搜索引擎
-    chrome.storage.sync.get(['regularSearchEngines'], function (data) {
-        console.log('Loaded regular engines:', data.regularSearchEngines);
-        regularMenu.innerHTML = ''; // 清除加载提示
+    chrome.storage.sync.get(['topEngineListEngines', 'regularSearchEngines'], function (data) {
+        console.log('Loaded regular engines:', data);
+        regularMenu.innerHTML = '';
 
-        const engines = data.regularSearchEngines || [];
-        // 只过滤出已启用的搜索引擎
+        const engines = data.topEngineListEngines || data.regularSearchEngines || [];
+         // 只过滤出已启用的搜索引擎
         const enabledEngines = engines.filter(engine => engine.enabled);
 
         if (enabledEngines.length === 0) {
@@ -2127,6 +2128,12 @@ function createRegularSearchMenu(parentPopup) {
 
     document.body.appendChild(regularMenu);
     return regularMenu;
+}
+// [修改点 5] 新增通用函数
+function createEngineButton(engine, parentPopup, menu) {
+    const engineButton = document.createElement('div');
+    // ... 按钮样式和事件处理代码 ...
+    return engineButton;
 }
 // 添加消息监听器来接收更新
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
