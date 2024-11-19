@@ -461,7 +461,14 @@ function loadEngineList() {
 	console.log('Loading engine list');
 	const topEngineList = document.querySelector('#topEngineList .engine-list');
 	const bottomEngineList = document.querySelector('#bottomEngineList .engine-list');
-	topEngineList.innerHTML = '';
+	if (topEngineList) {
+		topEngineList.innerHTML = '';
+		// 使用 topEngineListEngines
+		topEngineListEngines.forEach((engine, index) => {
+			const engineItem = createEngineItem(engine, index, true, true);
+			topEngineList.appendChild(engineItem);
+		});
+	}
 	bottomEngineList.innerHTML = '';
 
 	chrome.storage.sync.get(['aiSearchEngines', 'regularSearchEngines'], function (data) {
@@ -684,6 +691,46 @@ function saveEngineSettings() {
 	});
 }
 // 初始化
+// 定义 topEngineList 的搜索引擎
+const topEngineListEngines = [
+	{ name: "ChatGPT", url: "https://chat.openai.com/", enabled: true },
+	{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s", enabled: true },
+	{ name: "360AI搜索", url: "https://www.sou.com/?q=%s", enabled: true },
+	{ name: "百小度", url: "https://ying.baichuan-ai.com/chat", enabled: true },
+	{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail", enabled: true },
+	{ name: "海螺", url: "https://hailuoai.com/", enabled: true },
+	{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s", enabled: true }
+];
+
+// 定义 multiMenu1 的搜索引擎
+const multiMenu1Engines = [
+	{ name: "ChatGPT", url: "https://chatgpt.com/?q=%s", enabled: true },
+	{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s", enabled: true },
+	{ name: "360AI搜索", url: "https://www.sou.com/?q=%s", enabled: true },
+	{ name: "百小度", url: "https://ying.baichuan-ai.com/chat", enabled: true },
+	{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail", enabled: true },
+	{ name: "海螺", url: "https://hailuoai.com/", enabled: true },
+	{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s", enabled: true },
+	{ name: "WebPilot", url: "https://www.webpilot.ai/search?q=%s", enabled: true },
+	{ name: "私塔", url: "https://metaso.cn/?q=%s", enabled: true },
+	{ name: "Devv", url: "https://devv.ai/", enabled: true },
+	{ name: "豆包", url: "https://www.doubao.com/", enabled: true },
+	{ name: "开搜AI", url: "https://kaisouai.com/?q=%s", enabled: true },
+	{ name: "文心一言", url: "https://yiyan.baidu.com/", enabled: true },
+	{ name: "Consensus", url: "https://consensus.app/results/?q=%s", enabled: true },
+	{ name: "YOU", url: "https://you.com/search?q=%s", enabled: true },
+	{ name: "phind", url: "https://www.phind.com/search?q=%s", enabled: true },
+	{ name: "SEMANTIC SCHOLAR", url: "https://www.semanticscholar.org/search?q=%s", enabled: true },
+	{ name: "Genspark", url: "https://www.genspark.ai/search?query=%s", enabled: true },
+	{ name: "Felo Search", url: "https://felo.ai/?q=%s", enabled: true },
+	{ name: "Miku", url: "https://hellomiku.com/search?q=%s", enabled: true },
+	{ name: "kFind", url: "https://kfind.kmind.com/search?q=%s", enabled: true },
+	{ name: "MenFree", url: "https://www.memfree.me/search?q=%s", enabled: true },
+	{ name: "Monica", url: "https://s.monica.im/search?q=%s", enabled: true },
+	{ name: "MERGEEK", url: "https://mergeek.com/search", enabled: true },
+	{ name: "Xanswer", url: "https://www.xanswer.com/", enabled: true },
+	{ name: "exa", url: "https://exa.ai/search?q=%s", enabled: true }
+];
 
 document.addEventListener('DOMContentLoaded', function () {
 	chrome.storage.sync.get(['aiSearchEngines', 'regularSearchEngines'], function (data) {
@@ -733,7 +780,25 @@ function loadAISearchEngines(containerId) {
 	chrome.storage.sync.get(['aiSearchEngines'], function (data) {
 		const engines = data.aiSearchEngines || [];
 		container.innerHTML = ''; // 清空现有内容
+		multiMenu1Engines.forEach((engine, index) => {
+			const li = document.createElement('li');
+			li.className = 'ai-engine-item';
+			li.innerHTML = `
+            <div class="engine-row">
+                <input type="checkbox" id="ai-engine-${index}" 
+                       class="engine-checkbox" 
+                       ${engine.enabled ? 'checked' : ''}>
+                <label for="ai-engine-${index}">${engine.name}</label>
+                <input type="text" class="engine-url" value="${engine.url}" readonly>
+                <button class="edit-engine">编辑</button>
+                <button class="delete-engine">删除</button>
+            </div>
+        `;
 
+			// ... 保持事件监听器的代码不变 ...
+
+			container.appendChild(li);
+		});
 		engines.forEach((engine, index) => {
 			const li = document.createElement('li');
 			li.className = 'ai-engine-item';
@@ -813,6 +878,22 @@ function loadAISearchEngines(containerId) {
 		});
 	});
 }
+// 初始化时保存到存储
+document.addEventListener('DOMContentLoaded', function() {
+    // 保存 topEngineListEngines
+    chrome.storage.sync.set({ 
+        topEngineListEngines: topEngineListEngines 
+    });
+
+    // 保存 multiMenu1Engines
+    chrome.storage.sync.set({ 
+        multiMenu1Engines: multiMenu1Engines 
+    });
+
+    // 加载两个列表
+    loadEngineList();
+    loadAISearchEngines('multiMenu1');
+});
 // 添加相关的 CSS 样式
 const style = document.createElement('style');
 style.textContent = `
