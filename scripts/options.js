@@ -461,28 +461,33 @@ function loadEngineList() {
 	console.log('Loading engine list');
 	const topEngineList = document.querySelector('#topEngineList .engine-list');
 	const bottomEngineList = document.querySelector('#bottomEngineList .engine-list');
-	if (topEngineList) {
-		topEngineList.innerHTML = '';
 
-		// [修改点 1] 移除重复加载
-		// 只使用 topEngineListEngines
-		topEngineListEngines.forEach((engine, index) => {
-			const engineItem = createEngineItem(engine, index, true, true);
-			topEngineList.appendChild(engineItem);
-		});
-	}
-	bottomEngineList.innerHTML = '';
+	// 从存储中获取AI搜索引擎列表和状态
+	chrome.storage.sync.get(['aiSearchEngines'], function (data) {
+		if (topEngineList) {
+			topEngineList.innerHTML = '';
+			const engines = data.aiSearchEngines || topEngineListEngines;
 
-	chrome.storage.sync.get(['regularSearchEngines'], function (data) {
-		console.log('Regular engines:', data);
-		const regularEngines = data.regularSearchEngines || [];
-		regularEngines.forEach((engine, index) => {
-			const engineItem = createEngineItem(engine, index, true, false);
-			bottomEngineList.appendChild(engineItem);
-		});
+			engines.forEach((engine, index) => {
+				const engineItem = createEngineItem(engine, index, true, true);
+				topEngineList.appendChild(engineItem);
+			});
+		}
 	});
 
+	// 从存储中获取常规搜索引擎列表和状态
+	if (bottomEngineList) {
+		bottomEngineList.innerHTML = '';
+		chrome.storage.sync.get(['regularSearchEngines'], function (data) {
+			const engines = data.regularSearchEngines || [];
+			engines.forEach((engine, index) => {
+				const engineItem = createEngineItem(engine, index, true, false);
+				bottomEngineList.appendChild(engineItem);
+			});
+		});
+	}
 }
+
 // 创建引擎项
 function createEngineItem(engine, index, isCustom, isAI) {
 	const item = document.createElement('div');
@@ -609,19 +614,16 @@ function deleteEngine(index, isAI) {
 	});
 } */
 function saveEngineState(engineType, index, isEnabled) {
-	chrome.storage.sync.get(engineType, function (data) {
-		let engines = data[engineType] || [];
-		if (engineType === 'regularSearchEngines' && !engines.length) {
-			// 如果 regularSearchEngines 为空，使用默认的 searchEngines.regular
-			engines = JSON.parse(JSON.stringify(searchEngines.regular));
-		}
-		if (engines[index]) {
-			engines[index].enabled = isEnabled;
-			chrome.storage.sync.set({ [engineType]: engines }, function () {
-				console.log(`${engineType} 引擎 ${index} 状态已更新`);
-			});
-		}
-	});
+	const engines = engineType === 'aiSearchEngines' ? searchEngines.ai : searchEngines.regular;
+	if (engines[index]) {
+		engines[index].enabled = isEnabled;
+		// 更新存储
+		chrome.storage.sync.set({
+			[engineType]: engines
+		}, function () {
+			console.log(`${engineType} engine ${index} state updated to ${isEnabled}`);
+		});
+	}
 }
 // 添加自定义引擎
 function addCustomEngine() {
@@ -649,39 +651,18 @@ function deleteCustomEngine(index, isAI) {
 
 // 保存引擎设置
 function saveEngineSettings() {
-	const topEngineItems = document.querySelectorAll('#topEngineList .engine-item');
-	const bottomEngineItems = document.querySelectorAll('#bottomEngineList .engine-item');
-	const updatedAiEngines = [];
-	const updatedRegularEngines = [];
-
-	topEngineItems.forEach((item) => {
-		const checkbox = item.querySelector('input[type="checkbox"]');
-		const urlInput = item.querySelector('input[type="text"]');
-		const engine = {
-			name: item.querySelector('label').textContent,
-			url: urlInput.value,
-			enabled: checkbox.checked
-		};
-		updatedAiEngines.push(engine);
-	});
-
-	bottomEngineItems.forEach((item) => {
-		const checkbox = item.querySelector('input[type="checkbox"]');
-		const urlInput = item.querySelector('input[type="text"]');
-		const engine = {
-			name: item.querySelector('label').textContent,
-			url: urlInput.value,
-			enabled: checkbox.checked
-		};
-		updatedRegularEngines.push(engine);
-	});
-
 	chrome.storage.sync.set({
-		aiSearchEngines: updatedAiEngines,
-		regularSearchEngines: updatedRegularEngines
+		aiSearchEngines: searchEngines.ai,
+		regularSearchEngines: searchEngines.regular
 	}, function () {
-		alert('设置已保存');
-		loadEngineList();
+		console.log('搜索引擎设置已保存');
+		// 可以添加保存成功的提示
+		if (document.querySelector('.save-success-message')) {
+			document.querySelector('.save-success-message').textContent = '设置已保存';
+			setTimeout(() => {
+				document.querySelector('.save-success-message').textContent = '';
+			}, 2000);
+		}
 	});
 }
 // 初始化
@@ -727,17 +708,51 @@ const multiMenu1Engines = [
 ];
 
 document.addEventListener('DOMContentLoaded', function () {
+	// 初始化搜索引擎配置
 	chrome.storage.sync.get(['aiSearchEngines', 'regularSearchEngines'], function (data) {
-		searchEngines.ai = data.aiSearchEngines || searchEngines.ai;
-		searchEngines.regular = data.regularSearchEngines || searchEngines.regular;
+		// 如果没有存储的AI搜索引擎，使用默认配置并添加enabled属性
+		if (!data.aiSearchEngines) {
+			const defaultAIEngines = searchEngines.ai.map(engine => ({
+				...engine,
+				enabled: true
+			}));
+			chrome.storage.sync.set({ aiSearchEngines: defaultAIEngines });
+			searchEngines.ai = defaultAIEngines;
+		} else {
+			searchEngines.ai = data.aiSearchEngines;
+		}
 
+		// 如果没有存储的常规搜索引擎，使用默认配置并添加enabled属性
+		if (!data.regularSearchEngines) {
+			const defaultRegularEngines = searchEngines.regular.map(engine => ({
+				...engine,
+				enabled: true
+			}));
+			chrome.storage.sync.set({ regularSearchEngines: defaultRegularEngines });
+			searchEngines.regular = defaultRegularEngines;
+		} else {
+			searchEngines.regular = data.regularSearchEngines;
+		}
+
+		// 加载引擎列表
 		loadEngineList();
 	});
 
-	// 顶部和底部引擎列表的添加按钮
-	document.getElementById('addAISearchEngine').addEventListener('click', () => addNewEngine(true));
-	document.getElementById('addRegularSearchEngine').addEventListener('click', () => addNewEngine(false));
-	document.getElementById('saveSettings').addEventListener('click', saveEngineSettings);
+	// 绑定按钮事件
+	const addAIButton = document.getElementById('addAISearchEngine');
+	if (addAIButton) {
+		addAIButton.addEventListener('click', () => addNewEngine(true));
+	}
+
+	const addRegularButton = document.getElementById('addRegularSearchEngine');
+	if (addRegularButton) {
+		addRegularButton.addEventListener('click', () => addNewEngine(false));
+	}
+
+	const saveButton = document.getElementById('saveSettings');
+	if (saveButton) {
+		saveButton.addEventListener('click', saveEngineSettings);
+	}
 
 	// 多重菜单1 的新建搜索引擎按钮
 	const addMenuItemButton = document.querySelector('#multiMenu1 .add-menu-item');
@@ -745,6 +760,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		addMenuItemButton.addEventListener('click', addNewAISearchEngine);
 	}
 });
+
+ 
 // 新的函数重命名为 addNewAISearchEngine
 // 新增此函数
 function addNewAISearchEngine() {
