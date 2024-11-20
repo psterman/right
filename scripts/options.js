@@ -463,7 +463,9 @@ function loadEngineList() {
 	const bottomEngineList = document.querySelector('#bottomEngineList .engine-list');
 	if (topEngineList) {
 		topEngineList.innerHTML = '';
-		// 使用 topEngineListEngines
+
+		// [修改点 1] 移除重复加载
+		// 只使用 topEngineListEngines
 		topEngineListEngines.forEach((engine, index) => {
 			const engineItem = createEngineItem(engine, index, true, true);
 			topEngineList.appendChild(engineItem);
@@ -471,23 +473,15 @@ function loadEngineList() {
 	}
 	bottomEngineList.innerHTML = '';
 
-	chrome.storage.sync.get(['aiSearchEngines', 'regularSearchEngines'], function (data) {
-		console.log('Loaded data from storage:', data);
-
-		const aiEngines = data.aiSearchEngines || [];
-		console.log('AI engines:', aiEngines);
-		aiEngines.forEach((engine, index) => {
-			const engineItem = createEngineItem(engine, index, true, true);
-			topEngineList.appendChild(engineItem);
-		});
-
+	chrome.storage.sync.get(['regularSearchEngines'], function (data) {
+		console.log('Regular engines:', data);
 		const regularEngines = data.regularSearchEngines || [];
-		console.log('Regular engines:', regularEngines);
 		regularEngines.forEach((engine, index) => {
 			const engineItem = createEngineItem(engine, index, true, false);
 			bottomEngineList.appendChild(engineItem);
 		});
 	});
+
 }
 // 创建引擎项
 function createEngineItem(engine, index, isCustom, isAI) {
@@ -879,20 +873,23 @@ function loadAISearchEngines(containerId) {
 	});
 }
 // 初始化时保存到存储
-document.addEventListener('DOMContentLoaded', function() {
-    // 保存 topEngineListEngines
-    chrome.storage.sync.set({ 
-        topEngineListEngines: topEngineListEngines 
-    });
+document.addEventListener('DOMContentLoaded', function () {
+	// 保存 topEngineListEngines
+	chrome.storage.sync.set({
+		topEngineListEngines: topEngineListEngines
+	}, function () {
+		// 保存完成后再加载列表
+		loadEngineList();
+	});
 
-    // 保存 multiMenu1Engines
-    chrome.storage.sync.set({ 
-        multiMenu1Engines: multiMenu1Engines 
-    });
+	// 保存 multiMenu1Engines
+	chrome.storage.sync.set({
+		multiMenu1Engines: multiMenu1Engines
+	});
 
-    // 加载两个列表
-    loadEngineList();
-    loadAISearchEngines('multiMenu1');
+	// [修改点 4] 移除这里的 loadEngineList 调用
+	// loadEngineList(); // 删除这行
+	loadAISearchEngines('multiMenu1');
 });
 // 添加相关的 CSS 样式
 const style = document.createElement('style');
