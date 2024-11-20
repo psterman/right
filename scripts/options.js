@@ -788,125 +788,177 @@ function loadAISearchEngines(containerId) {
 		return;
 	}
 
-	chrome.storage.sync.get(['aiSearchEngines'], function (data) {
-		const engines = data.aiSearchEngines || [];
+	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
+		// 使用存储的数据或默认值
+		const engines = data.multiMenu1Engines || multiMenu1Engines.map(engine => ({
+			...engine,
+			enabled: true // 默认启用
+		}));
+
 		container.innerHTML = ''; // 清空现有内容
-		multiMenu1Engines.forEach((engine, index) => {
-			const li = document.createElement('li');
-			li.className = 'ai-engine-item';
-			li.innerHTML = `
-            <div class="engine-row">
-                <input type="checkbox" id="ai-engine-${index}" 
-                       class="engine-checkbox" 
-                       ${engine.enabled ? 'checked' : ''}>
-                <label for="ai-engine-${index}">${engine.name}</label>
-                <input type="text" class="engine-url" value="${engine.url}" readonly>
-                <button class="edit-engine">编辑</button>
-                <button class="delete-engine">删除</button>
-            </div>
-        `;
 
-			// ... 保持事件监听器的代码不变 ...
-
-			container.appendChild(li);
-		});
 		engines.forEach((engine, index) => {
 			const li = document.createElement('li');
 			li.className = 'ai-engine-item';
 			li.innerHTML = `
-        <div class="engine-row">
-          <input type="checkbox" id="ai-engine-${index}" 
-                 class="engine-checkbox" 
-                 ${engine.enabled ? 'checked' : ''}>
-          <label for="ai-engine-${index}">${engine.name}</label>
-          <input type="text" class="engine-url" value="${engine.url}" readonly>
-          <button class="edit-engine">编辑</button>
-          <button class="delete-engine">删除</button>
-        </div>
-      `;
+                <div class="engine-row">
+                    <input type="checkbox" id="multi-engine-${index}" 
+                           class="engine-checkbox" 
+                           ${engine.enabled ? 'checked' : ''}>
+                    <label for="multi-engine-${index}">${engine.name}</label>
+                    <input type="text" class="engine-url" value="${engine.url}" readonly>
+                    <button class="edit-engine">编辑</button>
+                    <button class="delete-engine">删除</button>
+                </div>
+            `;
 
 			// 添加复选框变化事件监听器
 			const checkbox = li.querySelector('.engine-checkbox');
 			checkbox.addEventListener('change', function () {
-				engine.enabled = this.checked;
-				saveAIEngineSettings(engines);
+				saveMultiMenuEngineState(index, this.checked);
 			});
 
 			// 添加编辑按钮事件监听器
 			const editButton = li.querySelector('.edit-engine');
 			editButton.addEventListener('click', function () {
-				const urlInput = li.querySelector('.engine-url');
-				const label = li.querySelector('label');
-
-				// 如果当前是只读状态，切换到编辑状态
-				if (urlInput.readOnly) {
-					urlInput.readOnly = false;
-					urlInput.focus();
-					editButton.textContent = '保存';
-
-					// 创建名称输入框
-					const nameInput = document.createElement('input');
-					nameInput.type = 'text';
-					nameInput.value = label.textContent;
-					nameInput.className = 'engine-name-input';
-					label.replaceWith(nameInput);
-
-				} else {
-					// 保存更改
-					const nameInput = li.querySelector('.engine-name-input');
-					const newName = nameInput.value.trim();
-					const newUrl = urlInput.value.trim();
-
-					if (newName && newUrl) {
-						engine.name = newName;
-						engine.url = newUrl;
-						saveAIEngineSettings(engines);
-
-						// 更新显示
-						urlInput.readOnly = true;
-						editButton.textContent = '编辑';
-
-						// 恢复标签显示
-						const newLabel = document.createElement('label');
-						newLabel.setAttribute('for', `ai-engine-${index}`);
-						newLabel.textContent = newName;
-						nameInput.replaceWith(newLabel);
-					}
-				}
+				editMultiMenuEngine(index);
 			});
 
 			// 添加删除按钮事件监听器
 			const deleteButton = li.querySelector('.delete-engine');
 			deleteButton.addEventListener('click', function () {
-				if (confirm('确定要删除这个搜索引擎吗？')) {
-					engines.splice(index, 1);
-					saveAIEngineSettings(engines);
-					loadAISearchEngines(containerId); // 重新加载列表
-				}
+				deleteMultiMenuEngine(index);
 			});
 
 			container.appendChild(li);
 		});
 	});
 }
-// 初始化时保存到存储
-document.addEventListener('DOMContentLoaded', function () {
-	// 保存 topEngineListEngines
-	chrome.storage.sync.set({
-		topEngineListEngines: topEngineListEngines
-	}, function () {
-		// 保存完成后再加载列表
-		loadEngineList();
+// 添加保存 multiMenu1 引擎状态的函数
+function saveMultiMenuEngineState(index, isEnabled) {
+	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
+		let engines = data.multiMenu1Engines || multiMenu1Engines;
+		if (engines[index]) {
+			engines[index].enabled = isEnabled;
+			chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
+				console.log(`MultiMenu1 engine ${index} state updated to ${isEnabled}`);
+			});
+		}
+	});
+}
+
+// 修改编辑引擎函数
+function editMultiMenuEngine(index) {
+	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
+		let engines = data.multiMenu1Engines || multiMenu1Engines;
+		const newName = prompt('输入新的搜索引擎名称:', engines[index].name);
+		const newUrl = prompt('输入新的搜索引擎URL:', engines[index].url);
+
+		if (newName && newUrl) {
+			engines[index] = {
+				...engines[index],
+				name: newName,
+				url: newUrl
+			};
+			chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
+				console.log('MultiMenu1 引擎已更新');
+				loadAISearchEngines('multiMenu1'); // 重新加载列表
+			});
+		}
+	});
+}
+
+// 修改删除引擎函数
+function deleteMultiMenuEngine(index) {
+	if (confirm('确定要删除这个搜索引擎吗？')) {
+		chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
+			let engines = data.multiMenu1Engines || multiMenu1Engines;
+			engines.splice(index, 1);
+			chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
+				console.log('MultiMenu1 引擎已删除');
+				loadAISearchEngines('multiMenu1'); // 重新加载列表
+			});
+		});
+	}
+}
+
+// 修改添加新引擎函数
+function addNewAISearchEngine() {
+	const name = prompt('输入新的AI搜索引擎名称:');
+	if (!name) return;
+
+	const url = prompt('输入新的AI搜索引擎URL:');
+	if (!url) return;
+
+	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
+		let engines = data.multiMenu1Engines || multiMenu1Engines;
+		engines.push({
+			name,
+			url,
+			enabled: true
+		});
+
+		chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
+			console.log('新的AI搜索引擎已添加');
+			loadAISearchEngines('multiMenu1');
+		});
+	});
+} document.addEventListener('DOMContentLoaded', function () {
+	// 初始化所有搜索引擎配置
+	chrome.storage.sync.get(['topEngineListEngines', 'multiMenu1Engines'], function (data) {
+		// 初始化 topEngineList
+		if (!data.topEngineListEngines) {
+			chrome.storage.sync.set({
+				topEngineListEngines: topEngineListEngines.map(engine => ({
+					...engine,
+					enabled: true
+				}))
+			}, function () {
+				console.log('已初始化 topEngineListEngines');
+				loadEngineList();
+			});
+		} else {
+			loadEngineList();
+		}
+
+		// 初始化 multiMenu1
+		if (!data.multiMenu1Engines) {
+			const defaultEngines = multiMenu1Engines.map(engine => ({
+				...engine,
+				enabled: true
+			}));
+			chrome.storage.sync.set({
+				multiMenu1Engines: defaultEngines
+			}, function () {
+				console.log('已初始化 multiMenu1Engines');
+				loadAISearchEngines('multiMenu1');
+			});
+		} else {
+			loadAISearchEngines('multiMenu1');
+		}
 	});
 
-	// 保存 multiMenu1Engines
-	chrome.storage.sync.set({
-		multiMenu1Engines: multiMenu1Engines
-	});
+	// 绑定事件监听器
+	const addAIButton = document.getElementById('addAISearchEngine');
+	if (addAIButton) {
+		addAIButton.addEventListener('click', () => addNewEngine(true));
+	}
 
-	// [修改点 4] 移除这里的 loadEngineList 调用
-	// loadEngineList(); // 删除这行
-	loadAISearchEngines('multiMenu1');
+	const addRegularButton = document.getElementById('addRegularSearchEngine');
+	if (addRegularButton) {
+		addRegularButton.addEventListener('click', () => addNewEngine(false));
+	}
+
+	const saveButton = document.getElementById('saveSettings');
+	if (saveButton) {
+		saveButton.addEventListener('click', saveEngineSettings);
+	}
+
+	// 多重菜单1 的新建搜索引擎按钮
+	const addMenuItemButton = document.querySelector('#multiMenu1 .add-menu-item');
+	if (addMenuItemButton) {
+		addMenuItemButton.addEventListener('click', addNewAISearchEngine);
+	}
 });
 // 添加相关的 CSS 样式
 const style = document.createElement('style');
