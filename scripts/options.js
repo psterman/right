@@ -3164,21 +3164,67 @@ document.addEventListener('DOMContentLoaded', function () {
 		saveSettings();
 	});
 	function saveSettings() {
+		// 原有的设置
 		const settings = {
 			longPressEnabled: longPressCheckbox.checked,
 			ctrlSelectEnabled: ctrlSelectCheckbox.checked,
-			directionSearchEnabled: directionSearchToggle.checked  // 添加这一行
+			directionSearchEnabled: directionSearchToggle.checked,
+			// 添加底部搜索引擎列表
+			regularSearchEngines: [
+				{ name: "Google", url: "https://www.google.com/search?q=%s", enabled: true },
+				{ name: "Bing", url: "https://www.bing.com/search?q=%s", enabled: true },
+				{ name: "百度", url: "https://www.baidu.com/s?wd=%s", enabled: true },
+				{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s", enabled: true },
+				{ name: "搜狗", url: "https://www.sogou.com/web?query=%s", enabled: true },
+				{ name: "360搜索", url: "https://www.so.com/s?q=%s", enabled: true },
+				{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s", enabled: true },
+				{ name: "闲鱼", url: "https://www.goofish.com/search?q=%s&spm=a21ybx.home", enabled: true },
+				{ name: "抖音", url: "https://www.douyin.com/search/%s", enabled: true },
+				{ name: "X", url: "https://twitter.com/search?q=%s", enabled: true },
+				{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s", enabled: true },
+				{ name: "V2EX", url: "https://www.v2ex.com/search?q=%s", enabled: true },
+				{ name: "Github", url: "https://github.com/search?q=%s", enabled: true },
+				{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s", enabled: true },
+				{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s", enabled: true },
+				{ name: "FaceBook", url: "https://www.facebook.com/search/top/?q=%s", enabled: true },
+				{ name: "bilibili", url: "https://search.bilibili.com/all?keyword=%s", enabled: true },
+				{ name: "知乎", url: "https://www.zhihu.com/search?q=%s", enabled: true },
+				{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s", enabled: true },
+				{ name: "微博", url: "https://s.weibo.com/weibo/%s", enabled: true },
+				{ name: "今日头条", url: "https://so.toutiao.com/search?keyword=%s", enabled: true }
+			]
 		};
+
+		// 保存到 Chrome 存储
 		chrome.storage.sync.set(settings, function () {
 			if (chrome.runtime.lastError) {
 				console.error('保存设置时出错:', chrome.runtime.lastError);
 			} else {
 				console.log('所有设置已保存:', settings);
 				// 通知 background.js 设置已更新
-				chrome.runtime.sendMessage({ action: 'settingsUpdated', settings: settings });
+				chrome.runtime.sendMessage({
+					action: 'settingsUpdated',
+					settings: settings
+				});
 			}
 		});
 	}
+
+	// 添加一个函数来加载搜索引擎列表
+	function loadSearchEngines() {
+		chrome.storage.sync.get(['regularSearchEngines'], function (result) {
+			if (result.regularSearchEngines) {
+				// 使用加载的搜索引擎列表更新界面
+				updateSearchEngineList(result.regularSearchEngines);
+			}
+		});
+	}
+
+	// 在页面加载时调用
+	document.addEventListener('DOMContentLoaded', function () {
+		loadSearchEngines();
+		// ... 其他初始化代码 ...
+	});
 	document.getElementById('shortcutLink').addEventListener('click', function () {
 		// 尝试打开 Chrome 扩展快捷键设置页面
 		chrome.tabs.create({ url: "chrome://extensions/shortcuts" });

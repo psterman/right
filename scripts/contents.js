@@ -2049,11 +2049,11 @@ function createRegularSearchMenu(parentPopup) {
     regularMenu.appendChild(loadingTip);
 
     // 从 storage 获取数据，只获取已启用的搜索引擎
-    chrome.storage.sync.get(['topEngineListEngines', 'regularSearchEngines'], function (data) {
+    chrome.storage.sync.get(['regularSearchEngines'], function (data) {
         console.log('Loaded regular engines:', data);
         regularMenu.innerHTML = '';
 
-        const engines = data.topEngineListEngines || data.regularSearchEngines || [];
+        const engines = data.regularSearchEngines || [];
          // 只过滤出已启用的搜索引擎
         const enabledEngines = engines.filter(engine => engine.enabled);
 
