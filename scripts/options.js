@@ -1063,13 +1063,32 @@ chrome.storage.sync.get('aiSearchEngines', function (data) {
 	if (engines.length === 0) {
 		console.log('未找到保存的AI搜索引擎，使用默认值');
 		engines = [
-			{ name: "ChatGPT", url: "https://chat.openai.com/", enabled: false },
-			{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s", enabled: false },
-			{ name: "360AI搜索", url: "https://www.sou.com/?q=%s", enabled: false },
-			{ name: "百小度", url: "https://ying.baichuan-ai.com/chat" , enabled: false},
-			{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail", enabled: false },
-			{ name: "海螺", url: "https://hailuoai.com/", enabled: false },
-			{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s", enabled: false }
+			{ name: "ChatGPT", url: "https://chat.openai.com/", enabled: true },
+			{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s", enabled: true },
+			{ name: "360AI搜索", url: "https://www.sou.com/?q=%s", enabled: true },
+			{ name: "百小度", url: "https://ying.baichuan-ai.com/chat", enabled: true },
+			{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail", enabled: true },
+			{ name: "海螺", url: "https://hailuoai.com/", enabled: true },
+			{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s", enabled: true },
+			{ name: "WebPilot", url: "https://www.webpilot.ai/search?q=%s", enabled: true },
+			{ name: "私塔", url: "https://metaso.cn/?q=%s", enabled: true },
+			{ name: "Devv", url: "https://devv.ai/", enabled: true },
+			{ name: "豆包", url: "https://www.doubao.com/", enabled: true },
+			{ name: "开搜AI", url: "https://kaisouai.com/?q=%s", enabled: true },
+			{ name: "文心一言", url: "https://yiyan.baidu.com/", enabled: true },
+			{ name: "Consensus", url: "https://consensus.app/results/?q=%s", enabled: true },
+			{ name: "YOU", url: "https://you.com/search?q=%s", enabled: true },
+			{ name: "phind", url: "https://www.phind.com/search?q=%s", enabled: true },
+			{ name: "SEMANTIC SCHOLAR", url: "https://www.semanticscholar.org/search?q=%s", enabled: true },
+			{ name: "Genspark", url: "https://www.genspark.ai/search?query=%s", enabled: true },
+			{ name: "Felo Search", url: "https://felo.ai/?q=%s", enabled: true },
+			{ name: "Miku", url: "https://hellomiku.com/search?q=%s", enabled: true },
+			{ name: "kFind", url: "https://kfind.kmind.com/search?q=%s", enabled: true },
+			{ name: "MenFree", url: "https://www.memfree.me/search?q=%s", enabled: true },
+			{ name: "Monica", url: "https://s.monica.im/search?q=%s", enabled: true },
+			{ name: "MERGEEK", url: "https://mergeek.com/search", enabled: true },
+			{ name: "Xanswer", url: "https://www.xanswer.com/", enabled: true },
+			{ name: "exa", url: "https://exa.ai/search?q=%s", enabled: true }
 		];
 
 		// 保存默认搜索引擎到存储
