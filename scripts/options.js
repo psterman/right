@@ -674,17 +674,6 @@ const topEngineListEngines = [
 	{ name: "百小度", url: "https://ying.baichuan-ai.com/chat", enabled: true },
 	{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail", enabled: true },
 	{ name: "海螺", url: "https://hailuoai.com/", enabled: true },
-	{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s", enabled: true }
-];
-
-// 定义 multiMenu1 的搜索引擎
-const multiMenu1Engines = [
-	{ name: "ChatGPT", url: "https://chatgpt.com/?q=%s", enabled: true },
-	{ name: "Perplexity", url: "https://www.perplexity.ai/?q=%s", enabled: true },
-	{ name: "360AI搜索", url: "https://www.sou.com/?q=%s", enabled: true },
-	{ name: "百小度", url: "https://ying.baichuan-ai.com/chat", enabled: true },
-	{ name: "智谱清言", url: "https://chatglm.cn/main/alltoolsdetail", enabled: true },
-	{ name: "海螺", url: "https://hailuoai.com/", enabled: true },
 	{ name: "ThinkAny", url: "https://thinkany.so/search?q=%s", enabled: true },
 	{ name: "WebPilot", url: "https://www.webpilot.ai/search?q=%s", enabled: true },
 	{ name: "私塔", url: "https://metaso.cn/?q=%s", enabled: true },
@@ -705,6 +694,30 @@ const multiMenu1Engines = [
 	{ name: "MERGEEK", url: "https://mergeek.com/search", enabled: true },
 	{ name: "Xanswer", url: "https://www.xanswer.com/", enabled: true },
 	{ name: "exa", url: "https://exa.ai/search?q=%s", enabled: true }
+];
+
+// 定义 multiMenu1 的搜索引擎
+const multiMenu1Engines = [
+	// 主流搜索引擎
+	{ name: "谷歌图片", url: "https://images.google.com/search?q=%s", enabled: true },
+	{ name: "必应图片", url: "https://cn.bing.com/images/search?q=%s", enabled: true },
+	{ name: "百度图片", url: "https://image.baidu.com/search/index?tn=baiduimage&word=%s", enabled: true },
+	{ name: "搜狗图片", url: "https://pic.sogou.com/pics?query=%s", enabled: true },
+	{ name: "360图片", url: "https://image.so.com/i?q=%s", enabled: true },
+
+	// 社交平台
+	{ name: "微博图片", url: "https://s.weibo.com/pic?q=%s", enabled: true },
+	{ name: "知乎图片", url: "https://www.zhihu.com/search?type=content&q=%s", enabled: true },
+	{ name: "小红书", url: "https://www.xiaohongshu.com/search_result?keyword=%s", enabled: true },
+	{ name: "花瓣网", url: "https://huaban.com/search?q=%s", enabled: true },
+	{ name: "堆糖", url: "https://www.duitang.com/search/?kw=%s", enabled: true },
+
+	// 图片素材
+	{ name: "千图网", url: "https://www.58pic.com/piccate/search.html?q=%s", enabled: true },
+	{ name: "包图网", url: "https://ibaotu.com/tupian/search?q=%s", enabled: true },
+	{ name: "摄图网", url: "https://699pic.com/tupian/%s.html", enabled: true },
+	{ name: "昵图网", url: "https://soso.nipic.com/?q=%s", enabled: true },
+	{ name: "全景网", url: "https://www.quanjing.com/search.aspx?q=%s", enabled: true }
 ];
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -781,6 +794,9 @@ function addNewAISearchEngine() {
 	});
 }
 
+// ... existing code ...
+
+// 修改现有的 loadAISearchEngines 函数，将内容改为加载图片搜索引擎
 function loadAISearchEngines(containerId) {
 	const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
 	if (!container) {
@@ -789,17 +805,14 @@ function loadAISearchEngines(containerId) {
 	}
 
 	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
-		// 使用存储的数据或默认值
-		const engines = data.multiMenu1Engines || multiMenu1Engines.map(engine => ({
-			...engine,
-			enabled: true // 默认启用
-		}));
+		const engines = data.multiMenu1Engines || multiMenu1Engines; // 使用存储的数据或默认值
 
 		container.innerHTML = ''; // 清空现有内容
 
 		engines.forEach((engine, index) => {
 			const li = document.createElement('li');
 			li.className = 'ai-engine-item';
+			// 修改: 确保复选框反映正确的启用状态
 			li.innerHTML = `
                 <div class="engine-row">
                     <input type="checkbox" id="multi-engine-${index}" 
@@ -812,40 +825,45 @@ function loadAISearchEngines(containerId) {
                 </div>
             `;
 
-			// 添加复选框变化事件监听器
+			// 修改: 更新复选框事件监听器
 			const checkbox = li.querySelector('.engine-checkbox');
 			checkbox.addEventListener('change', function () {
 				saveMultiMenuEngineState(index, this.checked);
-			});
-
-			// 添加编辑按钮事件监听器
-			const editButton = li.querySelector('.edit-engine');
-			editButton.addEventListener('click', function () {
-				editMultiMenuEngine(index);
-			});
-
-			// 添加删除按钮事件监听器
-			const deleteButton = li.querySelector('.delete-engine');
-			deleteButton.addEventListener('click', function () {
-				deleteMultiMenuEngine(index);
 			});
 
 			container.appendChild(li);
 		});
 	});
 }
+function addNewImageSearchEngine() {
+	const name = prompt('输入新的图片搜索引擎名称:');
+	if (!name) return;
+
+	const url = prompt('输入新的图片搜索引擎URL:');
+	if (!url) return;
+
+	chrome.storage.sync.get('multiMenu1Engines', function (data) {
+		let engines = data.multiMenu1Engines || multiMenu1Engines;
+		engines.push({ name, url, enabled: true });
+		chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
+			console.log('新的图片搜索引擎已添加');
+			loadImageSearchEngines('multiMenu1');
+		});
+	});
+}
 // 添加保存 multiMenu1 引擎状态的函数
 function saveMultiMenuEngineState(index, isEnabled) {
 	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
-		let engines = data.multiMenu1Engines || multiMenu1Engines;
+		let engines = data.multiMenu1Engines || [];
 		if (engines[index]) {
-			engines[index].enabled = isEnabled;
+			engines[index].enabled = isEnabled; // 更新启用状态
 			chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
-				console.log(`MultiMenu1 engine ${index} state updated to ${isEnabled}`);
+				console.log(`图片搜索引擎 ${engines[index].name} 状态已更新为: ${isEnabled}`);
 			});
 		}
 	});
 }
+
 
 // 修改编辑引擎函数
 function editMultiMenuEngine(index) {
@@ -953,7 +971,8 @@ function addNewAISearchEngine() {
 	if (saveButton) {
 		saveButton.addEventListener('click', saveEngineSettings);
 	}
-
+	console.log('DOM内容已加载');
+	loadImageSearchEngines('multiMenu1');
 	// 多重菜单1 的新建搜索引擎按钮
 	const addMenuItemButton = document.querySelector('#multiMenu1 .add-menu-item');
 	if (addMenuItemButton) {
