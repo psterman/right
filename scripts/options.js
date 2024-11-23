@@ -3169,6 +3169,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			longPressEnabled: longPressCheckbox.checked,
 			ctrlSelectEnabled: ctrlSelectCheckbox.checked,
 			directionSearchEnabled: directionSearchToggle.checked,
+			regularSearchEngines: regularSearchEngines,  // 使用全局定义的数组
 			// 添加底部搜索引擎列表
 			regularSearchEngines: [
 				{ name: "Google", url: "https://www.google.com/search?q=%s", enabled: true },

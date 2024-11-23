@@ -464,8 +464,16 @@ function initwelcome() {
 function installation() {
 	initwelcome();
 }
-chrome.runtime.onInstalled.addListener(function () {
-	installation();
+chrome.runtime.onInstalled.addListener(function (details) {
+	if (details.reason === 'install') {
+		// 初始化搜索引擎设置
+		chrome.storage.sync.set({
+			regularSearchEngines: regularSearchEngines,
+			// ... 其他初始设置
+		}, function () {
+			console.log('搜索引擎初始化完成');
+		});
+	}
 });
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 	if (request.engine && request.query) {
