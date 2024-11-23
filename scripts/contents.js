@@ -1869,11 +1869,11 @@ function createAIEngineMenu(parentPopup) {
     aiMenu.appendChild(loadingTip);
 
     // 从 storage 获取数据
-    chrome.storage.sync.get(['multiMenu1Engines', 'aiSearchEngines'], function (data) {
+    chrome.storage.sync.get(['aiSearchEngines'], function (data) {
         console.log('Loaded engines:', data);
         aiMenu.innerHTML = '';
 
-        const engines = data.multiMenu1Engines || data.aiSearchEngines || [];
+        const engines = data.aiSearchEngines || [];
 
 
         if (engines.length === 0) {
