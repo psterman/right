@@ -3063,3 +3063,22 @@ body.custom-cursor * {
   background-color: #f5f5f5;
   cursor: default;
 }
+.separator {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.separator hr {
+  margin: 10px 0;
+  border: none;
+  border-top: 1px solid #ddd;
+}
+
+.separator h4 {
+  color: #666;
+  margin: 10px 0;
+}
+
+.menu-item.top-engine {
+  background-color: #f5f5f5;
+}
