@@ -851,20 +851,36 @@ function addNewImageSearchEngine() {
 		});
 	});
 }
-// 添加保存 multiMenu1 引擎状态的函数
+// 添加保存引擎状态的函数
 function saveMultiMenuEngineState(index, isEnabled) {
 	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
-		let engines = data.multiMenu1Engines || [];
+		let engines = data.multiMenu1Engines || multiMenu1Engines;
 		if (engines[index]) {
-			engines[index].enabled = isEnabled; // 更新启用状态
+			engines[index].enabled = isEnabled;
 			chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
 				console.log(`图片搜索引擎 ${engines[index].name} 状态已更新为: ${isEnabled}`);
 			});
 		}
 	});
 }
+// 初始化 multiMenu1Engines（如果还没有初始化）
+function initializeMultiMenu1Engines() {
+	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
+		if (!data.multiMenu1Engines) {
+			const initialEngines = multiMenu1Engines.map(engine => ({
+				...engine,
+				enabled: true  // 默认启用所有引擎
+			}));
+			chrome.storage.sync.set({ multiMenu1Engines: initialEngines });
+		}
+	});
+}
 
-
+// 在页面加载时初始化
+document.addEventListener('DOMContentLoaded', function () {
+	initializeMultiMenu1Engines();
+	// ... 其他初始化代码 ...
+});
 // 修改编辑引擎函数
 function editMultiMenuEngine(index) {
 	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
@@ -4607,14 +4623,40 @@ function switchTab(tabId) {
 
 
 function loadMultiMenu(containerId, menuList) {
-	const container = document.querySelector(`#${containerId} .menu-list`);
+	const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
+	if (!container) return;
+
 	container.innerHTML = '';
-	menuList.forEach((menu, index) => {
-		const item = createMenuItem(menu, index, containerId);
-		container.appendChild(item);
+
+	// 从存储中获取搜索引擎列表及其状态
+	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
+		const engines = data.multiMenu1Engines || multiMenu1Engines;
+
+		engines.forEach((engine, index) => {
+			const li = document.createElement('li');
+			li.className = 'ai-engine-item';
+			li.innerHTML = `
+                <div class="engine-row">
+                    <input type="checkbox" id="multi-engine-${index}" 
+                           class="engine-checkbox" 
+                           ${engine.enabled !== false ? 'checked' : ''}>
+                    <label for="multi-engine-${index}">${engine.name}</label>
+                    <input type="text" class="engine-url" value="${engine.url}" readonly>
+                    <button class="edit-engine">编辑</button>
+                    <button class="delete-engine">删除</button>
+                </div>
+            `;
+
+			// 添加复选框事件监听器
+			const checkbox = li.querySelector('.engine-checkbox');
+			checkbox.addEventListener('change', function () {
+				saveMultiMenuEngineState(index, this.checked);
+			});
+
+			container.appendChild(li);
+		});
 	});
 }
-
 
 function createMenuItem(menu, index, containerId) {
     const item = document.createElement('div');

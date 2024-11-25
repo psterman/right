@@ -1948,6 +1948,36 @@ function createAIEngineMenu(parentPopup) {
     document.body.appendChild(aiMenu);
     return aiMenu;
 }
+// 加载并显示启用的图片搜索引擎
+function loadEnabledImageSearchEngines(menu) {
+    chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
+        const engines = data.multiMenu1Engines || [];
+        // 只获取启用的引擎
+        const enabledEngines = engines.filter(engine => engine.enabled !== false);
+
+        // 清空现有菜单
+        menu.innerHTML = '';
+
+        // 创建网格布局容器
+        const grid = document.createElement('div');
+        grid.className = 'search-grid';
+
+        // 添加启用的搜索引擎
+        enabledEngines.forEach(engine => {
+            const item = document.createElement('div');
+            item.className = 'grid-item';
+            item.textContent = engine.name;
+            item.setAttribute('data-url', engine.url);
+            item.addEventListener('click', () => {
+                const searchUrl = engine.url.replace('%s', encodeURIComponent(selectedText));
+                window.open(searchUrl, '_blank');
+            });
+            grid.appendChild(item);
+        });
+
+        menu.appendChild(grid);
+    });
+}
 function createAIMenu(parentPopup, engines) {
     const parentRect = parentPopup.getBoundingClientRect();
 
@@ -2291,16 +2321,18 @@ function createImageSearchMenu(parentPopup) {
     loadingTip.style.width = '100%';
     imageMenu.appendChild(loadingTip);
 
-    // 从 storage 获取图片搜索引擎数据
-    chrome.storage.sync.get(['imageSearchEngines'], function (data) {
-        console.log('Loaded image search engines:', data.imageSearchEngines);
+    // 从 storage 获取 multiMenu1 数据
+    chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
+        console.log('Loaded multiMenu1 engines:', data.multiMenu1Engines);
         imageMenu.innerHTML = ''; // 清除加载提示
 
-        const engines = data.imageSearchEngines || [];
+        const engines = data.multiMenu1Engines || [];
+        // 只获取启用的引擎
+        const enabledEngines = engines.filter(engine => engine.enabled !== false);
 
-        if (engines.length === 0) {
+        if (enabledEngines.length === 0) {
             const noDataMsg = document.createElement('div');
-            noDataMsg.textContent = '请先在扩展设置中配置图片搜索引擎';
+            noDataMsg.textContent = '请先在扩展设置中启用图片搜索引擎';
             noDataMsg.style.cssText = `
                 width: 100%;
                 text-align: center;
@@ -2311,7 +2343,7 @@ function createImageSearchMenu(parentPopup) {
             return;
         }
 
-        engines.forEach(engine => {
+        enabledEngines.forEach(engine => {
             const engineButton = document.createElement('div');
             engineButton.style.cssText = `
                 padding: 8px 16px;
