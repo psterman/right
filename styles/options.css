@@ -2507,15 +2507,18 @@ button {
   top: 100%;
   width: auto;
   min-width: 600px;
-  /* 确保有足够的宽度容纳所有类别 */
 }
-.select-menu.show {
-  display: flex;
-  flex-direction: row !important;
-  justify-content: space-between !important;
-  width: 100% !important;
-  max-width: none !important;
-  overflow-x: auto !important;
+.select-menu {
+  display: none;
+  position: absolute;
+  background-color: #1e1e1e;
+  color: #ffffff;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  left: 0;
+  top: 100%;
+  width: auto;
+  min-width: 600px;
 }
 .select-menu .engine-list li {
   cursor: pointer;
@@ -2526,13 +2529,8 @@ button {
 }
 .category {
   flex: 1 0 auto !important;
-  /* 不允许收缩，但允许增长 */
   width: 200px !important;
-  /* 设置一个固定宽度 */
-  
-  
   max-width: 25% !important;
-  /* 最大不超过父容器的1/4 */
   padding: 10px !important;
   border-right: 1px solid #444 !important;
   box-sizing: border-box !important;
@@ -2546,8 +2544,7 @@ button {
   list-style-type: none !important;
   padding: 0 !important;
   margin: 0 !important;
-  max-height: 200px !important;
-  overflow-y: auto !important;
+
   width: 100% !important;
 }
 
