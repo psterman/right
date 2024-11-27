@@ -3968,6 +3968,19 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
 		});
 	}
 });
+chrome.storage.onChanged.addListener(function (changes, namespace) {
+	if (namespace === 'sync') {
+		const relevantChanges = [
+			'multiMenu1Engines',
+			'aiSearchEngines',
+			'regularSearchEngines'
+		];
+
+		if (relevantChanges.some(key => changes[key])) {
+			loadMultiMenu('multiMenu2');
+		}
+	}
+});
 // 用这个新函数替换
 function loadEngines(category) {
 	var list = document.getElementById('engineList');
@@ -4585,6 +4598,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function initializeTab3() {
 	console.log('Initializing Tab3');
+
+	// 设置标签切换
 	const tabButtons = document.querySelectorAll('#tab3 .tab-button');
 	const tabPanes = document.querySelectorAll('#tab3 .tab-pane');
 
@@ -4595,17 +4610,9 @@ function initializeTab3() {
 		});
 	});
 
-
-	loadMultiMenu('multiMenu1', multiMenu1);
-	loadMultiMenu('multiMenu2', multiMenu2);
-
-
-	document.querySelectorAll('#tab3 .add-menu-item').forEach(button => {
-		button.addEventListener('click', (e) => {
-			const listId = e.target.closest('.tab-pane').id;
-			addNewMenuItem(listId);
-		});
-	});
+	// 初始化加载两个多重菜单
+	loadMultiMenu('multiMenu1');
+	loadMultiMenu('multiMenu2');
 
 	// 确保第一个标签页是活跃的
 	switchTab('topEngineList');
@@ -4622,42 +4629,105 @@ function switchTab(tabId) {
 }
 
 
-function loadMultiMenu(containerId, menuList) {
+function loadMultiMenu(containerId) {
 	const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
 	if (!container) return;
 
 	container.innerHTML = '';
 
-	// 从存储中获取搜索引擎列表及其状态
-	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
-		const engines = data.multiMenu1Engines || multiMenu1Engines;
+	if (containerId === 'multiMenu1') {
+		// 加载多重菜单1的内容
+		chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
+			const engines = data.multiMenu1Engines || [];
+			renderEngineList(container, engines, 'multiMenu1');
+		});
+	} else if (containerId === 'multiMenu2') {
+		// 加载所有选中的搜索引擎
+		chrome.storage.sync.get([
+			'multiMenu1Engines',
+			'aiSearchEngines',
+			'regularSearchEngines'
+		], function (data) {
+			// 获取所有选中的引擎
+			const selectedEngines = getSelectedEngines(data);
+			renderEngineList(container, selectedEngines, 'multiMenu2');
+		});
+	}
+}
+// 获取所有选中的引擎
+function getSelectedEngines(data) {
+    const multiMenu1Selected = (data.multiMenu1Engines || [])
+        .filter(engine => engine.enabled !== false);
+    
+    const aiEnginesSelected = (data.aiSearchEngines || [])
+        .filter(engine => engine.enabled !== false);
+    
+    const regularEnginesSelected = (data.regularSearchEngines || [])
+        .filter(engine => engine.enabled !== false);
 
-		engines.forEach((engine, index) => {
-			const li = document.createElement('li');
-			li.className = 'ai-engine-item';
-			li.innerHTML = `
-                <div class="engine-row">
-                    <input type="checkbox" id="multi-engine-${index}" 
-                           class="engine-checkbox" 
-                           ${engine.enabled !== false ? 'checked' : ''}>
-                    <label for="multi-engine-${index}">${engine.name}</label>
-                    <input type="text" class="engine-url" value="${engine.url}" readonly>
+    return [
+        ...multiMenu1Selected,
+        ...aiEnginesSelected,
+        ...regularEnginesSelected
+    ];
+}
+// 渲染引擎列表
+function renderEngineList(container, engines, menuId) {
+	engines.forEach((engine, index) => {
+		const li = document.createElement('li');
+		li.className = 'ai-engine-item';
+
+		const engineHtml = `
+            <div class="engine-row">
+                <input type="checkbox" 
+                       id="${menuId}-engine-${index}" 
+                       class="engine-checkbox" 
+                       ${engine.enabled !== false ? 'checked' : ''}>
+                <label for="${menuId}-engine-${index}">${engine.name}</label>
+                <input type="text" class="engine-url" value="${engine.url}" readonly>
+                ${menuId === 'multiMenu1' ? `
                     <button class="edit-engine">编辑</button>
                     <button class="delete-engine">删除</button>
-                </div>
-            `;
+                ` : ''}
+            </div>
+        `;
 
-			// 添加复选框事件监听器
-			const checkbox = li.querySelector('.engine-checkbox');
-			checkbox.addEventListener('change', function () {
-				saveMultiMenuEngineState(index, this.checked);
-			});
+		li.innerHTML = engineHtml;
 
-			container.appendChild(li);
+		// 添加复选框事件监听器
+		const checkbox = li.querySelector('.engine-checkbox');
+		checkbox.addEventListener('change', function () {
+			saveEngineState(menuId, index, this.checked, engine);
+		});
+
+		// 如果是multiMenu1，添加编辑和删除功能
+		if (menuId === 'multiMenu1') {
+			addMultiMenu1Controls(li, index, engine);
+		}
+
+		container.appendChild(li);
+	});
+}
+function saveEngineState(menuId, index, checked, engine) {
+	const storageKey = menuId === 'multiMenu1' ? 'multiMenu1Engines' : 'multiMenu2Engines';
+
+	chrome.storage.sync.get(storageKey, function (data) {
+		let engines = data[storageKey] || [];
+		if (engines[index]) {
+			engines[index].enabled = checked;
+		} else {
+			engines[index] = { ...engine, enabled: checked };
+		}
+
+		chrome.storage.sync.set({ [storageKey]: engines }, function () {
+			console.log(`${menuId} engine state saved:`, index, checked);
+			// 如果是multiMenu1或其他源列表的更改，更新multiMenu2
+			if (menuId !== 'multiMenu2') {
+				loadMultiMenu('multiMenu2');
+			}
 		});
 	});
 }
-
 function createMenuItem(menu, index, containerId) {
     const item = document.createElement('div');
     item.className = 'menu-item';
