@@ -1776,7 +1776,7 @@ const TAB_CONFIG = [
     { id: 'askai', text: '问AI', icon: '🤖', color: '#4CAF50' },  // 将第一项改为"问AI"
     { id: 'regularsearch', text: '搜索', icon: '🔍', color: '#2196F3' },  // 保持 id 不变
     { id: 'imagesearch', text: 'AI 搜图', icon: '🖼️', color: '#9C27B0' },
-    { id: 'read', text: '阅读总结', icon: '📚', color: '#FF9800' },
+    { id: 'summary', text: '阅读总结', icon: '📚', color: '#2E7D32' },
     { id: 'music', text: '音乐生成', icon: '🎵', color: '#E91E63' },
     { id: 'solve', text: '解题答疑', icon: '❓', color: '#00BCD4' },
     { id: 'study', text: '学术搜索', icon: '📖', color: '#795548' },
@@ -2240,6 +2240,32 @@ function createTabBar() {
                 }, 0);
             });
         }
+
+        // 为阅读总结标签添加特殊处理
+        if (tab.id === 'summary') {
+            tabElement.addEventListener('click', () => {
+                // 移除已存在的菜单
+                const existingMenu = document.querySelector('.summary-menu');
+                if (existingMenu) {
+                    document.body.removeChild(existingMenu);
+                }
+
+                const summaryMenu = createSummaryMenu(currentPopup);
+                summaryMenu.classList.add('summary-menu');
+
+                // 点击其他地方时关闭菜单
+                const closeMenu = (e) => {
+                    if (!summaryMenu.contains(e.target) && !tabElement.contains(e.target)) {
+                        document.body.removeChild(summaryMenu);
+                        document.removeEventListener('click', closeMenu);
+                    }
+                };
+
+                setTimeout(() => {
+                    document.addEventListener('click', closeMenu);
+                }, 0);
+            });
+        }
         if (tab.id === 'askai') {
             tabElement.addEventListener('click', () => {
                 // 移除已存在的菜单
@@ -2294,6 +2320,125 @@ function createTabBar() {
     return tabBar;
 }
 
+// 创建阅读总结菜单的函数
+function createSummaryMenu(parentPopup) {
+    const parentRect = parentPopup.getBoundingClientRect();
+
+    const summaryMenu = document.createElement('div');
+    summaryMenu.style.cssText = `
+        position: fixed;
+        left: ${parentRect.left}px;
+        bottom: ${window.innerHeight - parentRect.top + 10}px;
+        width: ${parentRect.width}px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: ${parseInt(parentPopup.style.zIndex) + 1};
+        padding: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    `;
+
+    // 添加加载提示
+    const loadingTip = document.createElement('div');
+    loadingTip.textContent = '加载中...';
+    loadingTip.style.textAlign = 'center';
+    loadingTip.style.width = '100%';
+    summaryMenu.appendChild(loadingTip);
+
+    // 从 storage 获取所有已启用的搜索引擎
+    chrome.storage.sync.get([
+        'multiMenu1Engines',
+        'aiSearchEngines',
+        'regularSearchEngines'
+    ], function (data) {
+        console.log('Loading summary engines');
+        summaryMenu.innerHTML = ''; // 清除加载提示
+
+        // 获取所有启用的引擎
+        const multiMenu1Selected = (data.multiMenu1Engines || [])
+            .filter(engine => engine.enabled !== false);
+        const aiEnginesSelected = (data.aiSearchEngines || [])
+            .filter(engine => engine.enabled !== false);
+        const regularEnginesSelected = (data.regularSearchEngines || [])
+            .filter(engine => engine.enabled !== false);
+
+        const allEngines = [
+            ...multiMenu1Selected,
+            ...aiEnginesSelected,
+            ...regularEnginesSelected
+        ];
+
+        if (allEngines.length === 0) {
+            const noDataMsg = document.createElement('div');
+            noDataMsg.textContent = '请先在扩展设置中启用搜索引擎';
+            noDataMsg.style.cssText = `
+                width: 100%;
+                text-align: center;
+                padding: 10px;
+                color: #666;
+            `;
+            summaryMenu.appendChild(noDataMsg);
+            return;
+        }
+
+        allEngines.forEach(engine => {
+            const engineButton = document.createElement('div');
+            engineButton.style.cssText = `
+                padding: 8px 16px;
+                background: #f5f6f7;
+                border-radius: 20px;
+                cursor: pointer;
+                font-size: 14px;
+                color: #333;
+                transition: all 0.3s;
+                user-select: none;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                white-space: nowrap;
+            `;
+
+            engineButton.innerHTML = `
+                <span style="font-size: 16px;">📝</span>
+                <span>${engine.name}</span>
+            `;
+
+            engineButton.addEventListener('mouseover', () => {
+                engineButton.style.backgroundColor = '#e9ecef';
+            });
+            engineButton.addEventListener('mouseout', () => {
+                engineButton.style.backgroundColor = '#f5f6f7';
+            });
+
+            engineButton.addEventListener('click', () => {
+                const searchText = parentPopup.querySelector('input').value.trim();
+                if (searchText) {
+                    const searchUrl = engine.url.replace('%s', encodeURIComponent(searchText));
+                    chrome.runtime.sendMessage({
+                        action: 'setpage',
+                        query: searchUrl,
+                        foreground: false // 在侧边栏打开
+                    });
+
+                    // 关闭搜索弹窗
+                    if (currentPopup) {
+                        document.body.removeChild(currentPopup);
+                        currentPopup = null;
+                    }
+                } else {
+                    showNotification('请输入搜索内容', 2000);
+                }
+            });
+
+            summaryMenu.appendChild(engineButton);
+        });
+    });
+
+    document.body.appendChild(summaryMenu);
+    return summaryMenu;
+}
 // 添加创建图片搜索菜单的函数
 function createImageSearchMenu(parentPopup) {
     const parentRect = parentPopup.getBoundingClientRect();
