@@ -470,6 +470,24 @@ function loadEngineList() {
 
 			engines.forEach((engine, index) => {
 				const engineItem = createEngineItem(engine, index, true, true);
+
+				// 添加复选框状态变化监听器
+				const checkbox = engineItem.querySelector('input[type="checkbox"]');
+				checkbox.addEventListener('change', function () {
+					// 更新存储中的enabled状态
+					chrome.storage.sync.get(['aiSearchEngines'], function (data) {
+						const currentEngines = data.aiSearchEngines;
+						currentEngines[index].enabled = checkbox.checked;
+						chrome.storage.sync.set({
+							aiSearchEngines: currentEngines
+						}, function () {
+							console.log('AI Engine state saved:', index, checkbox.checked);
+							// 更新multiMenu2显示
+							loadMultiMenu('multiMenu2');
+						});
+					});
+				});
+
 				topEngineList.appendChild(engineItem);
 			});
 		}
@@ -482,6 +500,24 @@ function loadEngineList() {
 			const engines = data.regularSearchEngines || [];
 			engines.forEach((engine, index) => {
 				const engineItem = createEngineItem(engine, index, true, false);
+
+				// 添加复选框状态变化监听器
+				const checkbox = engineItem.querySelector('input[type="checkbox"]');
+				checkbox.addEventListener('change', function () {
+					// 更新存储中的enabled状态
+					chrome.storage.sync.get(['regularSearchEngines'], function (data) {
+						const currentEngines = data.regularSearchEngines;
+						currentEngines[index].enabled = checkbox.checked;
+						chrome.storage.sync.set({
+							regularSearchEngines: currentEngines
+						}, function () {
+							console.log('Regular Engine state saved:', index, checkbox.checked);
+							// 更新multiMenu2显示
+							loadMultiMenu('multiMenu2');
+						});
+					});
+				});
+
 				bottomEngineList.appendChild(engineItem);
 			});
 		});
