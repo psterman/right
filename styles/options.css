@@ -2934,31 +2934,52 @@ body.custom-cursor * {
   padding: 15px;
 }
 
-.engine-item {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #333;
-  gap: 10px;
-}
 
 .engine-name {
   width: 120px;
   color: #fff;
 }
 
-.engine-url {
-  flex: 1;
-  background: #333;
-  color: #fff;
-  border: none;
-  padding: 5px;
+/* 统一的引擎项样式 */
+.engine-item,
+.ai-engine-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid var(--totl-section-border);
+  gap: 10px;
+  background: var(--totl-primary-background);
 }
 
-.engine-actions {
-  display: flex;
-  gap: 5px;
+/* 统一的URL输入框样式 */
+.engine-url {
+  flex: 1;
+  background: var(--totl-input-other-background);
+  color: var(--totl-input-other-color);
+  border: none;
+  padding: 5px;
+  border-radius: 4px;
 }
+
+/* 统一的按钮样式 */
+.engine-actions button,
+.edit-engine,
+.delete-engine {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: white;
+}
+
+.edit-engine {
+  background: #4285f4;
+}
+
+.delete-engine {
+  background: #ff4444;
+}
+
 
 .add-engine {
   margin-bottom: 15px;
@@ -2970,12 +2991,7 @@ body.custom-cursor * {
   cursor: pointer;
 }
 
-.edit-engine,
-.delete-engine {
-  padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-}
+
 
 .edit-engine {
   background: #2196F3;
@@ -2988,19 +3004,7 @@ body.custom-cursor * {
   color: white;
   border: none;
 }
-.ai-engine-item {
-  display: flex;
-  margin-bottom: 10px;
-  padding: 5px;
-  border-bottom: 1px solid #eee;
-}
 
-.engine-row {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  gap: 10px;
-}
 
 .engine-checkbox {
   margin-right: 10px;
