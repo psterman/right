@@ -841,14 +841,12 @@ function loadAISearchEngines(containerId) {
 	}
 
 	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
-		const engines = data.multiMenu1Engines || multiMenu1Engines; // 使用存储的数据或默认值
-
-		container.innerHTML = ''; // 清空现有内容
+		const engines = data.multiMenu1Engines || multiMenu1Engines;
+		container.innerHTML = '';
 
 		engines.forEach((engine, index) => {
 			const li = document.createElement('li');
 			li.className = 'ai-engine-item';
-			// 修改: 确保复选框反映正确的启用状态
 			li.innerHTML = `
                 <div class="engine-row">
                     <input type="checkbox" id="multi-engine-${index}" 
@@ -856,12 +854,20 @@ function loadAISearchEngines(containerId) {
                            ${engine.enabled ? 'checked' : ''}>
                     <label for="multi-engine-${index}">${engine.name}</label>
                     <input type="text" class="engine-url" value="${engine.url}" readonly>
-                    <button class="edit-engine">编辑</button>
-                    <button class="delete-engine">删除</button>
+                    <button class="edit-engine" data-index="${index}">编辑</button>
+                    <button class="delete-engine" data-index="${index}">删除</button>
                 </div>
             `;
 
-			// 修改: 更新复选框事件监听器
+			// 添加编辑按钮事件监听器
+			const editBtn = li.querySelector('.edit-engine');
+			editBtn.addEventListener('click', () => editMultiMenuEngine(index));
+
+			// 添加删除按钮事件监听器  
+			const deleteBtn = li.querySelector('.delete-engine');
+			deleteBtn.addEventListener('click', () => deleteMultiMenuEngine(index));
+
+			// 添加复选框事件监听器
 			const checkbox = li.querySelector('.engine-checkbox');
 			checkbox.addEventListener('change', function () {
 				saveMultiMenuEngineState(index, this.checked);
@@ -871,6 +877,7 @@ function loadAISearchEngines(containerId) {
 		});
 	});
 }
+
 function addNewImageSearchEngine() {
 	const name = prompt('输入新的图片搜索引擎名称:');
 	if (!name) return;
@@ -921,20 +928,28 @@ document.addEventListener('DOMContentLoaded', function () {
 function editMultiMenuEngine(index) {
 	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
 		let engines = data.multiMenu1Engines || multiMenu1Engines;
-		const newName = prompt('输入新的搜索引擎名称:', engines[index].name);
-		const newUrl = prompt('输入新的搜索引擎URL:', engines[index].url);
+		const engine = engines[index];
 
-		if (newName && newUrl) {
-			engines[index] = {
-				...engines[index],
-				name: newName,
-				url: newUrl
-			};
-			chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
-				console.log('MultiMenu1 引擎已更新');
-				loadAISearchEngines('multiMenu1'); // 重新加载列表
-			});
-		}
+		// 使用 prompt 获取新的值
+		const newName = prompt('输入新的搜索引擎名称:', engine.name);
+		if (!newName) return; // 用户取消
+
+		const newUrl = prompt('输入新的搜索引擎URL:', engine.url);
+		if (!newUrl) return; // 用户取消
+
+		// 更新引擎数据
+		engines[index] = {
+			...engine,
+			name: newName,
+			url: newUrl
+		};
+
+		// 保存更新后的数据
+		chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
+			console.log('搜索引擎已更新');
+			// 重新加载列表以显示更新
+			loadAISearchEngines('multiMenu1');
+		});
 	});
 }
 
@@ -943,15 +958,19 @@ function deleteMultiMenuEngine(index) {
 	if (confirm('确定要删除这个搜索引擎吗？')) {
 		chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
 			let engines = data.multiMenu1Engines || multiMenu1Engines;
+
+			// 从数组中移除指定索引的引擎
 			engines.splice(index, 1);
+
+			// 保存更新后的数据
 			chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
-				console.log('MultiMenu1 引擎已删除');
-				loadAISearchEngines('multiMenu1'); // 重新加载列表
+				console.log('搜索引擎已删除');
+				// 重新加载列表以显示更新
+				loadAISearchEngines('multiMenu1');
 			});
 		});
 	}
 }
-
 // 修改添加新引擎函数
 function addNewAISearchEngine() {
 	const name = prompt('输入新的AI搜索引擎名称:');
