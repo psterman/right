@@ -2508,18 +2508,13 @@ button {
   width: auto;
   min-width: 600px;
 }
-.select-menu {
-  display: none;
-  position: absolute;
-  background-color: #1e1e1e;
-  color: #ffffff;
-  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-  z-index: 1;
-  left: 0;
-  top: 100%;
-  width: auto;
-  min-width: 600px;
-}
+ /* 添加显示状态的样式 */
+ .select-menu.show {
+   display: flex !important;
+   /* 使用flex布局且强制显示 */
+   opacity: 1;
+   visibility: visible;
+ }
 .select-menu .engine-list li {
   cursor: pointer;
 }
