@@ -164,44 +164,63 @@ function addFloatingIcon() {
 
     const floatingIcon = document.createElement('div');
     floatingIcon.id = 'extension-floating-icon';
-    floatingIcon.innerHTML = '?';
+    // 使用更美观的图标
+    floatingIcon.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4V20M4 12H20" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+    `;// 添加悬停效果
+    floatingIcon.addEventListener('mouseenter', () => {
+        floatingIcon.style.backgroundColor = '#0056b3';
+        floatingIcon.style.boxShadow = '-4px 4px 12px rgba(0,0,0,0.2)';
+    });
+
+    floatingIcon.addEventListener('mouseleave', () => {
+        floatingIcon.style.backgroundColor = '#007AFF';
+        floatingIcon.style.boxShadow = '-2px 2px 8px rgba(0,0,0,0.15)';
+    });
+
     floatingIcon.style.cssText = `
         position: fixed !important;
         top: 50% !important;
-        right: 10px !important;
+        right: 0 !important;
         width: 40px !important;
-        height: 40px !important;
-        background-color: rgba(0, 122, 255, 0.8) !important;
+        height: 48px !important;
+        background-color: #007AFF !important;
         color: white !important;
-        border-radius: 50% !important;
+        border-radius: 12px 0 0 12px !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
-        font-size: 20px !important;
+        font-size: 24px !important;
+        font-weight: 500 !important;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
         cursor: pointer !important;
         z-index: 2147483647 !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
         transition: background-color 0.3s ease !important;
+         transform: translateY(-50%) !important;      // [修改] 确保初始就有这个transform
+
     `;
 
     // 创建命令菜单
     const menu = document.createElement('div');
     menu.id = 'extension-floating-menu';
     menu.style.cssText = `
-        position: fixed !important;
-        right: 10px !important;
-        background-color: rgba(255, 255, 255, 0.95) !important;
-        border-radius: 10px !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+   position: fixed !important;
+        right: 48px !important;
+        background-color: white !important;
+        border-radius: 4px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
         display: none !important;
         z-index: 2147483646 !important;
         overflow: hidden !important;
-        transition: opacity 0.3s ease, transform 0.3s ease !important;
-        opacity: 0 !important;
-        transform: scale(0.95) !important;
-        padding: 5px 0 !important;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
+        transition: opacity 0.2s ease !important;    // [修改] 只对透明度添加过渡效果
+        opacity: 1 !important;
+        transform: translateY(-50%) !important;      // [修改] 固定transform
+        padding: 4px 0 !important;
+        border: 1px solid #E0E0E0 !important;
+        min-width: 150px !important;
     `;
 
     const menuItems = [
@@ -249,39 +268,55 @@ function addFloatingIcon() {
     menuItems.forEach(item => {
         const menuItem = document.createElement('div');
         menuItem.style.cssText = `
-            padding: 10px 15px !important;
+        padding: 8px 16px !important;
             cursor: pointer !important;
             white-space: nowrap !important;
-            transition: background-color 0.2s ease !important;
+            transition: background-color 0.2s ease !important;  // [修改] 只对背景色添加过渡效果
             display: flex !important;
             align-items: center !important;
-            font-size: 14px !important;
-            color: #333 !important;
+            font-size: 13px !important;
+            color: #333333 !important;
+            background-color: white !important;
+            font-weight: normal !important;
+            line-height: 1.4 !important;
         `;
+        // 修改悬停效果
+        menuItem.addEventListener('mouseover', () => {
+            menuItem.style.backgroundColor = '#F0F0F0';
+        });
 
+        menuItem.addEventListener('mouseout', () => {
+            menuItem.style.backgroundColor = 'white';
+        });
         const iconSpan = document.createElement('span');
         iconSpan.textContent = item.icon;
         iconSpan.style.cssText = `
-            display: inline-flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-            width: 20px !important;
-            margin-right: 10px !important;
-            font-size: 16px !important;
+              display: inline-flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 20px !important;                       // [修改] 减小图标区域
+        margin-right: 8px !important;                 // [修改] 减小间距
+        font-size: 14px !important;                   // [修改] 调整图标大小
+        opacity: 0.7 !important;
         `;
-
         const textSpan = document.createElement('span');
         textSpan.textContent = item.text;
 
         menuItem.appendChild(iconSpan);
         menuItem.appendChild(textSpan);
+        // 添加悬停效果
+        floatingIcon.addEventListener('mouseenter', () => {
+            floatingIcon.style.transform = 'translateY(-50%) translateX(-2px)';
+            floatingIcon.style.backgroundColor = '#0056b3';
+            floatingIcon.style.boxShadow = '-4px 4px 12px rgba(0,0,0,0.2)';
+        });
 
-        menuItem.addEventListener('mouseover', () => {
-            menuItem.style.backgroundColor = 'rgba(0, 122, 255, 0.1)';
+        floatingIcon.addEventListener('mouseleave', () => {
+            floatingIcon.style.transform = 'translateY(-50%)';
+            floatingIcon.style.backgroundColor = '#007AFF';
+            floatingIcon.style.boxShadow = '-2px 2px 8px rgba(0,0,0,0.15)';
         });
-        menuItem.addEventListener('mouseout', () => {
-            menuItem.style.backgroundColor = 'transparent';
-        });
+
         menuItem.addEventListener('click', (e) => {
             e.stopPropagation();
             item.action();
@@ -295,22 +330,27 @@ function addFloatingIcon() {
 
     function showMenu() {
         const iconRect = floatingIcon.getBoundingClientRect();
-        menu.style.top = `${iconRect.bottom + 10}px`;
+        menu.style.top = `${iconRect.top}px`;  // [修改] 确保垂直对齐
         menu.style.display = 'block';
-        requestAnimationFrame(() => {
-            menu.style.opacity = '1';
-            menu.style.transform = 'scale(1)';
-        });
+        menu.style.opacity = '1';
+        menu.style.transform = 'translateY(-50%)';  // [修改] 使用固定的transform
     }
 
     function hideMenu() {
         menu.style.opacity = '0';
-        menu.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            menu.style.display = 'none';
-        }, 300);
+        menu.style.display = 'none';
+        menu.style.transform = 'translateY(-50%)';  // [修改] 保持相同的transform
     }
+    // 步骤 9: 添加鼠标悬停视觉反馈
+    floatingIcon.addEventListener('mouseenter', () => {
+        floatingIcon.style.transform = 'translateY(-50%) translateX(-2px)';
+        floatingIcon.style.backgroundColor = 'rgba(0, 122, 255, 0.9)';
+    });
 
+    floatingIcon.addEventListener('mouseleave', () => {
+        floatingIcon.style.transform = 'translateY(-50%)';
+        floatingIcon.style.backgroundColor = 'rgba(0, 122, 255, 0.8)';
+    });
     // 切换侧边栏的函数
     function toggleSidebar() {
         if (isSidebarOpen) {
@@ -333,23 +373,30 @@ function addFloatingIcon() {
         }
     }
 
-    // 点击图标时切换侧边栏
+    // 移除重复的事件监听器，合并逻辑
+    let isMenuVisible = false;
+
     floatingIcon.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleSidebar();
+        isMenuVisible = !isMenuVisible;
+
+        if (isMenuVisible) {
+            showMenu();
+        } else {
+            hideMenu();
+        }
+
+        // 如果需要同时切换侧边栏，可以在这里调用
+        // toggleSidebar();  // 建议移除这个功能，因为现在是用来显示菜单的
     });
 
-    // 鼠标划过图标时显示菜单
-    floatingIcon.addEventListener('mouseenter', showMenu);
-
-    floatingIcon.addEventListener('mouseleave', () => {
-        setTimeout(() => {
-            if (!menu.matches(':hover')) {
-                hideMenu();
-            }
-        }, 50);
+    // 步骤 6: 添加点击外部关闭功能
+    document.addEventListener('click', (e) => {
+        if (isMenuVisible && !menu.contains(e.target) && !floatingIcon.contains(e.target)) {
+            isMenuVisible = false;
+            hideMenu();
+        }
     });
-
     menu.addEventListener('mouseleave', () => {
         if (!floatingIcon.matches(':hover')) {
             hideMenu();
