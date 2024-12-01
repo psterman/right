@@ -1776,7 +1776,7 @@ const TAB_CONFIG = [
     { id: 'askai', text: '问AI', icon: '🤖', color: '#4CAF50' },  // 将第一项改为"问AI"
     { id: 'regularsearch', text: '搜索', icon: '🔍', color: '#2196F3' },  // 保持 id 不变
     { id: 'imagesearch', text: 'AI 搜图', icon: '🖼️', color: '#9C27B0' },
-    { id: 'summary', text: '阅读总结', icon: '📚', color: '#2E7D32' },
+    { id: 'summary', text: '常用', icon: '📚', color: '#2E7D32' },
     { id: 'music', text: '音乐生成', icon: '🎵', color: '#E91E63' },
     { id: 'solve', text: '解题答疑', icon: '❓', color: '#00BCD4' },
     { id: 'study', text: '学术搜索', icon: '📖', color: '#795548' },
@@ -2319,11 +2319,17 @@ function createTabBar() {
 
     return tabBar;
 }
-
+// 1. 添加缓存机制
+let cachedEngines = {
+    ai: null,
+    regular: null,
+    image: null,
+    summary: null
+};
 // 创建阅读总结菜单的函数
 function createSummaryMenu(parentPopup) {
+    // 创建基础菜单结构
     const parentRect = parentPopup.getBoundingClientRect();
-
     const summaryMenu = document.createElement('div');
     summaryMenu.style.cssText = `
         position: fixed;
@@ -2340,105 +2346,147 @@ function createSummaryMenu(parentPopup) {
         gap: 8px;
     `;
 
-    // 添加加载提示
-    const loadingTip = document.createElement('div');
-    loadingTip.textContent = '加载中...';
-    loadingTip.style.textAlign = 'center';
-    loadingTip.style.width = '100%';
-    summaryMenu.appendChild(loadingTip);
+    // 检查是否有缓存数据
+    if (cachedEngines.multiMenu1 || cachedEngines.ai || cachedEngines.regular) {
+        // 使用缓存数据
+        renderEngines(summaryMenu, [
+            ...(cachedEngines.multiMenu1 || []),
+            ...(cachedEngines.ai || []),
+            ...(cachedEngines.regular || [])
+        ], parentPopup);
+    } else {
+        // 显示加载提示
+        const loadingTip = document.createElement('div');
+        loadingTip.textContent = '加载中...';
+        loadingTip.style.textAlign = 'center';
+        loadingTip.style.width = '100%';
+        summaryMenu.appendChild(loadingTip);
 
-    // 从 storage 获取所有已启用的搜索引擎
+        // 加载数据
+        chrome.storage.sync.get([
+            'multiMenu1Engines',
+            'aiSearchEngines',
+            'regularSearchEngines'
+        ], function (data) {
+            // 更新缓存
+            cachedEngines.multiMenu1 = (data.multiMenu1Engines || []).filter(engine => engine.enabled !== false);
+            cachedEngines.ai = (data.aiSearchEngines || []).filter(engine => engine.enabled !== false);
+            cachedEngines.regular = (data.regularSearchEngines || []).filter(engine => engine.enabled !== false);
+
+            // 清除加载提示
+            summaryMenu.innerHTML = '';
+
+            // 渲染引擎按钮
+            renderEngines(summaryMenu, [
+                ...cachedEngines.multiMenu1,
+                ...cachedEngines.ai,
+                ...cachedEngines.regular
+            ], parentPopup);
+        });
+    }
+
+    document.body.appendChild(summaryMenu);
+    return summaryMenu;
+}
+
+// 新增渲染引擎的辅助函数
+function renderEngines(menu, engines, parentPopup) {
+    // 使用 DocumentFragment 优化性能
+    const fragment = document.createDocumentFragment();
+
+    if (engines.length === 0) {
+        const noDataMsg = document.createElement('div');
+        noDataMsg.textContent = '请先在扩展设置中启用搜索引擎';
+        noDataMsg.style.cssText = `
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            color: #666;
+        `;
+        fragment.appendChild(noDataMsg);
+    } else {
+        engines.forEach(engine => {
+            const engineButton = createEngineButton(engine, parentPopup);
+            fragment.appendChild(engineButton);
+        });
+    }
+
+    menu.appendChild(fragment);
+}
+
+// 新增创建引擎按钮的辅助函数
+function createEngineButton(engine, parentPopup) {
+    const engineButton = document.createElement('div');
+    engineButton.style.cssText = `
+        padding: 8px 16px;
+        background: #f5f6f7;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #333;
+        transition: all 0.3s;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    `;
+
+    engineButton.innerHTML = `
+        <span style="font-size: 16px;">📝</span>
+        <span>${engine.name}</span>
+    `;
+
+    engineButton.addEventListener('mouseover', () => {
+        engineButton.style.backgroundColor = '#e9ecef';
+    });
+    engineButton.addEventListener('mouseout', () => {
+        engineButton.style.backgroundColor = '#f5f6f7';
+    });
+
+    engineButton.addEventListener('click', () => {
+        const searchText = parentPopup.querySelector('input').value.trim();
+        if (searchText) {
+            const searchUrl = engine.url.replace('%s', encodeURIComponent(searchText));
+            chrome.runtime.sendMessage({
+                action: 'setpage',
+                query: searchUrl,
+                foreground: false
+            });
+            if (currentPopup) {
+                document.body.removeChild(currentPopup);
+                currentPopup = null;
+            }
+        } else {
+            showNotification('请输入搜索内容', 2000);
+        }
+    });
+
+    return engineButton;
+}
+
+// 添加预加载函数
+function preloadEngineData() {
     chrome.storage.sync.get([
         'multiMenu1Engines',
         'aiSearchEngines',
         'regularSearchEngines'
     ], function (data) {
-        console.log('Loading summary engines');
-        summaryMenu.innerHTML = ''; // 清除加载提示
-
-        // 获取所有启用的引擎
-        const multiMenu1Selected = (data.multiMenu1Engines || [])
-            .filter(engine => engine.enabled !== false);
-        const aiEnginesSelected = (data.aiSearchEngines || [])
-            .filter(engine => engine.enabled !== false);
-        const regularEnginesSelected = (data.regularSearchEngines || [])
-            .filter(engine => engine.enabled !== false);
-
-        const allEngines = [
-            ...multiMenu1Selected,
-            ...aiEnginesSelected,
-            ...regularEnginesSelected
-        ];
-
-        if (allEngines.length === 0) {
-            const noDataMsg = document.createElement('div');
-            noDataMsg.textContent = '请先在扩展设置中启用搜索引擎';
-            noDataMsg.style.cssText = `
-                width: 100%;
-                text-align: center;
-                padding: 10px;
-                color: #666;
-            `;
-            summaryMenu.appendChild(noDataMsg);
-            return;
-        }
-
-        allEngines.forEach(engine => {
-            const engineButton = document.createElement('div');
-            engineButton.style.cssText = `
-                padding: 8px 16px;
-                background: #f5f6f7;
-                border-radius: 20px;
-                cursor: pointer;
-                font-size: 14px;
-                color: #333;
-                transition: all 0.3s;
-                user-select: none;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                white-space: nowrap;
-            `;
-
-            engineButton.innerHTML = `
-                <span style="font-size: 16px;">📝</span>
-                <span>${engine.name}</span>
-            `;
-
-            engineButton.addEventListener('mouseover', () => {
-                engineButton.style.backgroundColor = '#e9ecef';
-            });
-            engineButton.addEventListener('mouseout', () => {
-                engineButton.style.backgroundColor = '#f5f6f7';
-            });
-
-            engineButton.addEventListener('click', () => {
-                const searchText = parentPopup.querySelector('input').value.trim();
-                if (searchText) {
-                    const searchUrl = engine.url.replace('%s', encodeURIComponent(searchText));
-                    chrome.runtime.sendMessage({
-                        action: 'setpage',
-                        query: searchUrl,
-                        foreground: false // 在侧边栏打开
-                    });
-
-                    // 关闭搜索弹窗
-                    if (currentPopup) {
-                        document.body.removeChild(currentPopup);
-                        currentPopup = null;
-                    }
-                } else {
-                    showNotification('请输入搜索内容', 2000);
-                }
-            });
-
-            summaryMenu.appendChild(engineButton);
-        });
+        cachedEngines.multiMenu1 = (data.multiMenu1Engines || []).filter(engine => engine.enabled !== false);
+        cachedEngines.ai = (data.aiSearchEngines || []).filter(engine => engine.enabled !== false);
+        cachedEngines.regular = (data.regularSearchEngines || []).filter(engine => engine.enabled !== false);
     });
-
-    document.body.appendChild(summaryMenu);
-    return summaryMenu;
 }
+
+// 在页面加载时预加载数据
+document.addEventListener('DOMContentLoaded', preloadEngineData);
+
+// 添加缓存更新监听器
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'updateEngines') {
+        preloadEngineData(); // 重新加载缓存数据
+    }
+});
 // 添加创建图片搜索菜单的函数
 function createImageSearchMenu(parentPopup) {
     const parentRect = parentPopup.getBoundingClientRect();
