@@ -369,10 +369,9 @@ function addFloatingIcon() {
             floatingIcon.innerHTML = 'X';
         } else {
             floatingIcon.style.backgroundColor = 'rgba(0, 122, 255, 0.8)'; // 蓝色表示关闭
-            floatingIcon.innerHTML = '?';
+            floatingIcon.innerHTML = '+';
         }
     }
-
     // 移除重复的事件监听器，合并逻辑
     let isMenuVisible = false;
 
