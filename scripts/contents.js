@@ -1482,19 +1482,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             // 新增: 检查是否为链接
             const isLink = e.dataTransfer.types.includes('text/uri-list');
 
-          // 检查方向搜索是否启用
-        chrome.storage.sync.get('directionSearchEnabled', function(result) {
-            if (!result.directionSearchEnabled) {
-                // 如果方向搜索被禁用，显示提示信息
-                showSearchNotification("请在设置中打开此方向搜索", "", direction);
-            } else if (isLink) {
-                showSearchNotification("在侧边栏打开链接", "", direction);
-            } else if (directionEngines[`direction-${direction}`]) {
-                const engineName = directionEngines[`direction-${direction}`];
-                showSearchNotification(engineName, selectedText, direction);
-            }
-        });
-    }
+            // 检查方向搜索是否启用
+            chrome.storage.sync.get('directionSearchEnabled', function (result) {
+                if (!result.directionSearchEnabled) {
+                    // 如果方向搜索被禁用，显示提示信息
+                    showSearchNotification("请在设置中打开此方向搜索", "", direction);
+                } else if (isLink) {
+                    showSearchNotification("在侧边栏打开链接", "", direction);
+                } else if (directionEngines[`direction-${direction}`]) {
+                    const engineName = directionEngines[`direction-${direction}`];
+                    showSearchNotification(engineName, selectedText, direction);
+                }
+            });
+        }
 
         return false;
     }
@@ -1777,10 +1777,25 @@ const TAB_CONFIG = [
     { id: 'regularsearch', text: '搜索', icon: '🔍', color: '#2196F3' },  // 保持 id 不变
     { id: 'imagesearch', text: 'AI 搜图', icon: '🖼️', color: '#9C27B0' },
     { id: 'summary', text: '常用', icon: '📚', color: '#2E7D32' },
-    { id: 'music', text: '音乐生成', icon: '🎵', color: '#E91E63' },
-    { id: 'solve', text: '解题答疑', icon: '❓', color: '#00BCD4' },
-    { id: 'study', text: '学术搜索', icon: '📖', color: '#795548' },
-    { id: 'more', text: '更多', icon: '⋯', color: '#607D8B' }
+    /*  { id: 'music', text: '音乐生成', icon: '🎵', color: '#E91E63' },
+     { id: 'solve', text: '解题答疑', icon: '❓', color: '#00BCD4' },
+     { id: 'study', text: '学术搜索', icon: '📖', color: '#795548' }, */
+    {
+        id: 'more',
+        text: '打开设置',
+        icon: '⚙️', // 修改为齿轮图标
+        color: '#607D8B',
+        action: () => {
+            // 发送消息给 background.js
+            chrome.runtime.sendMessage({ action: 'openOptionsPage' });
+
+            // 关闭当前菜单
+            if (currentPopup) {
+                document.body.removeChild(currentPopup);
+                currentPopup = null;
+            }
+        }
+    }
 ];
 
 // 定义工具按钮配置
@@ -2084,7 +2099,7 @@ function createRegularSearchMenu(parentPopup) {
         regularMenu.innerHTML = '';
 
         const engines = data.regularSearchEngines || [];
-         // 只过滤出已启用的搜索引擎
+        // 只过滤出已启用的搜索引擎
         const enabledEngines = engines.filter(engine => engine.enabled);
 
         if (enabledEngines.length === 0) {
@@ -2596,6 +2611,13 @@ function createImageSearchMenu(parentPopup) {
 }
 function createTabElement(tab) {
     const element = document.createElement('div');
+
+    // 添加点击事件处理
+    element.addEventListener('click', () => {
+        if (tab.action) {
+            tab.action();
+        }
+    });
     element.setAttribute('data-tab', tab.id);
     element.style.cssText = `
         display: flex;

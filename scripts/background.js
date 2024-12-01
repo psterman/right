@@ -582,7 +582,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 		chrome.runtime.openOptionsPage();
 	}
 });
-
+1
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 	if (request.action === 'toggleSidePanel') {
 		if (isSidePanelOpen) {
