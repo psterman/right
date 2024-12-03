@@ -1271,9 +1271,6 @@ function showInputContextMenu(inputElement, x, y) {
         document.body.removeChild(currentPopup);
         currentPopup = null;
     }
-
-
-
     popup.style.position = 'fixed';
     popup.style.zIndex = '9999';
     popup.style.borderRadius = '20px';
@@ -1334,7 +1331,8 @@ function showInputContextMenu(inputElement, x, y) {
     popup.appendChild(searchLinksContainer);
     document.body.appendChild(popup);
     currentPopup = popup;
-} function createActionLink(text, clickHandler) {
+}
+function createActionLink(text, clickHandler) {
     console.log(`Creating action link: ${text}`);
     var link = document.createElement('div'); // 改为 div 元素
     link.textContent = text;
@@ -1551,9 +1549,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         }
     });
 
-    // 显示搜索提示的函数
     function showSearchNotification(engineName, searchText, direction) {
-        // 如果存在当前通知，先移除它
         if (currentNotification) {
             document.body.removeChild(currentNotification);
             currentNotification = null;
@@ -1567,35 +1563,72 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         right: 20px;
         background-color: rgba(0, 0, 0, 0.8);
         color: white;
-        padding: 10px;
-        border-radius: 5px;
+        border-radius: 50%;
         z-index: 999999;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        max-width: 300px;
-        word-wrap: break-word;
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
         transition: opacity 0.3s ease-out;
         opacity: 0;
+        overflow: hidden;
     `;
 
-        // 修改: 根据是否为链接显示不同的提示内容
-        if (engineName === "在侧边栏打开链接") {
-            notification.innerHTML = `${engineName}，按Esc键取消。`;
-        } else {
-            notification.innerHTML = `将使用${engineName}搜索"<span style="color: red;">${searchText.substring(0, 50)}${searchText.length > 50 ? '...' : ''}</span>"，按Esc键取消。`;
-        }
+        // 修改扇形指示器的样式，确保它在圆心位置
+        const indicator = document.createElement('div');
+        indicator.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-left: 50px solid transparent;
+        border-right: 50px solid transparent;
+        border-bottom: 100px solid rgba(128, 128, 128, 0.5);
+        transform-origin: 0 100%;  // 将旋转原点设置在扇形的底部中心
+        transform: translate(-50%, -100%) rotate(0deg);  // 使用 translate 调整位置
+        transition: transform 0.1s ease;
+    `;
 
+        notification.appendChild(indicator);
+
+        const textElement = document.createElement('div');
+        textElement.style.cssText = `
+        position: absolute;
+        color: red;
+    `;
+        textElement.textContent = engineName;
+
+        notification.appendChild(textElement);
         document.body.appendChild(notification);
 
-        // 设置当前通知
         currentNotification = notification;
 
-        // 确保元素已经被添加到 DOM 中后设置不透明
         setTimeout(() => {
             notification.style.opacity = '1';
         }, 0);
-    }
 
+        // 在 dragover 事件中更新扇形的旋转角度
+        document.addEventListener('dragover', function (e) {
+            if (currentNotification) {  // 确保通知框存在
+                const rect = notification.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+
+                // 更新扇形旋转角度，保持在圆心位置
+                indicator.style.transform = `translate(-50%, -100%) rotate(${angle}deg)`;
+
+                // 更新文字位置
+                const offset = 110;
+                textElement.style.position = 'absolute';
+                textElement.style.left = `${centerX + Math.cos(angle * Math.PI / 180) * offset}px`;
+                textElement.style.top = `${centerY + Math.sin(angle * Math.PI / 180) * offset}px`;
+            }
+        });
+    }
     // 修改 removeDragNotification 函数
     function removeDragNotification() {
         if (currentNotification) {
