@@ -1417,43 +1417,30 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 (function () {
 
     function getDirection(x1, y1, x2, y2) {
-        const dx = x2 - x1;
-        const dy = y2 - y1;
+        const dx = x2 - x1;  // X轴位移
+        const dy = y2 - y1;  // Y轴位移
 
-        const vx = Math.abs(dx);
-        const vy = Math.abs(dy);
-
-        const threshold = 4; // 4px to change the direction
-
-        // 检查是否移动距离过短，不足以判断为有效方向
-        if (vx < threshold && vy < threshold) {
-            return null;
-        }
-
-        // 判断对角线方向
-        if (vx >= threshold && vy >= threshold) {
-            if (dx > 0 && dy > 0) {
-                return 'right-down';
-            } else if (dx > 0 && dy < 0) {
-                return 'right-up';
-            } else if (dx < 0 && dy > 0) {
-                return 'left-down';
-            } else if (dx < 0 && dy < 0) {
-                return 'left-up';
-            }
-        }
-
-        // 判断水平或垂直方向
-        if (vx > vy) {
+        // 移除阈值检查，直接计算方向
+        if (Math.abs(dx) > Math.abs(dy)) {
+            // 水平移动为主
             if (dx > 0) {
+                if (dy > dx / 2) return 'right-down';
+                if (dy < -dx / 2) return 'right-up';
                 return 'right';
             } else {
+                if (dy > -dx / 2) return 'left-down';
+                if (dy < dx / 2) return 'left-up';
                 return 'left';
             }
         } else {
+            // 垂直移动为主
             if (dy > 0) {
+                if (dx > dy / 2) return 'right-down';
+                if (dx < -dy / 2) return 'left-down';
                 return 'down';
             } else {
+                if (dx > -dy / 2) return 'right-up';
+                if (dx < dy / 2) return 'left-up';
                 return 'up';
             }
         }
@@ -1556,110 +1543,162 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
         const notification = document.createElement('div');
         notification.id = 'drag-search-notification';
+
+        // 设置圆环容器
         notification.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
-        background-color: rgba(0, 0, 0, 0.8);
-        color: white;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background-color: transparent;
+        border: 6px solid rgba(0, 0, 0, 0.8);
         border-radius: 50%;
-        z-index: 999999;
+        z-index: 1;
         width: 100px;
         height: 100px;
         display: flex;
         align-items: center;
         justify-content: center;
         text-align: center;
-        transition: opacity 0.3s ease-out;
-        opacity: 0;
         pointer-events: none;
+        opacity: 0.9;
     `;
 
-        // 修改扇形指示器样式
-        const indicator = document.createElement('div');
-        indicator.style.cssText = `
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(128, 128, 128, 0.5);
-        clip-path: polygon(50% 50%, 100% 0%, 0% 0%);
-        transform-origin: center;
-        transition: transform 0.1s ease;
-        border-radius: 50%;
-    `;
-
-        // 根据方向设置初始旋转角度
-        let initialAngle = 0;
-        switch (direction) {
-            case 'up':
-                initialAngle = 0;
-                break;
-            case 'right-up':
-                initialAngle = 45;
-                break;
-            case 'right':
-                initialAngle = 90;
-                break;
-            case 'right-down':
-                initialAngle = 135;
-                break;
-            case 'down':
-                initialAngle = 180;
-                break;
-            case 'left-down':
-                initialAngle = 225;
-                break;
-            case 'left':
-                initialAngle = 270;
-                break;
-            case 'left-up':
-                initialAngle = 315;
-                break;
-        }
-
-        // 应用初始旋转
-        indicator.style.transform = `rotate(${initialAngle}deg)`;
-
+        // 创建文本元素
         const textElement = document.createElement('div');
         textElement.style.cssText = `
         position: absolute;
         width: 100%;
         text-align: center;
-        color: white;
+        color: black;
         font-size: 14px;
-        z-index: 1;
+        font-weight: bold;
+        z-index: 12;
     `;
         textElement.textContent = engineName;
 
-        notification.appendChild(indicator);
-        notification.appendChild(textElement);
+        // 创建SVG容器
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("width", "112");
+        svg.setAttribute("height", "112");
+        svg.style.cssText = `
+        position: absolute;
+        left: -6px;
+        top: -6px;
+        z-index: 2;
+    `;// 新增：创建圆环 ⬇️
+        const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        ring.setAttribute("cx", "56");
+        ring.setAttribute("cy", "56");
+        ring.setAttribute("r", "50");
+        ring.setAttribute("stroke", "rgba(0, 0, 0, 0.8)");
+        ring.setAttribute("stroke-width", "6");
+        ring.setAttribute("fill", "none");
+        // 创建圆弧扇形路径
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+        // 圆环和圆弧的参数
+        const centerX = 56;
+        const centerY = 56;
+        const outerRadius = 56;  // 略小于圆环内径
+        const innerRadius = 45;  // 圆弧的内径
+        const arcAngle = 30;     // 圆弧扇形的角度（单侧）
+
+        // 创建圆弧扇形路径函数
+        function createArcPath(baseAngle) {
+            const startAngle = baseAngle - arcAngle;
+            const endAngle = baseAngle + arcAngle;
+
+            const startOuterX = centerX + outerRadius * Math.cos(startAngle * Math.PI / 180);
+            const startOuterY = centerY + outerRadius * Math.sin(startAngle * Math.PI / 180);
+            const endOuterX = centerX + outerRadius * Math.cos(endAngle * Math.PI / 180);
+            const endOuterY = centerY + outerRadius * Math.sin(endAngle * Math.PI / 180);
+
+            const startInnerX = centerX + innerRadius * Math.cos(startAngle * Math.PI / 180);
+            const startInnerY = centerY + innerRadius * Math.sin(startAngle * Math.PI / 180);
+            const endInnerX = centerX + innerRadius * Math.cos(endAngle * Math.PI / 180);
+            const endInnerY = centerY + innerRadius * Math.sin(endAngle * Math.PI / 180);
+
+            return `
+            M ${startOuterX},${startOuterY}
+            A ${outerRadius},${outerRadius} 0 0 1 ${endOuterX},${endOuterY}
+            L ${endInnerX},${endInnerY}
+            A ${innerRadius},${innerRadius} 0 0 0 ${startInnerX},${startInnerY}
+            Z
+        `;
+        }
+      
+        // 设置初始路径
+        path.setAttribute("fill", "white");
+        path.style.transition = "transform 0.3s ease-out";
+
+        // 根据方向设置初始角度
+        const directionAngles = {
+            'left': 180,
+            'right': 0,
+            'up': 270,
+            'down': 90,
+            'left-up': 225,
+            'right-up': 315,
+            'left-down': 135,
+            'right-down': 45
+        };
+
+        const initialAngle = directionAngles[direction] || 0;
+        path.setAttribute("d", createArcPath(initialAngle));
+        svg.appendChild(ring);     // 先添加圆环
+        svg.appendChild(path);
+        // 4. 更改元素添加顺序
+        notification.appendChild(svg);           // 再添加 SVG
+        notification.appendChild(textElement);    // 最后添加文本
         document.body.appendChild(notification);
-
-        requestAnimationFrame(() => {
-            notification.style.opacity = '1';
-        });
-
         currentNotification = notification;
 
-        // 更新扇形旋转逻辑，根据拖拽方向实时更新
-        document.addEventListener('dragover', function (e) {
-            if (currentNotification && dragStartPoint) {
+        // 添加过渡动画
+        notification.style.transition = 'opacity 0.3s ease-in-out';
+        setTimeout(() => {
+            notification.style.opacity = '1';
+        }, 10);
+
+        return path; // 返回路径元素以供后续更新
+    }
+
+    // 更新圆弧位置的函数
+    function updateArcPosition(e) {
+        if (currentNotification && dragStartPoint) {
+            const path = currentNotification.querySelector('path');
+            if (path) {
+                const dx = e.clientX - dragStartPoint.x;
+                const dy = e.clientY - dragStartPoint.y;
+                const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+                // 更新圆弧路径
+                path.setAttribute("d", createArcPath(angle));
+            }
+        }
+    }
+
+    // 在 dragover 事件中更新圆弧位置
+    document.addEventListener('dragover', updateArcPosition);
+    // 更新拖拽时的旋转逻辑
+    document.addEventListener('dragover', function (e) {
+        if (currentNotification && dragStartPoint) {
+            const indicator = currentNotification.querySelector('div');
+            if (indicator) {
                 const dx = e.clientX - dragStartPoint.x;
                 const dy = e.clientY - dragStartPoint.y;
 
-                // 计算拖拽方向的角度
+                // 计算角度
                 let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-                // 调整角度使其从上方开始计算
+                // 调整角度使三角形指向正确方向
                 angle = angle - 90;
                 if (angle < 0) angle += 360;
 
-                // 应用旋转
+                // 应用旋转到三角形指示器
                 indicator.style.transform = `rotate(${angle}deg)`;
             }
-        });
-    }
+        }
+    });
     // 修改 removeDragNotification 函数
     function removeDragNotification() {
         if (currentNotification) {
