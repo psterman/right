@@ -1550,7 +1550,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
-        background-color: transparent;
+        background-color: rgba(255, 255, 255, 0.5); // 添加半透明背景
         border: 6px solid rgba(0, 0, 0, 0.8);
         border-radius: 50%;
         z-index: 1;
