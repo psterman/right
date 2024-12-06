@@ -1543,9 +1543,47 @@ const searchEngines = {
 		// 添加更多AI搜索引擎...
 	],
 	image: [
-		{ name: "Google Images", url: "https://images.google.com/search?q=%s" },
-		{ name: "Bing Images", url: "https://www.bing.com/images/search?q=%s" },
-		// 添加更多图片搜索引擎...
+		{
+			name: "复制选中文本",
+			action: "copy",
+			handler: function (selectedText) {
+				navigator.clipboard.writeText(selectedText)
+					.then(() => console.log('文本已复制'))
+					.catch(err => console.error('复制失败:', err));
+			}
+		},
+		{
+			name: "保存选中文本",
+			action: "save",
+			handler: function (selectedText) {
+				chrome.storage.sync.get('savedRecords', function (data) {
+					const records = data.savedRecords || [];
+					records.push({
+						text: selectedText,
+						timestamp: new Date().getTime(),
+						url: window.location.href
+					});
+					chrome.storage.sync.set({ savedRecords: records });
+				});
+			}
+		},
+		{
+			name: "刷新页面",
+			action: "refresh",
+			handler: function () {
+				window.location.reload();
+			}
+		},
+		{
+			name: "在侧边栏打开",
+			action: "sidepanel",
+			handler: function (selectedText) {
+				chrome.runtime.sendMessage({
+					action: 'openSidePanel',
+					text: selectedText
+				});
+			}
+		}
 	],
 	regular: [
 		{ name: "Google", url: "https://www.google.com/search?q=%s" },
@@ -1576,6 +1614,33 @@ const searchEngines = {
 		// 这里可以是空的，或者包含一些默认的自定义搜索引擎
 	]
 };
+// 处理功能动作
+function handleAction(action, selectedText) {
+	const functionItem = searchEngines.image.find(item => item.action === action);
+	if (functionItem && functionItem.handler) {
+		functionItem.handler(selectedText);
+	}
+}
+
+// 更新菜单项
+function updateContextMenu() {
+	chrome.contextMenus.removeAll(() => {
+		searchEngines.image.forEach(item => {
+			chrome.contextMenus.create({
+				id: item.action,
+				title: item.name,
+				contexts: ['selection']  // 只在选中文本时显示
+			});
+		});
+	});
+}
+
+// 监听菜单点击
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+	if (info.selectionText) {
+		handleAction(info.menuItemId, info.selectionText);
+	}
+});
 function loadOptions() {
 	chrome.storage.sync.get(['selectedEngines', 'id2enginemap'], function (result) {
 		let id2enginemap = result.id2enginemap || {};
