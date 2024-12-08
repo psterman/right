@@ -832,7 +832,7 @@ function addNewAISearchEngine() {
 
 // ... existing code ...
 
-// 修改现有的 loadAISearchEngines 函数，将内容改为加载图片搜索引擎
+// 修改现有的 loadAISearchEngines 函数，将内容改为加载功能引擎
 function loadAISearchEngines(containerId) {
 	const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
 	if (!container) {
@@ -879,17 +879,17 @@ function loadAISearchEngines(containerId) {
 }
 
 function addNewImageSearchEngine() {
-	const name = prompt('输入新的图片搜索引擎名称:');
+	const name = prompt('输入新的功能名称:');
 	if (!name) return;
 
-	const url = prompt('输入新的图片搜索引擎URL:');
+	const url = prompt('输入新的功能代码:');
 	if (!url) return;
 
 	chrome.storage.sync.get('multiMenu1Engines', function (data) {
 		let engines = data.multiMenu1Engines || multiMenu1Engines;
 		engines.push({ name, url, enabled: true });
 		chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
-			console.log('新的图片搜索引擎已添加');
+			console.log('新的功能已添加');
 			loadImageSearchEngines('multiMenu1');
 		});
 	});
@@ -901,7 +901,7 @@ function saveMultiMenuEngineState(index, isEnabled) {
 		if (engines[index]) {
 			engines[index].enabled = isEnabled;
 			chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
-				console.log(`图片搜索引擎 ${engines[index].name} 状态已更新为: ${isEnabled}`);
+				console.log(`功能 ${engines[index].name} 状态已更新为: ${isEnabled}`);
 			});
 		}
 	});
@@ -1209,13 +1209,13 @@ chrome.storage.sync.get('regularSearchEngines', function (data) {
 	}
 });
 
-// 图片搜索引擎也采用相同模式
-// 修改图片搜索引擎的初始化逻辑
-// 强制更新图片搜索引擎列表
+// 功能引擎也采用相同模式
+// 修改功能引擎的初始化逻辑
+// 强制更新功能引擎列表
 chrome.storage.sync.get('imageSearchEngines', function (data) {
-	console.log('当前存储的图片搜索引擎：', data.imageSearchEngines);
+	console.log('当前存储的功能引擎：', data.imageSearchEngines);
 
-	// 定义完整的图片搜索引擎列表
+	// 定义完整的功能引擎列表
 	const updatedEngines = [
 		// 主流搜索引擎
 		{ name: "谷歌图片", url: "https://images.google.com/search?q=%s", enabled: true },
@@ -1254,7 +1254,7 @@ chrome.storage.sync.get('imageSearchEngines', function (data) {
 		imageSearchEngines: updatedEngines,
 		forceUpdate: true  // 添加标记表示已强制更新
 	}, function () {
-		console.log('已强制更新图片搜索引擎列表，共', updatedEngines.length, '个引擎');
+		console.log('已强制更新功能引擎列表，共', updatedEngines.length, '个引擎');
 		// 如果有回调函数则调用
 		if (typeof loadImageSearchEngines === 'function') {
 			loadImageSearchEngines();
@@ -1284,33 +1284,33 @@ function resetImageSearchEngines() {
 	});
 }
 
-// 添加用户自定义图片搜索引擎的函数
+// 添加用户自定义功能引擎的函数
 function addCustomImageEngine(name, url) {
 	chrome.storage.sync.get('imageSearchEngines', function (data) {
 		let engines = data.imageSearchEngines || [];
 		engines.push({ name, url, custom: true }); // 标记为自定义引擎
 
 		chrome.storage.sync.set({ imageSearchEngines: engines }, function () {
-			console.log('已添加自定义图片搜索引擎');
+			console.log('已添加自定义功能引擎');
 			loadImageSearchEngines();
 		});
 	});
 }
 
-// 删除图片搜索引擎的函数
+// 删除功能引擎的函数
 function removeImageEngine(index) {
 	chrome.storage.sync.get('imageSearchEngines', function (data) {
 		let engines = data.imageSearchEngines || [];
 		engines.splice(index, 1);
 
 		chrome.storage.sync.set({ imageSearchEngines: engines }, function () {
-			console.log('已删除图片搜索引擎');
+			console.log('已删除功能引擎');
 			loadImageSearchEngines();
 		});
 	});
 }
 
-// 编辑图片搜索引擎的函数
+// 编辑功能引擎的函数
 function editImageEngine(index, newName, newUrl) {
 	chrome.storage.sync.get('imageSearchEngines', function (data) {
 		let engines = data.imageSearchEngines || [];
@@ -1321,7 +1321,7 @@ function editImageEngine(index, newName, newUrl) {
 		};
 
 		chrome.storage.sync.set({ imageSearchEngines: engines }, function () {
-			console.log('已编辑图片搜索引擎');
+			console.log('已编辑功能引擎');
 			loadImageSearchEngines();
 		});
 	});
@@ -1544,45 +1544,24 @@ const searchEngines = {
 	],
 	image: [
 		{
-			name: "复制选中文本",
-			action: "copy",
-			handler: function (selectedText) {
-				navigator.clipboard.writeText(selectedText)
-					.then(() => console.log('文本已复制'))
-					.catch(err => console.error('复制失败:', err));
-			}
+			name: "复制",
+			action: " ",
+			url: "复制选中文本"  // 添加 url 属性
 		},
 		{
-			name: "保存选中文本",
-			action: "save",
-			handler: function (selectedText) {
-				chrome.storage.sync.get('savedRecords', function (data) {
-					const records = data.savedRecords || [];
-					records.push({
-						text: selectedText,
-						timestamp: new Date().getTime(),
-						url: window.location.href
-					});
-					chrome.storage.sync.set({ savedRecords: records });
-				});
-			}
+			name: "收藏",
+			action: "",
+			url: "选中文本保存到书签页面 "
 		},
 		{
-			name: "刷新页面",
-			action: "refresh",
-			handler: function () {
-				window.location.reload();
-			}
+			name: "刷新",
+			action: " ",
+			url: "刷新网页，按“esc”可以取消 "
 		},
 		{
-			name: "在侧边栏打开",
-			action: "sidepanel",
-			handler: function (selectedText) {
-				chrome.runtime.sendMessage({
-					action: 'openSidePanel',
-					text: selectedText
-				});
-			}
+			name: "侧边栏",
+			action: " ",
+			url: " 打开侧边栏"
 		}
 	],
 	regular: [
@@ -4068,7 +4047,7 @@ function updateCurrentTabContent(category, globalId2enginemap) {
 function getCategoryName(category) {
 	const names = {
 		ai: 'AI 搜索',
-		image: '图片搜索',
+		image: '功能搜索',
 		regular: '综合搜索',
 		custom: '自定义搜索'
 	};
