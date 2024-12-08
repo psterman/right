@@ -1826,9 +1826,14 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     break;
 
                 case 'sidepanel':
+                    console.log('Opening in sidepanel:', dropData);
+                    // 直接使用已有的 toggleSidePanel 动作
                     chrome.runtime.sendMessage({
-                        action: 'openSidePanel',
-                        text: dropData
+                        action: 'toggleSidePanel'
+                    }, (response) => {
+                        if (response && response.success) {
+                            showNotification('已在侧边栏打开');
+                        }
                     });
                     break;
 
