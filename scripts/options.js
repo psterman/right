@@ -1562,6 +1562,12 @@ const searchEngines = {
 			name: "侧边栏",
 			action: " ",
 			url: " 打开侧边栏"
+		},
+		{
+			name: "二维码",
+			action: "",
+			url: "打开侧边栏，扫描二维码复制文字"
+			
 		}
 	],
 	regular: [

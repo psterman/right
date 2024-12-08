@@ -1741,7 +1741,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             'refresh': 'refresh',
             '在侧边栏打开': 'sidepanel',
             '侧边栏': 'sidepanel',
-            'sidepanel': 'sidepanel'
+            'sidepanel': 'sidepanel',
+            '二维码': 'qrcode',           // 新增
+            'qrcode': 'qrcode'   
         };
 
         // 添加调试日志
@@ -1835,6 +1837,97 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                             showNotification('已在侧边栏打开');
                         }
                     });
+                    break;
+                case 'qrcode':
+                    console.log('Generating QR code for:', dropData);
+                    const qrCodeHtml = `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <title>文本二维码</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                    text-align: center;
+                    background: #f5f5f5;
+                }
+                .qr-container {
+                    max-width: 300px;
+                    margin: 20px auto;
+                    padding: 20px;
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .text-preview {
+                    margin-top: 20px;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    word-break: break-all;
+                    background: #fff;
+                    text-align: left;
+                    max-height: 200px;
+                    overflow-y: auto;
+                }
+                h3 {
+                    color: #333;
+                    margin-bottom: 10px;
+                }
+                .qr-image {
+                    margin: 0 auto;
+                    max-width: 200px;
+                    height: auto;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="qr-container">
+                <img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(dropData)}" alt="QR Code">
+                <div class="text-preview">
+                    <h3>文本预览:</h3>
+                    <p>${dropData}</p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+
+                    try {
+                        const blob = new Blob([qrCodeHtml], { type: 'text/html' });
+                        const blobUrl = URL.createObjectURL(blob);
+
+                        chrome.runtime.sendMessage({
+                            action: 'setpage',
+                            query: blobUrl,
+                            foreground: false
+                        }, function (response) {
+                            if (chrome.runtime.lastError) {
+                                console.error('Runtime error:', chrome.runtime.lastError);
+                                showNotification('二维码生成失败');
+                                return;
+                            }
+
+                            if (response && response.success) {
+                                console.log('QR code page opened successfully');
+                                showNotification('二维码已生成');
+                            } else {
+                                console.error('Failed to open QR code page');
+                                showNotification('二维码生成失败');
+                            }
+                        });
+
+                        // 延迟释放 blob URL
+                        setTimeout(() => {
+                            URL.revokeObjectURL(blobUrl);
+                        }, 3000);
+
+                    } catch (error) {
+                        console.error('Error generating QR code:', error);
+                        showNotification('二维码生成失败');
+                    }
                     break;
 
                 default:
