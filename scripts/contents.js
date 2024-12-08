@@ -1957,7 +1957,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             const searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
 
             if (isAltPressed) {
-                // 按住Shift键时在后台标签页打开
+                // 按住alt键时在后台标签页打开
                 window.open(searchUrl, '_blank', 'noopener,noreferrer');
                 window.focus(); // 保持当前窗口焦点
             } else {
