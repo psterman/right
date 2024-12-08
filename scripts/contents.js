@@ -28,48 +28,10 @@ let directionSearchEnabled = false;
 let directionEngines = {};
 let cursorStyleElement = null;
 const actionTemplates = {
-    copy: {
-        name: "复制选中文本",
-        handler: function (text) {
-            navigator.clipboard.writeText(text)
-                .then(() => {
-                    showNotification('文本已复制');
-                    console.log('文本已复制');
-                })
-                .catch(err => console.error('复制失败:', err));
-        }
-    },
-    save: {
-        name: "保存选中文本",
-        handler: function (text) {
-            chrome.storage.sync.get('savedRecords', function (data) {
-                const records = data.savedRecords || [];
-                records.push({
-                    text: text,
-                    timestamp: new Date().getTime(),
-                    url: window.location.href
-                });
-                chrome.storage.sync.set({ savedRecords: records }, () => {
-                    showNotification('文本已保存');
-                });
-            });
-        }
-    },
-    refresh: {
-        name: "刷新页面",
-        handler: function () {
-            window.location.reload();
-        }
-    },
-    sidepanel: {
-        name: "在侧边栏打开",
-        handler: function (text) {
-            chrome.runtime.sendMessage({
-                action: 'openSidePanel',
-                text: text
-            });
-        }
-    }
+    'copy': '复制选中文本',
+    'save': '保存选中文本',
+    'refresh': '刷新页面',
+    'sidepanel': '在侧边栏打开'
 };
 // 获取当前选择的光标
 function getCurrentCursor() {
@@ -1760,7 +1722,34 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             removeDragNotification();
         }
     });
+    function getNormalizedAction(actionName) {
+        if (!actionName) return '';
 
+        // 转换为小写并移除空格
+        const normalized = actionName.toLowerCase().trim();
+
+        // 扩展动作名称映射，确保包含所有可能的中文表述
+        const actionMap = {
+            '复制选中文本': 'copy',
+            '复制': 'copy',
+            'copy': 'copy',
+            '保存选中文本': 'save',
+            '保存': 'save',
+            'save': 'save',
+            '刷新页面': 'refresh',
+            '刷新': 'refresh',
+            'refresh': 'refresh',
+            '在侧边栏打开': 'sidepanel',
+            '侧边栏': 'sidepanel',
+            'sidepanel': 'sidepanel'
+        };
+
+        // 添加调试日志
+        console.log('Action name before normalization:', actionName);
+        console.log('Normalized action:', actionMap[normalized] || normalized);
+
+        return actionMap[normalized] || normalized;
+    }
     // 修改 drop 函数
     function drop(e) {
         if (bypass(e.target)) return false;
@@ -1779,18 +1768,37 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             }
 
             const dragDirection = direction;
-            if (!dragDirection || !result.directionEngines[`direction-${dragDirection}`]) {
-                console.log('未找到对应方向的搜索引擎');
+            const directionKey = `direction-${dragDirection}`;
+
+            console.log('当前方向:', dragDirection);
+            console.log('方向设置:', result.directionEngines);
+
+            if (!dragDirection || !result.directionEngines || !result.directionEngines[directionKey]) {
+                console.log('未找到对应方向的搜索引擎:', directionKey);
                 return;
             }
 
             // 获取该方向配置的动作名称
-            const actionName = result.directionEngines[`direction-${dragDirection}`];
+            const actionName = result.directionEngines[directionKey];
             console.log('配置的动作:', actionName);
 
-            // 根据动作名称进行匹配
-            switch (actionName.toLowerCase()) {
-                case '复制选中文本':
+            // 标准化动作名称
+            const normalizedAction = getNormalizedAction(actionName);
+            console.log('标准化后的动作:', normalizedAction);
+
+            // 根据标准化后的动作名称进行匹配
+            switch (normalizedAction) {
+                case 'refresh':
+                    console.log('执行刷新操作');
+                    try {
+                        window.location.reload();
+                        showNotification('页面刷新中...');
+                    } catch (error) {
+                        console.error('刷新失败:', error);
+                        showNotification('刷新失败');
+                    }
+                    break;
+
                 case 'copy':
                     navigator.clipboard.writeText(dropData)
                         .then(() => {
@@ -1803,7 +1811,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                         });
                     break;
 
-                case '保存选中文本':
                 case 'save':
                     chrome.storage.sync.get('savedRecords', function (data) {
                         const records = data.savedRecords || [];
@@ -1818,15 +1825,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     });
                     break;
 
-                case '刷新页面':
-                case 'refresh':
-                    showNotification('页面即将刷新...');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 500); // 延迟500ms刷新，让用户能看到提示
-                    break;
-
-                case '在侧边栏打开':
                 case 'sidepanel':
                     chrome.runtime.sendMessage({
                         action: 'openSidePanel',
@@ -1835,33 +1833,14 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     break;
 
                 default:
-                    // 处理常规搜索引擎
-                    chrome.storage.sync.get('id2enginemap', function (result) {
-                        if (result.id2enginemap && result.id2enginemap[actionName.toLowerCase()]) {
-                            const urlTemplate = result.id2enginemap[actionName.toLowerCase()];
-                            const searchUrl = urlTemplate.replace('%s', encodeURIComponent(dropData));
-
-                            chrome.runtime.sendMessage({
-                                action: 'setpage',
-                                query: searchUrl,
-                                foreground: e.altKey
-                            });
-                        } else {
-                            console.log('未找到搜索引擎URL，使用默认搜索');
-                            const defaultSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(dropData)}`;
-                            chrome.runtime.sendMessage({
-                                action: 'setpage',
-                                query: defaultSearchUrl,
-                                foreground: e.altKey
-                            });
-                        }
-                    });
+                    // 处理搜索引擎
+                    handleSearchEngine(actionName, dropData, e.altKey);
+                    break;
             }
         });
 
         return false;
     }
-
     // 新增: 添加 dragend 事件监听器
     document.addEventListener('dragend', function (e) {
         removeDragNotification();

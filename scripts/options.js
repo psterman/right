@@ -810,7 +810,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 });
 
- 
+
 // 新的函数重命名为 addNewAISearchEngine
 // 新增此函数
 function addNewAISearchEngine() {
@@ -832,7 +832,7 @@ function addNewAISearchEngine() {
 
 // ... existing code ...
 
-// 修改现有的 loadAISearchEngines 函数，将内容改为加载功能引擎
+// 修改现有的 loadAISearchEngines 函数，将内容改为加载图片搜索引擎
 function loadAISearchEngines(containerId) {
 	const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
 	if (!container) {
@@ -879,17 +879,17 @@ function loadAISearchEngines(containerId) {
 }
 
 function addNewImageSearchEngine() {
-	const name = prompt('输入新的功能名称:');
+	const name = prompt('输入新的图片搜索引擎名称:');
 	if (!name) return;
 
-	const url = prompt('输入新的功能代码:');
+	const url = prompt('输入新的图片搜索引擎URL:');
 	if (!url) return;
 
 	chrome.storage.sync.get('multiMenu1Engines', function (data) {
 		let engines = data.multiMenu1Engines || multiMenu1Engines;
 		engines.push({ name, url, enabled: true });
 		chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
-			console.log('新的功能已添加');
+			console.log('新的图片搜索引擎已添加');
 			loadImageSearchEngines('multiMenu1');
 		});
 	});
@@ -901,7 +901,7 @@ function saveMultiMenuEngineState(index, isEnabled) {
 		if (engines[index]) {
 			engines[index].enabled = isEnabled;
 			chrome.storage.sync.set({ multiMenu1Engines: engines }, function () {
-				console.log(`功能 ${engines[index].name} 状态已更新为: ${isEnabled}`);
+				console.log(`图片搜索引擎 ${engines[index].name} 状态已更新为: ${isEnabled}`);
 			});
 		}
 	});
@@ -1178,25 +1178,25 @@ chrome.storage.sync.get('regularSearchEngines', function (data) {
 	if (engines.length === 0) {
 		console.log('未找到保存的常规搜索引擎，使用默认值');
 		engines = [
-			{ name: "Google", url: "https://www.google.com/search?q=%s" , enabled: false},
-			{ name: "Bing", url: "https://www.bing.com/search?q=%s" , enabled: false},
-			{ name: "百度", url: "https://www.baidu.com/s?wd=%s" , enabled: false},
+			{ name: "Google", url: "https://www.google.com/search?q=%s", enabled: false },
+			{ name: "Bing", url: "https://www.bing.com/search?q=%s", enabled: false },
+			{ name: "百度", url: "https://www.baidu.com/s?wd=%s", enabled: false },
 			{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s", enabled: false },
-			{ name: "搜狗", url: "https://www.sogou.com/web?query=%s" , enabled: false},
+			{ name: "搜狗", url: "https://www.sogou.com/web?query=%s", enabled: false },
 			{ name: "360搜索", url: "https://www.so.com/s?q=%s", enabled: false },
-			{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s" , enabled: false},
-			{ name: "闲鱼", url: "https://www.goofish.com/search?q=%s&spm=a21ybx.home" , enabled: false},
+			{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s", enabled: false },
+			{ name: "闲鱼", url: "https://www.goofish.com/search?q=%s&spm=a21ybx.home", enabled: false },
 			{ name: "抖音", url: "https://www.douyin.com/search/%s", enabled: false },
-			{ name: "X", url: "https://twitter.com/search?q=%s" , enabled: false},
-			{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s" , enabled: false},
-			{ name: "V2EX", url: "https://www.v2ex.com/search?q=%s" , enabled: false},
+			{ name: "X", url: "https://twitter.com/search?q=%s", enabled: false },
+			{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s", enabled: false },
+			{ name: "V2EX", url: "https://www.v2ex.com/search?q=%s", enabled: false },
 			{ name: "Github", url: "https://github.com/search?q=%s", enabled: false },
 			{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s", enabled: false },
-			{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s" , enabled: false},
-			{ name: "FaceBook", url: "https://www.facebook.com/search/top/?q=%s" , enabled: false},
-			{ name: "bilibili", url: "https://search.bilibili.com/all?keyword=%s", enabled: false},
+			{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s", enabled: false },
+			{ name: "FaceBook", url: "https://www.facebook.com/search/top/?q=%s", enabled: false },
+			{ name: "bilibili", url: "https://search.bilibili.com/all?keyword=%s", enabled: false },
 			{ name: "知乎", url: "https://www.zhihu.com/search?q=%s", enabled: false },
-			{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s" , enabled: false},
+			{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s", enabled: false },
 			{ name: "微博", url: "https://s.weibo.com/weibo/%s", enabled: false },
 			{ name: "今日头条", url: "https://so.toutiao.com/search?keyword=%s", enabled: false }
 		];
@@ -1209,13 +1209,13 @@ chrome.storage.sync.get('regularSearchEngines', function (data) {
 	}
 });
 
-// 功能引擎也采用相同模式
-// 修改功能引擎的初始化逻辑
-// 强制更新功能引擎列表
+// 图片搜索引擎也采用相同模式
+// 修改图片搜索引擎的初始化逻辑
+// 强制更新图片搜索引擎列表
 chrome.storage.sync.get('imageSearchEngines', function (data) {
-	console.log('当前存储的功能引擎：', data.imageSearchEngines);
+	console.log('当前存储的图片搜索引擎：', data.imageSearchEngines);
 
-	// 定义完整的功能引擎列表
+	// 定义完整的图片搜索引擎列表
 	const updatedEngines = [
 		// 主流搜索引擎
 		{ name: "谷歌图片", url: "https://images.google.com/search?q=%s", enabled: true },
@@ -1254,7 +1254,7 @@ chrome.storage.sync.get('imageSearchEngines', function (data) {
 		imageSearchEngines: updatedEngines,
 		forceUpdate: true  // 添加标记表示已强制更新
 	}, function () {
-		console.log('已强制更新功能引擎列表，共', updatedEngines.length, '个引擎');
+		console.log('已强制更新图片搜索引擎列表，共', updatedEngines.length, '个引擎');
 		// 如果有回调函数则调用
 		if (typeof loadImageSearchEngines === 'function') {
 			loadImageSearchEngines();
@@ -1284,33 +1284,33 @@ function resetImageSearchEngines() {
 	});
 }
 
-// 添加用户自定义功能引擎的函数
+// 添加用户自定义图片搜索引擎的函数
 function addCustomImageEngine(name, url) {
 	chrome.storage.sync.get('imageSearchEngines', function (data) {
 		let engines = data.imageSearchEngines || [];
 		engines.push({ name, url, custom: true }); // 标记为自定义引擎
 
 		chrome.storage.sync.set({ imageSearchEngines: engines }, function () {
-			console.log('已添加自定义功能引擎');
+			console.log('已添加自定义图片搜索引擎');
 			loadImageSearchEngines();
 		});
 	});
 }
 
-// 删除功能引擎的函数
+// 删除图片搜索引擎的函数
 function removeImageEngine(index) {
 	chrome.storage.sync.get('imageSearchEngines', function (data) {
 		let engines = data.imageSearchEngines || [];
 		engines.splice(index, 1);
 
 		chrome.storage.sync.set({ imageSearchEngines: engines }, function () {
-			console.log('已删除功能引擎');
+			console.log('已删除图片搜索引擎');
 			loadImageSearchEngines();
 		});
 	});
 }
 
-// 编辑功能引擎的函数
+// 编辑图片搜索引擎的函数
 function editImageEngine(index, newName, newUrl) {
 	chrome.storage.sync.get('imageSearchEngines', function (data) {
 		let engines = data.imageSearchEngines || [];
@@ -1321,7 +1321,7 @@ function editImageEngine(index, newName, newUrl) {
 		};
 
 		chrome.storage.sync.set({ imageSearchEngines: engines }, function () {
-			console.log('已编辑功能引擎');
+			console.log('已编辑图片搜索引擎');
 			loadImageSearchEngines();
 		});
 	});
@@ -1544,24 +1544,45 @@ const searchEngines = {
 	],
 	image: [
 		{
-			name: "复制",
-			action: " ",
-			url: "复制选中文本"  // 添加 url 属性
+			name: "复制选中文本",
+			action: "copy",
+			handler: function (selectedText) {
+				navigator.clipboard.writeText(selectedText)
+					.then(() => console.log('文本已复制'))
+					.catch(err => console.error('复制失败:', err));
+			}
 		},
 		{
-			name: "收藏",
-			action: "",
-			url: "选中文本保存到书签页面 "
+			name: "保存选中文本",
+			action: "save",
+			handler: function (selectedText) {
+				chrome.storage.sync.get('savedRecords', function (data) {
+					const records = data.savedRecords || [];
+					records.push({
+						text: selectedText,
+						timestamp: new Date().getTime(),
+						url: window.location.href
+					});
+					chrome.storage.sync.set({ savedRecords: records });
+				});
+			}
 		},
 		{
-			name: "刷新",
-			action: " ",
-			url: "刷新网页，按“esc”可以取消 "
+			name: "刷新页面",
+			action: "refresh",
+			handler: function () {
+				window.location.reload();
+			}
 		},
 		{
-			name: "侧边栏",
-			action: " ",
-			url: " 打开侧边栏"
+			name: "在侧边栏打开",
+			action: "sidepanel",
+			handler: function (selectedText) {
+				chrome.runtime.sendMessage({
+					action: 'openSidePanel',
+					text: selectedText
+				});
+			}
 		}
 	],
 	regular: [
@@ -1840,7 +1861,7 @@ function defaultgetsettings() {
 
 // 保存选中的搜索引擎到 Chrome 存储
 function save_options() {
-	chrome.storage.sync.set({ "icon": $("btnpreview").src, "optionskipremember": $("optionskipremember").checked, "contextmenus": $("contextmenus").checked, "searchgoogle": $("searchgoogle").checked, "searchbing": $("searchbing").checked, "searchduckduckgo": $("searchduckduckgo").checked, "searchbaidu": $("searchbaidu").checked, "searchyandex": $("searchyandex").checked, "navtop": $("navtop").checked, "navbottom": $("navbottom").checked, "navhidden": $("navhidden").checked, "typepanelzone": $("typepanelzone").checked, "typepanelcustom": $("typepanelcustom").checked, "typepanellasttime": $("typepanellasttime").checked, "websitezoomname": $("websitezoomname").value, "opentab": $("opentab").checked, "opencopy": $("opencopy").checked, "opennonebookmarks": $("opennonebookmarks").checked, "openbrowserbookmarks": $("openbrowserbookmarks").checked, "openquickbookmarks": $("openquickbookmarks").checked, "websitename1": $("websitename1").value, "websiteurl1": $("websiteurl1").value, "websitename2": $("websitename2").value, "websiteurl2": $("websiteurl2").value, "websitename3": $("websitename3").value, "websiteurl3": $("websiteurl3").value, "websitename4": $("websitename4").value, "websiteurl4": $("websiteurl4").value, "websitename5": $("websitename5").value, "websiteurl5": $("websiteurl5").value, "websitename6": $("websitename6").value, "websiteurl6": $("websiteurl6").value, "websitename7": $("websitename7").value, "websiteurl7": $("websiteurl7").value, "websitename8": $("websitename8").value, "websiteurl8": $("websiteurl8").value, "websitename9": $("websitename9").value, "websiteurl9": $("websiteurl9").value, "websitename10": $("websitename10").value, "websiteurl10": $("websiteurl10").value, "googlesidepanel": $("googlesidepanel").checked, "zoom": $("zoom").checked, "defaultzoom": $("defaultzoom").value,  "directionSearchEnabled": $("directionSearchToggle").checked,"step": $("step").value });
+	chrome.storage.sync.set({ "icon": $("btnpreview").src, "optionskipremember": $("optionskipremember").checked, "contextmenus": $("contextmenus").checked, "searchgoogle": $("searchgoogle").checked, "searchbing": $("searchbing").checked, "searchduckduckgo": $("searchduckduckgo").checked, "searchbaidu": $("searchbaidu").checked, "searchyandex": $("searchyandex").checked, "navtop": $("navtop").checked, "navbottom": $("navbottom").checked, "navhidden": $("navhidden").checked, "typepanelzone": $("typepanelzone").checked, "typepanelcustom": $("typepanelcustom").checked, "typepanellasttime": $("typepanellasttime").checked, "websitezoomname": $("websitezoomname").value, "opentab": $("opentab").checked, "opencopy": $("opencopy").checked, "opennonebookmarks": $("opennonebookmarks").checked, "openbrowserbookmarks": $("openbrowserbookmarks").checked, "openquickbookmarks": $("openquickbookmarks").checked, "websitename1": $("websitename1").value, "websiteurl1": $("websiteurl1").value, "websitename2": $("websitename2").value, "websiteurl2": $("websiteurl2").value, "websitename3": $("websitename3").value, "websiteurl3": $("websiteurl3").value, "websitename4": $("websitename4").value, "websiteurl4": $("websiteurl4").value, "websitename5": $("websitename5").value, "websiteurl5": $("websiteurl5").value, "websitename6": $("websitename6").value, "websiteurl6": $("websiteurl6").value, "websitename7": $("websitename7").value, "websiteurl7": $("websiteurl7").value, "websitename8": $("websitename8").value, "websiteurl8": $("websiteurl8").value, "websitename9": $("websitename9").value, "websiteurl9": $("websiteurl9").value, "websitename10": $("websitename10").value, "websiteurl10": $("websiteurl10").value, "googlesidepanel": $("googlesidepanel").checked, "zoom": $("zoom").checked, "defaultzoom": $("defaultzoom").value, "directionSearchEnabled": $("directionSearchToggle").checked, "step": $("step").value });
 }
 // 确保在DOM加载完成后正确初始化复选框状态
 document.addEventListener('DOMContentLoaded', function () {
@@ -4047,7 +4068,7 @@ function updateCurrentTabContent(category, globalId2enginemap) {
 function getCategoryName(category) {
 	const names = {
 		ai: 'AI 搜索',
-		image: '功能搜索',
+		image: '图片搜索',
 		regular: '综合搜索',
 		custom: '自定义搜索'
 	};
@@ -4194,7 +4215,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		});
 	}
-	
+
 	// 添加这个新函数
 	function saveDirectionSearchSetting() {
 		const directionSearchToggle = document.getElementById('directionSearchToggle');
@@ -4755,20 +4776,20 @@ function loadMultiMenu(containerId) {
 }
 // 获取所有选中的引擎
 function getSelectedEngines(data) {
-    const multiMenu1Selected = (data.multiMenu1Engines || [])
-        .filter(engine => engine.enabled !== false);
-    
-    const aiEnginesSelected = (data.aiSearchEngines || [])
-        .filter(engine => engine.enabled !== false);
-    
-    const regularEnginesSelected = (data.regularSearchEngines || [])
-        .filter(engine => engine.enabled !== false);
+	const multiMenu1Selected = (data.multiMenu1Engines || [])
+		.filter(engine => engine.enabled !== false);
 
-    return [
-        ...multiMenu1Selected,
-        ...aiEnginesSelected,
-        ...regularEnginesSelected
-    ];
+	const aiEnginesSelected = (data.aiSearchEngines || [])
+		.filter(engine => engine.enabled !== false);
+
+	const regularEnginesSelected = (data.regularSearchEngines || [])
+		.filter(engine => engine.enabled !== false);
+
+	return [
+		...multiMenu1Selected,
+		...aiEnginesSelected,
+		...regularEnginesSelected
+	];
 }
 // 渲染引擎列表
 function renderEngineList(container, engines, menuId) {
@@ -4828,38 +4849,38 @@ function saveEngineState(menuId, index, checked, engine) {
 	});
 }
 function createMenuItem(menu, index, containerId) {
-    const item = document.createElement('div');
-    item.className = 'menu-item';
-    item.innerHTML = `
+	const item = document.createElement('div');
+	item.className = 'menu-item';
+	item.innerHTML = `
         <input type="text" class="menu-name" value="${menu}" placeholder="菜单项" readonly>
         <button class="edit-menu-item">编辑</button>
         <button class="delete-menu-item">删除</button>
     `;
 
-    // 获取按钮和输入框元素
-    const editButton = item.querySelector('.edit-menu-item');
-    const deleteButton = item.querySelector('.delete-menu-item');
-    const input = item.querySelector('.menu-name');
+	// 获取按钮和输入框元素
+	const editButton = item.querySelector('.edit-menu-item');
+	const deleteButton = item.querySelector('.delete-menu-item');
+	const input = item.querySelector('.menu-name');
 
-    // 编辑按钮点击事件
-    editButton.addEventListener('click', () => {
-        if (editButton.textContent === '编辑') {
-            // 进入编辑模式
-            input.removeAttribute('readonly');
-            input.focus();
-            editButton.textContent = '保存';
-        } else {
-            // 保存更改
-            input.setAttribute('readonly', 'readonly');
-            editButton.textContent = '编辑';
-            updateMenuItem(containerId, index, item);
-        }
-    });
+	// 编辑按钮点击事件
+	editButton.addEventListener('click', () => {
+		if (editButton.textContent === '编辑') {
+			// 进入编辑模式
+			input.removeAttribute('readonly');
+			input.focus();
+			editButton.textContent = '保存';
+		} else {
+			// 保存更改
+			input.setAttribute('readonly', 'readonly');
+			editButton.textContent = '编辑';
+			updateMenuItem(containerId, index, item);
+		}
+	});
 
-    // 删除按钮点击事件
-    deleteButton.addEventListener('click', () => deleteMenuItem(containerId, index));
+	// 删除按钮点击事件
+	deleteButton.addEventListener('click', () => deleteMenuItem(containerId, index));
 
-    return item;
+	return item;
 }
 
 
@@ -4882,17 +4903,17 @@ function deleteMenuItem(containerId, index) {
 
 
 function updateMenuItem(containerId, index, item) {
-    const list = containerId === 'multiMenu1' ? multiMenu1 : multiMenu2;
-    const newValue = item.querySelector('.menu-name').value.trim();
-    
-    if (newValue) {
-        list[index] = newValue;
-        saveMultiMenu(containerId, list);
-    } else {
-        // 如果输入为空，恢复原值
-        item.querySelector('.menu-name').value = list[index];
-        alert('菜单项名称不能为空');
-    }
+	const list = containerId === 'multiMenu1' ? multiMenu1 : multiMenu2;
+	const newValue = item.querySelector('.menu-name').value.trim();
+
+	if (newValue) {
+		list[index] = newValue;
+		saveMultiMenu(containerId, list);
+	} else {
+		// 如果输入为空，恢复原值
+		item.querySelector('.menu-name').value = list[index];
+		alert('菜单项名称不能为空');
+	}
 }
 
 function saveMultiMenu(containerId, list) {
