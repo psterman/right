@@ -1820,7 +1820,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
                 case '刷新页面':
                 case 'refresh':
-                    window.location.reload();
+                    showNotification('页面即将刷新...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500); // 延迟500ms刷新，让用户能看到提示
                     break;
 
                 case '在侧边栏打开':
