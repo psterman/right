@@ -27,7 +27,50 @@ chrome.storage.sync.get('id2enginemap', function (result) {
 let directionSearchEnabled = false;
 let directionEngines = {};
 let cursorStyleElement = null;
-
+const actionTemplates = {
+    copy: {
+        name: "复制选中文本",
+        handler: function (text) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    showNotification('文本已复制');
+                    console.log('文本已复制');
+                })
+                .catch(err => console.error('复制失败:', err));
+        }
+    },
+    save: {
+        name: "保存选中文本",
+        handler: function (text) {
+            chrome.storage.sync.get('savedRecords', function (data) {
+                const records = data.savedRecords || [];
+                records.push({
+                    text: text,
+                    timestamp: new Date().getTime(),
+                    url: window.location.href
+                });
+                chrome.storage.sync.set({ savedRecords: records }, () => {
+                    showNotification('文本已保存');
+                });
+            });
+        }
+    },
+    refresh: {
+        name: "刷新页面",
+        handler: function () {
+            window.location.reload();
+        }
+    },
+    sidepanel: {
+        name: "在侧边栏打开",
+        handler: function (text) {
+            chrome.runtime.sendMessage({
+                action: 'openSidePanel',
+                text: text
+            });
+        }
+    }
+};
 // 获取当前选择的光标
 function getCurrentCursor() {
     return new Promise((resolve) => {
@@ -1021,35 +1064,34 @@ chrome.storage.sync.get(['websiteList', 'selectedEngines'], function (data) {
     });
 });
 // 在全局范围内添加这个函数
-function showNotification(message, duration = 2000) {
+function showNotification(message) {
     const notification = document.createElement('div');
-    notification.textContent = message;
     notification.style.cssText = `
         position: fixed;
         top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
+        right: 20px;
         background-color: rgba(0, 0, 0, 0.8);
         color: white;
         padding: 10px 20px;
         border-radius: 5px;
-        z-index: 10000;
-        transition: opacity 0.3s ease-in-out;
+        z-index: 999999;
+        font-family: system-ui;
+        animation: fadeInOut 2s ease-in-out;
     `;
+    notification.textContent = message;
+
+    // 移除旧的通知
+    const oldNotification = document.querySelector('.drag-notification');
+    if (oldNotification) {
+        oldNotification.remove();
+    }
+
+    notification.classList.add('drag-notification');
     document.body.appendChild(notification);
 
-    // 淡入效果
     setTimeout(() => {
-        notification.style.opacity = '1';
-    }, 10);
-
-    // 淡出并移除
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        setTimeout(() => {
-            document.body.removeChild(notification);
-        }, 300);
-    }, duration);
+        notification.remove();
+    }, 2000);
 }
 // 读取复选框的状态
 chrome.storage.sync.get(['copyCheckbox', 'deleteCheckbox', 'jumpCheckbox', 'closeCheckbox', 'refreshCheckbox', 'pasteCheckbox', 'downloadCheckbox', 'closesidepanelCheckbox'], function (checkboxes) {
@@ -1723,116 +1765,124 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     function drop(e) {
         if (bypass(e.target)) return false;
 
-        // 立即移除提示
         removeDragNotification();
-
         e.preventDefault();
         e.stopPropagation();
-        e.dataTransfer.dropEffect = 'move';
 
-        console.log('拖拽事件触发');
+        const dropData = e.dataTransfer.getData('text/plain');
+        console.log('拖拽的文本:', dropData);
 
-        let isImage = false;
-        let imageUrl = '';
-        // 新增: 添加链接相关变量
-        let isLink = false;
-        let linkUrl = '';
-        // 检查是否拖动的是图片文件或HTML
-        if (e.dataTransfer.types.includes('text/html') && e.dataTransfer.getData('text/html').includes('<img')) {
-            isImage = true;
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = e.dataTransfer.getData('text/html');
-            const imgElement = tempDiv.querySelector('img');
-            if (imgElement) {
-                imageUrl = imgElement.src || imgElement.currentSrc;
-            }
-            console.log('拖动数据中包含图片HTML');
-        } else if (e.target.tagName.toLowerCase() === 'img') {
-            isImage = true;
-            imageUrl = e.target.src || e.target.currentSrc;
-            console.log('拖动的是网页中的图片元素');
-        }
-        else if (e.dataTransfer.types.includes('text/uri-list')) {
-            isLink = true;
-            linkUrl = e.dataTransfer.getData('text/uri-list');
-            console.log('拖动的是链接');
-        }
-        console.log('是否为图片:', isImage);
-        console.log('图片URL:', imageUrl);
-        // 新增: 输出链接相关信息
-        console.log('是否为链接:', isLink);
-        console.log('链接URL:', linkUrl);
-        var dropData = e.dataTransfer.getData('text/plain');
-        console.log('原始拖放数据 (dropData):', dropData);
-
-        chrome.storage.sync.get(['directionSearchEnabled', 'directionEngines', 'id2enginemap'], function (result) {
-            console.log('方向搜索启用状态:', result.directionSearchEnabled);
-            console.log('方向搜索引擎设置:', result.directionEngines);
-            console.log('id2enginemap:', result.id2enginemap);
-
-            if (result.directionSearchEnabled !== true) {
-                console.log('搜索功能已禁用，不执行任何搜索');
+        chrome.storage.sync.get(['directionSearchEnabled', 'directionEngines'], function (result) {
+            if (!result.directionSearchEnabled) {
+                console.log('方向搜索已禁用');
                 return;
             }
 
             const dragDirection = direction;
-            console.log('拖动方向:', dragDirection);
-
-            let searchUrl;
-            // 修改: 更新searchText的赋值逻辑，优先考虑链接
-            let searchText = isImage ? imageUrl : (isLink ? linkUrl : dropData);
-            console.log('搜索文本 (searchText):', searchText);
-
-            if (isImage) {
-                // 对于图片，使用默认的图片搜索引擎（这里假设使用百度图片）
-                searchUrl = 'https://image.baidu.com/search/index?tn=baiduimage&word=' + encodeURIComponent(searchText);
-                console.log('图片搜索URL:', searchUrl);
-            } else if (isLink || linkUrl) {
-                // 如果是链接，直接使用链接URL
-                searchUrl = searchText;
-                console.log('链接URL:', searchUrl);
-            } else {
-                // 对于普通文本，使用方向搜索
-                const dragDirection = direction;
-                console.log('拖动方向:', dragDirection);
-
-                if (dragDirection && result.directionEngines[`direction-${dragDirection}`]) {
-                    const engineName = result.directionEngines[`direction-${dragDirection}`];
-                    console.log('执行方向搜索，使用引擎:', engineName);
-
-                    let engineUrl = result.id2enginemap[engineName.toLowerCase()];
-
-                    console.log('从 id2enginemap 获取的 URL:', engineUrl);
-
-                    if (!engineUrl) {
-                        console.log('在 id2enginemap 中未找到引擎 URL，使用默认搜索');
-                        engineUrl = 'https://www.google.com/search?q=%s';
-                    }
-
-                    searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
-                } else {
-                    console.log('执行默认文本搜索');
-                    searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(searchText);
-                }
+            if (!dragDirection || !result.directionEngines[`direction-${dragDirection}`]) {
+                console.log('未找到对应方向的搜索引擎');
+                return;
             }
 
-            console.log('最终使用的搜索URL:', searchUrl);
+            // 获取该方向配置的动作名称
+            const actionName = result.directionEngines[`direction-${dragDirection}`];
+            console.log('配置的动作:', actionName);
 
-            // 执行搜索
-            chrome.runtime.sendMessage({
-                action: 'setpage',
-                query: searchUrl,
-                foreground: e.altKey
-            }, function (response) {
-                console.log('发送消息后的响应:', response);
-            });
+            // 根据动作名称进行匹配
+            switch (actionName.toLowerCase()) {
+                case '复制选中文本':
+                case 'copy':
+                    navigator.clipboard.writeText(dropData)
+                        .then(() => {
+                            showNotification('文本已复制');
+                            console.log('文本已复制:', dropData);
+                        })
+                        .catch(err => {
+                            console.error('复制失败:', err);
+                            showNotification('复制失败');
+                        });
+                    break;
+
+                case '保存选中文本':
+                case 'save':
+                    chrome.storage.sync.get('savedRecords', function (data) {
+                        const records = data.savedRecords || [];
+                        records.push({
+                            text: dropData,
+                            timestamp: new Date().getTime(),
+                            url: window.location.href
+                        });
+                        chrome.storage.sync.set({ savedRecords: records }, () => {
+                            showNotification('文本已保存');
+                        });
+                    });
+                    break;
+
+                case '刷新页面':
+                case 'refresh':
+                    window.location.reload();
+                    break;
+
+                case '在侧边栏打开':
+                case 'sidepanel':
+                    chrome.runtime.sendMessage({
+                        action: 'openSidePanel',
+                        text: dropData
+                    });
+                    break;
+
+                default:
+                    // 处理常规搜索引擎
+                    chrome.storage.sync.get('id2enginemap', function (result) {
+                        if (result.id2enginemap && result.id2enginemap[actionName.toLowerCase()]) {
+                            const urlTemplate = result.id2enginemap[actionName.toLowerCase()];
+                            const searchUrl = urlTemplate.replace('%s', encodeURIComponent(dropData));
+
+                            chrome.runtime.sendMessage({
+                                action: 'setpage',
+                                query: searchUrl,
+                                foreground: e.altKey
+                            });
+                        } else {
+                            console.log('未找到搜索引擎URL，使用默认搜索');
+                            const defaultSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(dropData)}`;
+                            chrome.runtime.sendMessage({
+                                action: 'setpage',
+                                query: defaultSearchUrl,
+                                foreground: e.altKey
+                            });
+                        }
+                    });
+            }
         });
 
         return false;
     }
+
     // 新增: 添加 dragend 事件监听器
     document.addEventListener('dragend', function (e) {
         removeDragNotification();
+    });
+    function initializeActionTemplates() {
+        chrome.storage.sync.get('id2enginemap', function (result) {
+            let id2enginemap = result.id2enginemap || {};
+
+            // 添加功能模板
+            Object.keys(actionTemplates).forEach(action => {
+                id2enginemap[action] = action; // 使用action作为标识符
+            });
+
+            // 保存更新后的映射
+            chrome.storage.sync.set({ id2enginemap: id2enginemap }, function () {
+                console.log('功能模板已添加到id2enginemap');
+            });
+        });
+    }
+
+    // 在页面加载时初始化
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeActionTemplates();
+        // ... 其他初始化代码 ...
     });
     function normalizeUrl(url) {
         return url.replace(/^https?:\/\//, '').toLowerCase().replace(/\/$/, '');
