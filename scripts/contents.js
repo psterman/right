@@ -1939,6 +1939,37 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
         return false;
     }
+    function handleSearchEngine(engineName, searchText, isShiftPressed) {
+        console.log('Handling search engine:', engineName, 'Search text:', searchText);
+
+        // 获取搜索引擎URL
+        chrome.storage.sync.get('id2enginemap', function (result) {
+            const engineMap = result.id2enginemap || {};
+            const engineUrl = engineMap[engineName.toLowerCase()];
+
+            if (!engineUrl) {
+                console.error('No URL template found for engine:', engineName);
+                showNotification('未找到对应的搜索引擎');
+                return;
+            }
+
+            // 替换搜索词并打开URL
+            const searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
+
+            if (isAltPressed) {
+                // 按住Shift键时在后台标签页打开
+                window.open(searchUrl, '_blank', 'noopener,noreferrer');
+                window.focus(); // 保持当前窗口焦点
+            } else {
+                // 默认在侧边栏打开
+                chrome.runtime.sendMessage({
+                    action: 'setpage',
+                    query: searchUrl,
+                    foreground: false
+                });
+            }
+        });
+    }
     // 新增: 添加 dragend 事件监听器
     document.addEventListener('dragend', function (e) {
         removeDragNotification();
