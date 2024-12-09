@@ -1596,7 +1596,16 @@ const searchEngines = {
 		// 添加更多综合搜索引擎...
 	],
 	custom: [
-		// 这里可以是空的，或者包含一些默认的自定义搜索引擎
+		{ name: "谷歌图片", url: "https://images.google.com/search?q=%s"},
+		{ name: "必应图片", url: "https://cn.bing.com/images/search?q=%s"},
+		{ name: "百度图片", url: "https://image.baidu.com/search/index?tn=baiduimage&word=%s"},
+		{ name: "搜狗图片", url: "https://pic.sogou.com/pics?query=%s"},
+		{ name: "360图片", url: "https://image.so.com/i?q=%s"},
+		{ name: "微博图片", url: "https://s.weibo.com/pic?q=%s"},
+		{ name: "知乎图片", url: "https://www.zhihu.com/search?type=content&q=%s"},
+		{ name: "小红书", url: "https://www.xiaohongshu.com/search_result?keyword=%s"},
+		{ name: "花瓣网", url: "https://huaban.com/search?q=%s"},
+		{ name: "堆糖", url: "https://www.duitang.com/search/?kw=%s"},
 	]
 };
 // 处理功能动作
