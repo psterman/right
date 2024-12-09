@@ -1567,13 +1567,6 @@ const searchEngines = {
 			name: "二维码",
 			action: "",
 			url: "打开侧边栏，扫描二维码复制文字"
-			
-		}
-		,
-		{
-			name: "下载",
-			action: "",
-			url: "youtube，b站，抖音，小红书,微博视频下载"
 
 		}
 	],

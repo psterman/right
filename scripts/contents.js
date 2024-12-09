@@ -1631,7 +1631,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             Z
         `;
         }
-      
+
         // 设置初始路径
         path.setAttribute("fill", "white");
         path.style.transition = "transform 0.3s ease-out";
@@ -1743,7 +1743,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             '侧边栏': 'sidepanel',
             'sidepanel': 'sidepanel',
             '二维码': 'qrcode',           // 新增
-            'qrcode': 'qrcode'   
+            'qrcode': 'qrcode'
         };
 
         // 添加调试日志
@@ -1939,29 +1939,47 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
         return false;
     }
-    function handleSearchEngine(engineName, searchText, isShiftPressed) {
+    function handleSearchEngine(engineName, searchText, isAltPressed) {
         console.log('Handling search engine:', engineName, 'Search text:', searchText);
 
-        // 获取搜索引擎URL
-        chrome.storage.sync.get('id2enginemap', function (result) {
+        // 从storage获取搜索引擎映射
+        chrome.storage.sync.get(['id2enginemap'], function (result) {
             const engineMap = result.id2enginemap || {};
-            const engineUrl = engineMap[engineName.toLowerCase()];
+            console.log('Available engines:', engineMap);
 
-            if (!engineUrl) {
+            // 从用户配置中查找搜索引擎
+            let matchedEngine = Object.values(engineMap).find(engine =>
+            (typeof engine === 'object' && engine.name &&
+                engine.name.toLowerCase() === engineName.toLowerCase())
+            );
+
+            // 如果没找到，但engineMap中有直接的URL映射
+            if (!matchedEngine && engineMap[engineName.toLowerCase()]) {
+                matchedEngine = {
+                    name: engineName,
+                    url: engineMap[engineName.toLowerCase()]
+                };
+            }
+
+            if (!matchedEngine) {
                 console.error('No URL template found for engine:', engineName);
                 showNotification('未找到对应的搜索引擎');
                 return;
             }
 
-            // 替换搜索词并打开URL
-            const searchUrl = engineUrl.replace('%s', encodeURIComponent(searchText));
+            console.log('Matched engine:', matchedEngine);
+
+            // 替换搜索词并构建URL
+            const searchUrl = matchedEngine.url.replace('%s', encodeURIComponent(searchText));
+            console.log('Search URL:', searchUrl);
 
             if (isAltPressed) {
-                // 按住alt键时在后台标签页打开
-                window.open(searchUrl, '_blank', 'noopener,noreferrer');
-                window.focus(); // 保持当前窗口焦点
+                chrome.runtime.sendMessage({
+                    action: 'openInNewTab',
+                    url: searchUrl,
+                    active: false
+                });
             } else {
-                // 默认在侧边栏打开
                 chrome.runtime.sendMessage({
                     action: 'setpage',
                     query: searchUrl,

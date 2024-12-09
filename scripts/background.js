@@ -987,3 +987,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		return true; // 保持消息通道开放
 	}
 });
+
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	if (request.action === 'openInNewTab') {
+		// 使用 chrome.tabs.create 在新标签页打开URL
+		chrome.tabs.create({
+			url: request.url,
+			active: false  // false表示在后台打开
+		});
+	}
+});
