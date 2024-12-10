@@ -1765,6 +1765,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 
         // 检查是否为链接
         const isLink = dropData.startsWith('http://') || dropData.startsWith('https://');
+        // 检查是否为文本
+        const isText = dropData && !isLink;
+
+        // 如果不是文本或链接，假设为图片
+        const isImage = !isText && !isLink;
 
         chrome.storage.sync.get(['directionSearchEnabled', 'directionEngines'], function (result) {
             if (!result.directionSearchEnabled) {
