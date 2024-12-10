@@ -1763,6 +1763,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         const dropData = e.dataTransfer.getData('text/plain');
         console.log('拖拽的文本:', dropData);
 
+        // 检查是否为链接
+        const isLink = dropData.startsWith('http://') || dropData.startsWith('https://');
+
         chrome.storage.sync.get(['directionSearchEnabled', 'directionEngines'], function (result) {
             if (!result.directionSearchEnabled) {
                 console.log('方向搜索已禁用');
@@ -1788,6 +1791,20 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             const normalizedAction = getNormalizedAction(actionName);
             console.log('标准化后的动作:', normalizedAction);
 
+            // 如果是链接且动作是二维码，则改为在侧边栏打开
+            if (isLink && normalizedAction === 'qrcode') {
+                console.log('检测到链接，在侧边栏打开:', dropData);
+                chrome.runtime.sendMessage({
+                    action: 'setpage',
+                    query: dropData,
+                    foreground: false
+                }, function (response) {
+                    if (response && response.success) {
+                        showNotification('已在侧边栏打开链接');
+                    }
+                });
+                return;
+            }
             // 根据标准化后的动作名称进行匹配
             switch (normalizedAction) {
                 case 'refresh':
