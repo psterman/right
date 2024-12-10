@@ -1760,16 +1760,55 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         e.preventDefault();
         e.stopPropagation();
 
-        const dropData = e.dataTransfer.getData('text/plain');
-        console.log('拖拽的文本:', dropData);
+        // 检查拖拽内容类型
+        let dropData = '';
+        let isImage = false;
+        let imageUrl = '';
+
+        // 检查是否是图片文件
+        if (e.dataTransfer.types.includes('Files')) {
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                isImage = true;
+                imageUrl = URL.createObjectURL(file);
+                dropData = imageUrl;
+            }
+        }
+        // 检查是否是HTML中的图片
+        else if (e.dataTransfer.types.includes('text/html')) {
+            const html = e.dataTransfer.getData('text/html');
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            const img = tempDiv.querySelector('img');
+            if (img) {
+                isImage = true;
+                imageUrl = img.src;
+                dropData = imageUrl;
+            }
+        }
+        // [新增] 检查是否是blob URL的图片
+        else {
+            const textData = e.dataTransfer.getData('text/plain');
+            if (textData.startsWith('blob:') || textData.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                isImage = true;
+                imageUrl = textData;
+                dropData = textData;
+            } else {
+                dropData = textData;
+            }
+        }
+        // 如果不是图片,获取普通文本
+        if (!isImage) {
+            dropData = e.dataTransfer.getData('text/plain');
+        }
+
+        console.log('拖拽的内容:', dropData);
+        console.log('是否为图片:', isImage);
 
         // 检查是否为链接
-        const isLink = dropData.startsWith('http://') || dropData.startsWith('https://');
+        const isLink = !isImage && (dropData.startsWith('http://') || dropData.startsWith('https://'));
         // 检查是否为文本
-        const isText = dropData && !isLink;
-
-        // 如果不是文本或链接，假设为图片
-        const isImage = !isText && !isLink;
+        const isText = !isImage && dropData && !isLink;
 
         chrome.storage.sync.get(['directionSearchEnabled', 'directionEngines'], function (result) {
             if (!result.directionSearchEnabled) {
@@ -1810,6 +1849,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 });
                 return;
             }
+
             // 根据标准化后的动作名称进行匹配
             switch (normalizedAction) {
                 case 'refresh':
@@ -1824,10 +1864,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     break;
 
                 case 'copy':
-                    navigator.clipboard.writeText(dropData)
+                    // 如果是图片,复制图片URL
+                    const textToCopy = isImage ? imageUrl : dropData;
+                    navigator.clipboard.writeText(textToCopy)
                         .then(() => {
-                            showNotification('文本已复制');
-                            console.log('文本已复制:', dropData);
+                            showNotification(isImage ? '图片链接已复制' : '文本已复制');
+                            console.log('已复制:', textToCopy);
                         })
                         .catch(err => {
                             console.error('复制失败:', err);
@@ -1839,19 +1881,18 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     chrome.storage.sync.get('savedRecords', function (data) {
                         const records = data.savedRecords || [];
                         records.push({
-                            text: dropData,
+                            text: isImage ? '图片: ' + imageUrl : dropData,
                             timestamp: new Date().getTime(),
-                            url: window.location.href
+                            url: window.location.href,
+                            isImage: isImage
                         });
                         chrome.storage.sync.set({ savedRecords: records }, () => {
-                            showNotification('文本已保存');
+                            showNotification(isImage ? '图片已保存' : '文本已保存');
                         });
                     });
                     break;
-
                 case 'sidepanel':
                     console.log('Opening in sidepanel:', dropData);
-                    // 直接使用已有的 toggleSidePanel 动作
                     chrome.runtime.sendMessage({
                         action: 'toggleSidePanel'
                     }, (response) => {
@@ -1862,7 +1903,181 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     break;
                 case 'qrcode':
                     console.log('Generating QR code for:', dropData);
-                    const qrCodeHtml = `
+                    let qrCodeHtml;
+
+                    if (isImage) {
+                        // 为图片生成特殊的二维码页面
+                        qrCodeHtml = `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <title>图片二维码</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                    text-align: center;
+                    background: #f5f5f5;
+                }
+                .qr-container {
+                    max-width: 600px;
+                    margin: 20px auto;
+                    padding: 20px;
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .preview-image {
+                    max-width: 300px;
+                    max-height: 300px;
+                    margin: 10px auto;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                }
+                .qr-image {
+                    margin: 20px auto;
+                    max-width: 200px;
+                    height: auto;
+                }
+                .image-url {
+                    margin-top: 10px;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    word-break: break-all;
+                    background: #fff;
+                    text-align: left;
+                    max-height: 60px;
+                    overflow-y: auto;
+                    font-size: 12px;
+                    color: #666;
+                }
+                h3 {
+                    color: #333;
+                    margin: 15px 0;
+                }
+                .copy-button {
+                    margin: 10px;
+                    padding: 5px 15px;
+                    background: #4CAF50;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+                .copy-button:hover {
+                    background: #45a049;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="qr-container">
+                <h3>图片预览</h3>
+                <img class="preview-image" src="${imageUrl}" alt="Preview Image">
+                <h3>图片链接二维码</h3>
+                <img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(imageUrl)}" alt="QR Code">
+                <div class="image-url">
+                    <p>图片链接: ${imageUrl}</p>
+                </div>
+                <button class="copy-button" onclick="navigator.clipboard.writeText('${imageUrl}').then(() => alert('图片链接已复制'))">
+                    复制图片链接
+                </button>
+            </div>
+        </body>
+        </html>
+        `;
+                    } else if (isLink) {
+                        // 为链接生成二维码页面
+                        qrCodeHtml = `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <title>链接二维码</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                    text-align: center;
+                    background: #f5f5f5;
+                }
+                .qr-container {
+                    max-width: 400px;
+                    margin: 20px auto;
+                    padding: 20px;
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .qr-image {
+                    margin: 20px auto;
+                    max-width: 200px;
+                    height: auto;
+                }
+                .link-preview {
+                    margin-top: 20px;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    word-break: break-all;
+                    background: #fff;
+                    text-align: left;
+                    max-height: 100px;
+                    overflow-y: auto;
+                    font-size: 14px;
+                }
+                h3 {
+                    color: #333;
+                    margin: 15px 0;
+                }
+                .copy-button {
+                    margin: 10px;
+                    padding: 5px 15px;
+                    background: #2196F3;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+                .copy-button:hover {
+                    background: #1976D2;
+                }
+                .visit-button {
+                    margin: 10px;
+                    padding: 5px 15px;
+                    background: #4CAF50;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    text-decoration: none;
+                    display: inline-block;
+                }
+                .visit-button:hover {
+                    background: #45a049;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="qr-container">
+                <h3>链接二维码</h3>
+                <img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(dropData)}" alt="QR Code">
+                <div class="link-preview">
+                    <h3>链接预览:</h3>
+                    <p>${dropData}</p>
+                </div>
+                <button class="copy-button" onclick="navigator.clipboard.writeText('${dropData}').then(() => alert('链接已复制'))">
+                    复制链接
+                </button>
+                <a href="${dropData}" target="_blank" class="visit-button">访问链接</a>
+            </div>
+        </body>
+        </html>
+        `;
+                    } else {
+                        // 为普通文本生成二维码页面
+                        qrCodeHtml = `
         <!DOCTYPE html>
         <html lang="zh-CN">
         <head>
@@ -1903,6 +2118,18 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     max-width: 200px;
                     height: auto;
                 }
+                .copy-button {
+                    margin: 10px;
+                    padding: 5px 15px;
+                    background: #2196F3;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+                .copy-button:hover {
+                    background: #1976D2;
+                }
             </style>
         </head>
         <body>
@@ -1912,10 +2139,14 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     <h3>文本预览:</h3>
                     <p>${dropData}</p>
                 </div>
+                <button class="copy-button" onclick="navigator.clipboard.writeText('${dropData}').then(() => alert('文本已复制'))">
+                    复制文本
+                </button>
             </div>
         </body>
         </html>
-    `;
+        `;
+                    }
 
                     try {
                         const blob = new Blob([qrCodeHtml], { type: 'text/html' });
@@ -1932,9 +2163,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                                 return;
                             }
 
-                            if (response && response.ready) { // 修改这里
+                            if (response && response.ready) {
                                 console.log('QR code page opened successfully');
-                                showNotification('二维码已生成');
+                                let notificationText = isImage ? '图片二维码已生成' :
+                                    isLink ? '链接二维码已生成' :
+                                        '文本二维码已生成';
+                                showNotification(notificationText);
                             } else {
                                 console.error('Failed to open QR code page');
                                 console.log('Response:', response);
@@ -1948,7 +2182,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     break;
 
                 default:
-                    // 处理搜索引擎
+                    // 处理搜索引擎,根据内容类型传递不同的搜索内容
                     handleSearchEngine(actionName, dropData, e.altKey);
                     break;
             }
