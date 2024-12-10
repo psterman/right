@@ -997,3 +997,38 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 		});
 	}
 });
+
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	// 处理 setpage 消息
+	if (request.msg === "setpage" || request.action === "setpage") {
+		try {
+			// 获取当前窗口
+			chrome.windows.getCurrent(function (window) {
+				// 打开侧边栏
+				chrome.sidePanel.open({ windowId: window.id }, function () {
+					// 等待侧边栏打开后
+					setTimeout(function () {
+						// 向侧边栏发送页面内容
+						chrome.runtime.sendMessage({
+							msg: "setpage",
+							value: request.value || request.query
+						});
+						// 发送成功响应
+						sendResponse({ ready: true });
+					}, 500);
+				});
+			});
+		} catch (error) {
+			console.error('Error handling setpage:', error);
+			sendResponse({ ready: false, error: error.message });
+		}
+		return true; // 保持消息通道开放以进行异步响应
+	}
+
+	// ... 其他消息处理 ...
+});
+
+// 添加侧边栏相关配置
+chrome.sidePanel.setPanelBehavior({
+	openPanelOnActionClick: true
+}).catch((error) => console.error(error));

@@ -1927,20 +1927,15 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                                 return;
                             }
 
-                            if (response && response.success) {
+                            if (response && response.ready) { // 修改这里
                                 console.log('QR code page opened successfully');
                                 showNotification('二维码已生成');
                             } else {
                                 console.error('Failed to open QR code page');
+                                console.log('Response:', response);
                                 showNotification('二维码生成失败');
                             }
                         });
-
-                        // 延迟释放 blob URL
-                        setTimeout(() => {
-                            URL.revokeObjectURL(blobUrl);
-                        }, 3000);
-
                     } catch (error) {
                         console.error('Error generating QR code:', error);
                         showNotification('二维码生成失败');
