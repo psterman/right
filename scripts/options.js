@@ -534,9 +534,15 @@ function createEngineItem(engine, index, isCustom, isAI) {
 	checkbox.id = `engine-${isAI ? 'ai' : 'regular'}-${index}`;
 	checkbox.checked = engine.enabled !== false;
 
+	// 添加复选框状态变化监听
 	checkbox.addEventListener('change', function () {
-		saveEngineState(isAI ? 'aiSearchEngines' : 'regularSearchEngines', index, this.checked);
+		saveEngineState(
+			isAI ? 'aiSearchEngines' : 'regularSearchEngines',
+			index,
+			this.checked
+		);
 	});
+
 
 	const label = document.createElement('label');
 	label.htmlFor = checkbox.id;
@@ -650,16 +656,17 @@ function deleteEngine(index, isAI) {
 	});
 } */
 function saveEngineState(engineType, index, isEnabled) {
-	const engines = engineType === 'aiSearchEngines' ? searchEngines.ai : searchEngines.regular;
-	if (engines[index]) {
-		engines[index].enabled = isEnabled;
-		// 更新存储
-		chrome.storage.sync.set({
-			[engineType]: engines
-		}, function () {
-			console.log(`${engineType} engine ${index} state updated to ${isEnabled}`);
-		});
-	}
+	chrome.storage.sync.get(engineType, function (data) {
+		let engines = data[engineType] || [];
+		if (engines[index]) {
+			engines[index].enabled = isEnabled;
+			chrome.storage.sync.set({
+				[engineType]: engines
+			}, function () {
+				console.log(`${engineType} engine ${index} state updated to ${isEnabled}`);
+			});
+		}
+	});
 }
 // 添加自定义引擎
 function addCustomEngine() {
@@ -1596,16 +1603,16 @@ const searchEngines = {
 		// 添加更多综合搜索引擎...
 	],
 	custom: [
-		{ name: "谷歌图片", url: "https://images.google.com/search?q=%s"},
-		{ name: "必应图片", url: "https://cn.bing.com/images/search?q=%s"},
-		{ name: "百度图片", url: "https://image.baidu.com/search/index?tn=baiduimage&word=%s"},
-		{ name: "搜狗图片", url: "https://pic.sogou.com/pics?query=%s"},
-		{ name: "360图片", url: "https://image.so.com/i?q=%s"},
-		{ name: "微博图片", url: "https://s.weibo.com/pic?q=%s"},
-		{ name: "知乎图片", url: "https://www.zhihu.com/search?type=content&q=%s"},
-		{ name: "小红书", url: "https://www.xiaohongshu.com/search_result?keyword=%s"},
-		{ name: "花瓣网", url: "https://huaban.com/search?q=%s"},
-		{ name: "堆糖", url: "https://www.duitang.com/search/?kw=%s"},
+		{ name: "谷歌图片", url: "https://images.google.com/search?q=%s" },
+		{ name: "必应图片", url: "https://cn.bing.com/images/search?q=%s" },
+		{ name: "百度图片", url: "https://image.baidu.com/search/index?tn=baiduimage&word=%s" },
+		{ name: "搜狗图片", url: "https://pic.sogou.com/pics?query=%s" },
+		{ name: "360图片", url: "https://image.so.com/i?q=%s" },
+		{ name: "微博图片", url: "https://s.weibo.com/pic?q=%s" },
+		{ name: "知乎图片", url: "https://www.zhihu.com/search?type=content&q=%s" },
+		{ name: "小红书", url: "https://www.xiaohongshu.com/search_result?keyword=%s" },
+		{ name: "花瓣网", url: "https://huaban.com/search?q=%s" },
+		{ name: "堆糖", url: "https://www.duitang.com/search/?kw=%s" },
 	]
 };
 // 处理功能动作
@@ -2978,56 +2985,66 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 
 	// 加载标签内容
+
 	function loadTabContent(category) {
-		chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
-			const engineMap = data.engineMap || {};
-			const globalId2enginemap = data.id2enginemap || {};
-			let presetEngines = searchEngines[category] || [];
-			let customEngines = {};
+		const tabContent = document.getElementById('tabContent');
+		tabContent.innerHTML = '';
 
-			// 获取用户自定义搜索引擎
-			Object.keys(globalId2enginemap).forEach(key => {
-				if (key.startsWith(category + '_')) {
-					customEngines[key.replace(category + '_', '')] = globalId2enginemap[key];
-				}
+		// 获取对应类别的搜索引擎列表
+		chrome.storage.sync.get([`${category}SearchEngines`], function (data) {
+			const engines = data[`${category}SearchEngines`] || [];
+
+			const ul = document.createElement('ul');
+			ul.className = 'engine-list';
+
+			engines.forEach((engine, index) => {
+				const li = document.createElement('li');
+
+				// 添加复选框
+				const checkbox = document.createElement('input');
+				checkbox.type = 'checkbox';
+				checkbox.checked = engine.enabled !== false;
+				checkbox.addEventListener('change', () => {
+					engine.enabled = checkbox.checked;
+					saveEngineSettings(category, engines);
+				});
+
+				// 添加标签
+				const label = document.createElement('label');
+				label.textContent = engine.name;
+
+				// 添加操作按钮容器
+				const actions = document.createElement('div');
+				actions.className = 'engine-actions';
+
+				// 编辑按钮
+				const editBtn = document.createElement('button');
+				editBtn.textContent = '编辑';
+				editBtn.onclick = () => editEngine(category, index);
+
+				// 删除按钮
+				const deleteBtn = document.createElement('button');
+				deleteBtn.textContent = '删除';
+				deleteBtn.onclick = () => deleteEngine(category, index);
+
+				// 组装元素
+				actions.appendChild(editBtn);
+				actions.appendChild(deleteBtn);
+				li.appendChild(checkbox);
+				li.appendChild(label);
+				li.appendChild(actions);
+				ul.appendChild(li);
 			});
 
-			let content = `
-            <h2>${getCategoryName(category)}引擎</h2>
-            <h3>预设搜索引擎</h3>
-            <ul id="${category}PresetEngineList" class="engine-list">
-                ${presetEngines.map(engine => `
-                    <li>
-                        <span>${engine.name}: ${engine.url}</span>
-                    </li>
-                `).join('')}
-            </ul>
-            <h3>自定义搜索引擎</h3>
-            <ul id="${category}CustomEngineList" class="engine-list">
-                ${Object.entries(customEngines).map(([name, url]) => `
-                    <li>
-                        <span>${name}: ${url}</span>
-                        <button class="delete-engine" data-category="${category}" data-name="${name}">删除</button>
-                    </li>
-                `).join('')}
-            </ul>
-            <div class="add-engine-form">
-                <input type="text" id="${category}EngineName" placeholder="搜索引擎名称">
-                <input type="text" id="${category}EngineUrl" placeholder="搜索引擎 URL">
-                <button id="add${capitalize(category)}Engine">添加${getCategoryName(category)}引擎</button>
-            </div>
-        `;
+			tabContent.appendChild(ul);
+		});
+	}
 
-			document.getElementById('tabContent').innerHTML = content;
-
-			document.getElementById(`add${capitalize(category)}Engine`).addEventListener('click', () => addEngine(category));
-			document.getElementById('tabContent').addEventListener('click', function (e) {
-				if (e.target.classList.contains('delete-engine')) {
-					const category = e.target.dataset.category;
-					const name = e.target.dataset.name;
-					deleteEngine(category, name);
-				}
-			});
+	function saveEngineSettings(category, engines) {
+		chrome.storage.sync.set({
+			[`${category}SearchEngines`]: engines
+		}, function () {
+			console.log(`${category} search engines saved`);
 		});
 	}
 	function loadSelectedEngines(category) {

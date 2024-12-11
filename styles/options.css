@@ -2538,7 +2538,32 @@ button {
 .category:last-child {
   border-right: none !important;
 }
+/* 添加搜索引擎列表项样式 */
+.engine-list li {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  gap: 10px;
+}
 
+/* 复选框样式 */
+.engine-list input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+/* 搜索引擎名称样式 */
+.engine-list label {
+  flex: 1;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* 操作按钮容器 */
+.engine-actions {
+  display: flex;
+  gap: 8px;
+}
 .engine-list {
   list-style-type: none !important;
   padding: 0 !important;
