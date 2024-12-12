@@ -3924,30 +3924,38 @@ function updateEngineList(selectMenu, globalId2enginemap) {
 		if (list) {
 			list.innerHTML = ''; // 清空现有列表
 
-			// 添加预设搜索引擎
-			if (searchEngines[category]) {
-				searchEngines[category].forEach(engine => {
+			// 从存储中获取已启用的搜索引擎
+			chrome.storage.sync.get([`${category}SearchEngines`], function (data) {
+				const enabledEngines = (data[`${category}SearchEngines`] || [])
+					.filter(engine => engine.enabled !== false);
+
+				// 只添加已启用的搜索引擎到方向选择菜单
+				enabledEngines.forEach(engine => {
 					const li = document.createElement('li');
 					li.textContent = engine.name;
+					li.setAttribute('data-url', engine.url); // 保存URL以供后续使用
 					li.addEventListener('click', () => selectEngine(engine.name, selectMenu));
 					list.appendChild(li);
 				});
-			}
-
-			// 添加用户自定义搜索引擎
-			Object.keys(globalId2enginemap).forEach(engineName => {
-				if (engineName.startsWith(category + '_')) {
-					const li = document.createElement('li');
-					li.textContent = engineName.split('_')[1];
-					li.addEventListener('click', () => selectEngine(engineName, selectMenu));
-					list.appendChild(li);
-				}
 			});
 		}
 	});
 }
-
-
+// 添加一个函数来监听搜索引擎启用状态的变化
+function listenToEngineChanges() {
+    const categories = ['ai', 'regular', 'image', 'custom'];
+    
+    categories.forEach(category => {
+        chrome.storage.onChanged.addListener((changes, area) => {
+            if (area === 'sync' && changes[`${category}SearchEngines`]) {
+                // 当搜索引擎列表发生变化时，更新所有方向的选择菜单
+                document.querySelectorAll('.select-menu').forEach(menu => {
+                    updateEngineList(menu, {});
+                });
+            }
+        });
+    });
+}
 // 新增或修改整个函数
 function updateTabContentUI(category, engineMap, globalId2enginemap) {
 	let engines = {};
@@ -4840,25 +4848,25 @@ function renderEngineList(container, engines, menuId) {
 	});
 }
 function saveEngineState(menuId, index, checked, engine) {
-	const storageKey = menuId === 'multiMenu1' ? 'multiMenu1Engines' : 'multiMenu2Engines';
-
-	chrome.storage.sync.get(storageKey, function (data) {
-		let engines = data[storageKey] || [];
-		if (engines[index]) {
-			engines[index].enabled = checked;
-		} else {
-			engines[index] = { ...engine, enabled: checked };
-		}
-
-		chrome.storage.sync.set({ [storageKey]: engines }, function () {
-			console.log(`${menuId} engine state saved:`, index, checked);
-			// 如果是multiMenu1或其他源列表的更改，更新multiMenu2
-			if (menuId !== 'multiMenu2') {
-				loadMultiMenu('multiMenu2');
-			}
-		});
-	});
+    const category = getCategoryFromEngine(engine); // 获取引擎所属类别
+    const storageKey = `${category}SearchEngines`;
+    
+    chrome.storage.sync.get(storageKey, function(data) {
+        let engines = data[storageKey] || [];
+        if (engines[index]) {
+            engines[index].enabled = checked;
+            
+            // 保存更改并触发更新
+            chrome.storage.sync.set({ [storageKey]: engines }, function() {
+                // 更新所有方向选择菜单
+                document.querySelectorAll('.select-menu').forEach(menu => {
+                    updateEngineList(menu, {});
+                });
+            });
+        }
+    });
 }
+
 function createMenuItem(menu, index, containerId) {
 	const item = document.createElement('div');
 	item.className = 'menu-item';
@@ -4932,3 +4940,13 @@ function saveMultiMenu(containerId, list) {
 		console.log(`${containerId} saved`);
 	});
 }
+// 在页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化所有方向的选择菜单
+    document.querySelectorAll('.select-menu').forEach(menu => {
+        updateEngineList(menu, {});
+    });
+    
+    // 开始监听搜索引擎变化
+    listenToEngineChanges();
+});
