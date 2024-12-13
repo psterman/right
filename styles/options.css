@@ -2531,7 +2531,7 @@ button {
   width: 200px !important;
   max-width: 25% !important;
   padding: 10px !important;
-  border-right: 1px solid #444 !important;
+   border-right: 1px solid rgba(255, 255, 255, 0.1) !important; /* 降低分隔线透明度 */
   box-sizing: border-box !important;
 }
 
@@ -2581,7 +2581,9 @@ button {
 .engine-list li:hover {
   background-color: #3a3a3a;
 }
-
+.engine-list li:last-child {
+  border-bottom: none; /* 移除最后一项的分隔线 */
+}
 /* 可以为每个类别设置不同的背景色 */
 .category.ai {
   background-color: #2a3f5f;
@@ -2611,7 +2613,7 @@ button {
   align-items: center;
   margin-bottom: 10px;
   padding: 5px;
-  border: 1px solid #ccc;
+  
   border-radius: 4px;
 }
 
