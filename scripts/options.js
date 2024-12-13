@@ -1276,16 +1276,22 @@ function handleFunctionAction(action, selectedText) {
 				showNotification('已复制到剪贴板');
 			});
 			break;
-
 		case 'saveToBookmarks':
+			// 从 chrome.storage.sync 中获取已保存的书签数据
 			chrome.storage.sync.get('savedBookmarks', function (data) {
+				// 如果没有现有书签则初始化为空数组
 				const bookmarks = data.savedBookmarks || [];
+
+				// 添加新的书签记录
 				bookmarks.push({
-					text: selectedText,
-					url: window.location.href,
-					date: new Date().toISOString()
+					text: selectedText,     // 用户选中的文本
+					url: window.location.href,  // 当前页面URL
+					date: new Date().toISOString()  // 保存时间
 				});
+
+				// 将更新后的书签数组保存回 storage
 				chrome.storage.sync.set({ savedBookmarks: bookmarks }, function () {
+					// 显示保存成功的通知
 					showNotification('已保存到书签');
 				});
 			});
