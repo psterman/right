@@ -3044,667 +3044,213 @@ function editWebsite(index) {
 		displayWebsiteList(); // 刷新页面显示
 	}
 }
+const TabManager = {
+	hasLoaded: false,
+	currentCategory: null,
+	loadedEngines: {},
 
-// 页面加载时调用
-document.addEventListener('DOMContentLoaded', function () {
-	loadSavedPages();
-	restoreCheckboxStates();
-	addCheckboxListeners();
-	chrome.storage.sync.get('id2enginemap', function (data) {
-		const globalId2enginemap = data.id2enginemap || {};
-		updateAllEngineLists(globalId2enginemap);
-	});
-	//四类标签展示
-	const settingsContainer = document.getElementById('searchEngineSettings');
-	const tabs = document.querySelectorAll('.tab');
-	const tabContent = document.getElementById('tabContent');
+	init() {
+		if (this.hasLoaded) return;
+		this.bindEvents();
+		this.loadInitialTab();
+		this.hasLoaded = true;
+	},
 
-	// 应用样式
-	applyStyles();
-
-	// 切换标签
-	tabs.forEach(tab => {
-		tab.addEventListener('click', () => {
-			tabs.forEach(t => t.classList.remove('active'));
-			tab.classList.add('active');
-			loadTabContent(tab.dataset.category);
+	bindEvents() {
+		const tabs = document.querySelectorAll('.tab');
+		tabs.forEach(tab => {
+			tab.addEventListener('click', () => this.switchTab(tab));
 		});
-	});
+	},
 
-	// 加载标签内容
+	loadInitialTab() {
+		const defaultTab = document.querySelector('.tab');
+		if (defaultTab) {
+			defaultTab.classList.add('active');
+			this.loadTabContent(defaultTab.dataset.category);
+		}
+	},
 
-	function loadTabContent(category) {
+	switchTab(tab) {
+		const tabs = document.querySelectorAll('.tab');
+		tabs.forEach(t => t.classList.remove('active'));
+		tab.classList.add('active');
+		this.loadTabContent(tab.dataset.category);
+	},
+
+	loadTabContent(category) {
+		if (this.currentCategory === category) return;
+
 		const tabContent = document.getElementById('tabContent');
 		tabContent.innerHTML = '';
 
-		// 获取对应类别的搜索引擎列表
-		chrome.storage.sync.get([`${category}SearchEngines`], function (data) {
+		// 如果已经加载过该分类的数据,直接使用缓存
+		if (this.loadedEngines[category]) {
+			this.renderEngines(this.loadedEngines[category], category);
+			return;
+		}
+
+		// 否则从storage加载
+		chrome.storage.sync.get([`${category}SearchEngines`], data => {
 			const engines = data[`${category}SearchEngines`] || [];
-
-			const ul = document.createElement('ul');
-			ul.className = 'engine-list';
-
-			engines.forEach((engine, index) => {
-				const li = document.createElement('li');
-
-				// 添加复选框
-				const checkbox = document.createElement('input');
-				checkbox.type = 'checkbox';
-				checkbox.checked = engine.enabled !== false;
-				checkbox.addEventListener('change', () => {
-					engine.enabled = checkbox.checked;
-					saveEngineSettings(category, engines);
-				});
-
-				// 添加标签
-				const label = document.createElement('label');
-				label.textContent = engine.name;
-
-				// 添加操作按钮容器
-				const actions = document.createElement('div');
-				actions.className = 'engine-actions';
-
-				// 编辑按钮
-				const editBtn = document.createElement('button');
-				editBtn.textContent = '编辑';
-				editBtn.onclick = () => editEngine(category, index);
-
-				// 删除按钮
-				const deleteBtn = document.createElement('button');
-				deleteBtn.textContent = '删除';
-				deleteBtn.onclick = () => deleteEngine(category, index);
-
-				// 组装元素
-				actions.appendChild(editBtn);
-				actions.appendChild(deleteBtn);
-				li.appendChild(checkbox);
-				li.appendChild(label);
-				li.appendChild(actions);
-				ul.appendChild(li);
-			});
-
-			tabContent.appendChild(ul);
+			this.loadedEngines[category] = engines;
+			this.renderEngines(engines, category);
 		});
-	}
 
-	function saveEngineSettings(category, engines) {
+		this.currentCategory = category;
+	},
+
+	renderEngines(engines, category) {
+		const tabContent = document.getElementById('tabContent');
+		const ul = document.createElement('ul');
+		ul.className = 'engine-list';
+
+		engines.forEach((engine, index) => {
+			const li = this.createEngineListItem(engine, category, index);
+			ul.appendChild(li);
+		});
+
+		tabContent.appendChild(ul);
+	},
+
+	createEngineListItem(engine, category, index) {
+		const li = document.createElement('li');
+
+		// 复选框
+		const checkbox = document.createElement('input');
+		checkbox.type = 'checkbox';
+		checkbox.checked = engine.enabled !== false;
+		checkbox.addEventListener('change', () => {
+			engine.enabled = checkbox.checked;
+			this.saveEngineSettings(category, this.loadedEngines[category]);
+		});
+
+		// 标签
+		const label = document.createElement('label');
+		label.textContent = engine.name;
+
+		// 操作按钮
+		const actions = document.createElement('div');
+		actions.className = 'engine-actions';
+
+		const editBtn = document.createElement('button');
+		editBtn.textContent = '编辑';
+		editBtn.onclick = () => this.editEngine(category, index);
+
+		const deleteBtn = document.createElement('button');
+		deleteBtn.textContent = '删除';
+		deleteBtn.onclick = () => this.deleteEngine(category, index);
+
+		actions.appendChild(editBtn);
+		actions.appendChild(deleteBtn);
+
+		li.appendChild(checkbox);
+		li.appendChild(label);
+		li.appendChild(actions);
+
+		return li;
+	},
+
+	saveEngineSettings(category, engines) {
 		chrome.storage.sync.set({
 			[`${category}SearchEngines`]: engines
-		}, function () {
+		}, () => {
 			console.log(`${category} search engines saved`);
+			// 更新缓存
+			this.loadedEngines[category] = engines;
 		});
+	},
+
+	editEngine(category, index) {
+		const engines = this.loadedEngines[category];
+		const engine = engines[index];
+
+		const newName = prompt('输入新名称:', engine.name);
+		const newUrl = prompt('输入新URL:', engine.url);
+
+		if (newName && newUrl) {
+			engines[index] = {
+				...engine,
+				name: newName,
+				url: newUrl
+			};
+
+			this.saveEngineSettings(category, engines);
+			this.renderEngines(engines, category);
+		}
+	},
+
+	deleteEngine(category, index) {
+		const engines = this.loadedEngines[category];
+		if (confirm(`确定删除 "${engines[index].name}"?`)) {
+			engines.splice(index, 1);
+			this.saveEngineSettings(category, engines);
+			this.renderEngines(engines, category);
+		}
 	}
-	function loadSelectedEngines(category) {
-		chrome.storage.sync.get(`selectedEngines_${category}`, function (result) {
-			const selectedEngines = result[`selectedEngines_${category}`] || [];
-			const select = document.getElementById(`${category}EngineSelect`);
+};
+document.addEventListener('DOMContentLoaded', () => {
+  // 初始化标签管理器
+  TabManager.init();
 
-			for (let option of select.options) {
-				option.selected = selectedEngines.includes(option.value);
-			}
+  // 加载其他设置
+  loadSavedPages();
+  restoreCheckboxStates();
+  addCheckboxListeners();
 
-			// 添加change事件监听器来保存选择
-			select.addEventListener('change', function () {
-				const selectedOptions = Array.from(this.selectedOptions).map(option => option.value);
-				chrome.storage.sync.set({ [`selectedEngines_${category}`]: selectedOptions });
-			});
-		});
-	}
-	function deleteEngine(category, name) {
-		chrome.storage.sync.get(['engineMap', 'id2enginemap'], function (data) {
-			let engineMap = data.engineMap || {};
-			let globalId2enginemap = data.id2enginemap || {};
-			const fullEngineName = `${category}_${name}`;
+  // 加载搜索引擎映射
+  chrome.storage.sync.get('id2enginemap', data => {
+    const globalId2enginemap = data.id2enginemap || {};
+    updateAllEngineLists(globalId2enginemap);
+  });
 
-			let deleted = false;
+  // 应用样式
+  applyStyles();
+});
+function updateAllEngineLists(globalId2enginemap) {
+	const directions = ['left-up', 'up', 'right-up', 'left', 'right', 'left-down', 'down', 'right-down'];
 
-			if (engineMap[category] && engineMap[category][name]) {
-				delete engineMap[category][name];
-				deleted = true;
-			}
-			if (globalId2enginemap[fullEngineName]) {
-				delete globalId2enginemap[fullEngineName];
-				deleted = true;
-			}
-
-			if (deleted) {
-				chrome.storage.sync.set({
-					'engineMap': engineMap,
-					'id2enginemap': globalId2enginemap
-				}, function () {
-					if (chrome.runtime.lastError) {
-						console.error('删除搜索引擎时发生错误:', chrome.runtime.lastError);
-						alert('删除搜索引擎时发生错误，请重试。');
-					} else {
-						alert('搜索引擎删除成功！');
-						// 更新界面
-						updateCurrentTabContent(category, globalId2enginemap);
-					}
-				});
-			} else {
-				console.log('未找到要删除的搜索引擎');
-			}
-		});
-	}
-
-
-	// 添加搜索引擎
-
-
-
-
-	// 应用样式
-	function applyStyles() {
-		const styles = `
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #121212;
-            color: #ffffff;
-        }
-        #searchEngineSettings {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #1e1e1e;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-        .tabs {
-            display: flex;
-            background-color: #2c2c2c;
-            border-bottom: 1px solid #3a3a3a;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
-        }
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            border: none;
-            background: none;
-            font-size: 14px;
-            color: #b0b0b0;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-        }
-        .tab:hover {
-            background-color: #3a3a3a;
-        }
-        .tab.active {
-            border-bottom: 3px solid #4285f4;
-            color: #4285f4;
-        }
-        .tab-content {
-            padding: 20px;
-        }
-        .engine-list {
-            list-style-type: none;
-            padding: 0;
-        }
-        .engine-list li {
-            margin-bottom: 10px;
-            padding: 10px;
-            background-color: #2c2c2c;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .engine-list li span {
-            display: flex;
-            align-items: center;
-            height: 100%;
-        }
-        .add-engine-form {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #3a3a3a;
-        }
-        input[type="text"] {
-            width: calc(50% - 10px);
-            padding: 8px;
-            margin-right: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #3a3a3a;
-            border-radius: 4px;
-            background-color: #2c2c2c;
-            color: #ffffff;
-        }
-       button {
-    
-    background-color: #4285f4;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-
-    /* 添加以下属性 */
-    display:inline-block;
-    align-items: center;
-    justify-content: center;
-    text-align: center; /* 为了保险起见，也设置文本对齐 */
+	directions.forEach(direction => {
+		const selectMenu = document.querySelector(`#direction-${direction} .select-menu`);
+		if (selectMenu) {
+			updateEngineList(selectMenu, globalId2enginemap);
+		}
+	});
 }
-    `;
-
-		// 创建 style 元素并添加到 head
-		const styleElement = document.createElement('style');
-		styleElement.textContent = styles;
-		document.head.appendChild(styleElement);
+function updateEngineList(selectMenu, globalId2enginemap) {
+	// 检查是否已经加载过
+	if (selectMenu.dataset.loaded === 'true') {
+		return;
 	}
-	document.querySelectorAll('.tab').forEach(tab => {
-		tab.addEventListener('click', function () {
-			document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-			this.classList.add('active');
-			loadTabContent(this.dataset.category);
-		});
-	});
 
-	// 初始化：加载默认标签内容
-	loadTabContent('ai');
-	const customSearchEngineNameInput = document.getElementById('customSearchEngineName');
-	const customSearchEngineUrlInput = document.getElementById('customSearchEngineUrl');
-	const addCustomSearchEngineButton = document.getElementById('addCustomSearchEngineButton');
-	const customSearchEngineList = document.getElementById('customSearchEngineList');
+	const categories = ['ai', 'regular', 'image', 'custom'];
 
+	categories.forEach(category => {
+		const list = selectMenu.querySelector(`.category.${category} .engine-list`);
+		if (!list) return;
 
+		// 清空现有内容
+		list.innerHTML = '';
 
+		// 从 TabManager 缓存获取数据
+		chrome.storage.sync.get([`${category}SearchEngines`], data => {
+			const engines = data[`${category}SearchEngines`] || [];
+			const enabledEngines = engines.filter(e => e.enabled !== false);
 
-	function renderCustomSearchEngines() {
-		customSearchEngineList.innerHTML = '';
-		customSearchEngines.forEach((engine, index) => {
-			const li = document.createElement('li');
-			li.innerHTML = `
-                <span>${engine.name} - ${engine.url}</span>
-                <button class="edit-button" data-index="${index}">编辑</button>
-                <button class="delete-button" data-index="${index}">删除</button>
-            `;
-			customSearchEngineList.appendChild(li);
-		});
-
-		// 绑定编辑和删除按钮的事件处理程序
-		document.querySelectorAll('.edit-button').forEach(button => {
-			button.addEventListener('click', function () {
-				const index = this.getAttribute('data-index');
-				editCustomSearchEngine(index);
+			// 只渲染启用的搜索引擎
+			enabledEngines.forEach(engine => {
+				const li = document.createElement('li');
+				li.textContent = engine.name;
+				li.setAttribute('data-url', engine.url);
+				li.addEventListener('click', () => selectEngine(engine.name, selectMenu));
+				list.appendChild(li);
 			});
 		});
-
-		document.querySelectorAll('.delete-button').forEach(button => {
-			button.addEventListener('click', function () {
-				const index = this.getAttribute('data-index');
-				deleteCustomSearchEngine(index);
-			});
-		});
-	}
-
-	function editCustomSearchEngine(index) {
-		chrome.storage.sync.get('customSearchEngines', function (data) {
-			let engines = data.customSearchEngines || [];
-			const engine = engines[index];
-
-			const newName = prompt("请输入新的搜索引擎名称:", engine.name);
-			const newUrl = prompt("请输入新的搜索引擎URL:", engine.url);
-
-			if (newName && newUrl) {
-				engines[index] = { name: newName, url: newUrl };
-
-				chrome.storage.sync.set({ customSearchEngines: engines }, function () {
-					console.log('自定义搜索引擎已编辑');
-					renderCustomSearchEngineList();
-					updateCustomSearchEngineList();
-				});
-			}
-		});
-	}
-
-	function deleteCustomSearchEngine(index) {
-		chrome.storage.sync.get('customSearchEngines', function (data) {
-			let engines = data.customSearchEngines || [];
-			if (confirm(`确定要删除 "${engines[index].name}" 吗？`)) {
-				engines.splice(index, 1);
-
-				chrome.storage.sync.set({ customSearchEngines: engines }, function () {
-					console.log('自定义搜索引擎已删除');
-					renderCustomSearchEngineList();
-					updateCustomSearchEngineList();
-				});
-			}
-		});
-	}
-	function saveCustomSearchEngines() {
-		chrome.storage.sync.set({ customSearchEngines: customSearchEngines }, function () {
-			console.log('Custom search engines saved.');
-		});
-	}
-
-	function loadCustomSearchEngines() {
-		chrome.storage.sync.get('customSearchEngines', function (data) {
-			if (data.customSearchEngines) {
-				customSearchEngines = data.customSearchEngines;
-				renderCustomSearchEngines();
-			}
-		});
-	}
-
-	addCustomSearchEngineButton.addEventListener('click', addCustomSearchEngine);
-	window.editCustomSearchEngine = editCustomSearchEngine;
-	window.deleteCustomSearchEngine = deleteCustomSearchEngine;
-
-	loadCustomSearchEngines();
-
-	const longPressCheckbox = document.getElementById('longPressCheckbox');
-	const ctrlSelectCheckbox = document.getElementById('ctrlSelectCheckbox');
-
-	// 加载保存的设置
-	chrome.storage.sync.get(['longPressEnabled', 'ctrlSelectEnabled', 'directionSearchEnabled'], function (result) {
-		longPressCheckbox.checked = result.longPressEnabled ?? true;
-		ctrlSelectCheckbox.checked = result.ctrlSelectEnabled ?? true;
-		directionSearchToggle.checked = result.directionSearchEnabled ?? true;  // 添加这一行
-	});
-	// 保存设置变更
-	longPressCheckbox.addEventListener('change', function () {
-		saveSettings();
 	});
 
-	ctrlSelectCheckbox.addEventListener('change', function () {
-		saveSettings();
-	});
-	directionSearchToggle.addEventListener('change', function () {
-		saveSettings();
-	});
-	function saveSettings() {
-		// 原有的设置
-		const settings = {
-			longPressEnabled: longPressCheckbox.checked,
-			ctrlSelectEnabled: ctrlSelectCheckbox.checked,
-			directionSearchEnabled: directionSearchToggle.checked,
-			regularSearchEngines: regularSearchEngines,  // 使用全局定义的数组
-			// 添加底部搜索引擎列表
-			regularSearchEngines: [
-				{ name: "Google", url: "https://www.google.com/search?q=%s", enabled: true },
-				{ name: "Bing", url: "https://www.bing.com/search?q=%s", enabled: true },
-				{ name: "百度", url: "https://www.baidu.com/s?wd=%s", enabled: true },
-				{ name: "DuckDuckGo", url: "https://duckduckgo.com/?q=%s", enabled: true },
-				{ name: "搜狗", url: "https://www.sogou.com/web?query=%s", enabled: true },
-				{ name: "360搜索", url: "https://www.so.com/s?q=%s", enabled: true },
-				{ name: "Yahoo", url: "https://search.yahoo.com/search?p=%s", enabled: true },
-				{ name: "闲鱼", url: "https://www.goofish.com/search?q=%s&spm=a21ybx.home", enabled: true },
-				{ name: "抖音", url: "https://www.douyin.com/search/%s", enabled: true },
-				{ name: "X", url: "https://twitter.com/search?q=%s", enabled: true },
-				{ name: "YouTube", url: "https://www.youtube.com/results?search_query=%s", enabled: true },
-				{ name: "V2EX", url: "https://www.v2ex.com/search?q=%s", enabled: true },
-				{ name: "Github", url: "https://github.com/search?q=%s", enabled: true },
-				{ name: "ProductHunt", url: "https://www.producthunt.com/search?q=%s", enabled: true },
-				{ name: "即刻", url: "https://web.okjike.com/search?keyword=%s", enabled: true },
-				{ name: "FaceBook", url: "https://www.facebook.com/search/top/?q=%s", enabled: true },
-				{ name: "bilibili", url: "https://search.bilibili.com/all?keyword=%s", enabled: true },
-				{ name: "知乎", url: "https://www.zhihu.com/search?q=%s", enabled: true },
-				{ name: "微信公众号", url: "https://weixin.sogou.com/weixin?type=2&query=%s", enabled: true },
-				{ name: "微博", url: "https://s.weibo.com/weibo/%s", enabled: true },
-				{ name: "今日头条", url: "https://so.toutiao.com/search?keyword=%s", enabled: true }
-			]
-		};
-
-		// 保存到 Chrome 存储
-		chrome.storage.sync.set(settings, function () {
-			if (chrome.runtime.lastError) {
-				console.error('保存设置时出错:', chrome.runtime.lastError);
-			} else {
-				console.log('所有设置已保存:', settings);
-				// 通知 background.js 设置已更新
-				chrome.runtime.sendMessage({
-					action: 'settingsUpdated',
-					settings: settings
-				});
-			}
-		});
-	}
-
-	// 添加一个函数来加载搜索引擎列表
-	function loadSearchEngines() {
-		chrome.storage.sync.get(['regularSearchEngines'], function (result) {
-			if (result.regularSearchEngines) {
-				// 使用加载的搜索引擎列表更新界面
-				updateSearchEngineList(result.regularSearchEngines);
-			}
-		});
-	}
-
-	// 在页面加载时调用
-	document.addEventListener('DOMContentLoaded', function () {
-		loadSearchEngines();
-		// ... 其他初始化代码 ...
-	});
-	document.getElementById('shortcutLink').addEventListener('click', function () {
-		// 尝试打开 Chrome 扩展快捷键设置页面
-		chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
-	});
-	document.getElementById('panellink').addEventListener('click', function () {
-		// 尝试打开 Chrome 扩展快捷键设置页面
-		chrome.tabs.create({ url: "chrome://settings/appearance" });
-	});
-
-	// 绑定添加搜索引擎按钮的点击事件
-	var addEngineButton = document.getElementById('addEngineButton');
-	addEngineButton.addEventListener('click', addEngine);
-	// 获取复选框元素
-
-	chrome.storage.sync.get('savedPages', function (items) {
-		if (items.savedPages) {
-			var savedPages = items.savedPages;
-			var savedPagesList = document.getElementById('savedPagesList');
-
-			// 清空现有的列表
-			savedPagesList.innerHTML = '';
-
-			// 创建列表项并添加到列表中
-			var listItem = document.createElement('li');
-			listItem.textContent = `Homepage: ${savedPages.homepageName} - ${savedPages.homepageUrl}`;
-			savedPagesList.appendChild(listItem);
-
-			listItem = document.createElement('li');
-			listItem.textContent = `Sidebar: ${savedPages.sidebarName} - ${savedPages.sidebarUrl}`;
-			savedPagesList.appendChild(listItem);
-
-			// 绑定编辑和删除事件
-			// 这里需要添加更多的逻辑来实现编辑和删除功能
-		}
-	});
-	var btnLightTheme = document.getElementById('btnLightTheme');
-	var btnDarkTheme = document.getElementById('btnDarkTheme');
-
-	titlecolor.addEventListener('click', function () {
-		// 实现浅色主题的切换逻辑
-		golightmode(); // 切换主题的函数（如果有）
-		chrome.storage.sync.set({ "darkmode": 0 }); // 保存主题设置
-	});
-
-	btnDarkTheme.addEventListener('click', function () {
-		// 实现暗色主题的切换逻辑
-		godarkmode(); // 切换主题的函数（如果有）
-		chrome.storage.sync.set({ "darkmode": 1 }); // 保存主题设置
-	});
-	var searchEngineList = document.getElementById('searchEngineList');
-
-	restoreCheckboxStatus().then(selectedEngines => {
-		searchEngineData.forEach(function (engine) {
-			var label = document.createElement('label');
-			var checkbox = document.createElement('input');
-			checkbox.type = 'checkbox';
-			checkbox.className = 'search-engine-checkbox';
-			checkbox.value = engine.name;
-			checkbox.setAttribute('data-urlbase', engine.urlbase);
-
-			// 设置复选框的选中状态
-			checkbox.checked = selectedEngines.some(selected => selected.name === engine.name);
-
-			label.appendChild(checkbox);
-			label.appendChild(document.createTextNode(' ' + engine.name));
-			searchEngineList.appendChild(label);
-		});
-
-		// 添加事件监听器以保存更改
-		searchEngineList.addEventListener('change', saveCheckboxStatus);
-	});
-	// 保存复选框状态
-	function saveCheckboxStatus() {
-		var checkboxes = document.getElementsByClassName("search-engine-checkbox");
-
-		for (var i = 0; i < checkboxes.length; i++) {
-			var checkbox = checkboxes[i];
-			if (checkbox.checked) {
-				selectedEngines.push({
-					name: checkbox.value,
-					urlBase: checkbox.getAttribute('data-urlbase')
-				});
-			}
-		}
-
-		chrome.storage.sync.set({ selectedEngines: selectedEngines }, function () {
-			console.log('Selected engines saved:', selectedEngines);
-		});
-	}
-	// 恢复复选框状态
-	function restoreCheckboxStatus() {
-		return new Promise((resolve) => {
-			chrome.storage.sync.get("selectedEngines", function (result) {
-				console.log('Retrieved selectedEngines:', result.selectedEngines);
-				var selectedEngines = result.selectedEngines || [];
-
-				var checkboxes = document.getElementsByClassName("search-engine-checkbox");
-				console.log('Found checkboxes:', checkboxes.length);
-
-				for (var i = 0; i < checkboxes.length; i++) {
-					var checkbox = checkboxes[i];
-					var isChecked = selectedEngines.some(engine => engine.name === checkbox.value);
-					console.log(`Checkbox ${checkbox.value}: ${isChecked ? 'checked' : 'unchecked'}`);
-					checkbox.checked = isChecked;
-				}
-
-				resolve(selectedEngines);
-			});
-		});
-	}
-	// 保存复选框状态
-	document.getElementById("searchEngineList").addEventListener("change", saveCheckboxStatus);
-
-	// 页面加载时恢复复选框状态
-	restoreCheckboxStatus();
-	chrome.storage.sync.get('selectedEngines', function (items) {
-		if (items.selectedEngines) {
-			// 确保selectedEngines被正确加载后，再进行其他操作
-			updateCheckboxes(items.selectedEngines);
-		}
-	});
-
-	// 为每个复选框添加 "change" 事件监听器，以保存更改的状态
-	document.querySelectorAll('.engine-checkbox').forEach(checkbox => {
-		checkbox.addEventListener('change', function () {
-			// 获取搜索引擎名称和URL
-			const name = checkbox.getAttribute('data-name');
-			const urlBase = checkbox.getAttribute('data-urlbase');
-			// 更新搜索引擎的状态
-			searchEngineList.forEach(engine => {
-				if (engine.name === name && engine.urlBase === urlBase) {
-					engine.checked = checkbox.checked;
-				}
-			});
-			// 保存更新后的搜索引擎列表到Chrome存储
-			chrome.storage.sync.set({ selectedEngines: searchEngineList });
-		});
-	});
-
-	// 从存储中读取复选框状态
-	chrome.storage.sync.get('websiteList', function (result) {
-		if (result.websiteList) {
-			websiteList = result.websiteList;
-			websiteList.forEach(function (website) {
-				var checkbox = document.getElementById('checkbox-' + website.name);
-				if (checkbox) {
-					checkbox.checked = website.checked;
-				}
-			});
-		}
-	});
-	// 从本地存储中获取保存的搜索引擎
-	chrome.storage.local.get(['searchEngines'], function (result) {
-		var searchEngines = result.searchEngines || [];
-
-		// 根据保存的搜索引擎更新选项页面的勾选状态
-		searchEngines.forEach(function (engine) {
-			var checkbox = document.querySelector('input[type="checkbox"][value="' + engine.name + '"]');
-			if (checkbox) {
-				checkbox.checked = engine.selected;
-			}
-		});
-
-		// 通知contents.js更新搜索引擎
-		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-			var activeTab = tabs[0];
-			chrome.tabs.sendMessage(activeTab.id, { action: 'updateSearchEngines', searchEngines: searchEngines });
-		});
-	});
-	loadWebsiteList(); // 使用修正后的 loadWebsiteList 函数加载已保存的网站列表
-
-	document.querySelectorAll('.filter-checkbox').forEach((checkbox, index) => {
-		checkbox.addEventListener('change', function () {
-			let isChecked = this.checked;
-			websiteList[index].checked = isChecked; // 更新勾选状态
-			saveWebsiteList(); // 保存更新后的列表到Chrome存储
-		});
-	});
-
-	// 保存websiteList到Chrome存储的函数
-	function saveWebsiteList() {
-		chrome.storage.sync.set({ "websiteList": websiteList }, function () {
-			if (chrome.runtime.lastError) {
-				console.error(chrome.runtime.lastError.message);
-			} else {
-				console.log("Website list updated successfully.");
-			}
-		});
-	}
-
-
-
-	function addWebsiteToList(name, url, index) {
-		var listItem = document.createElement('li');
-		var nameSpan = document.createElement('span');
-		var urlSpan = document.createElement('span');
-		var editButton = document.createElement('button');
-		var deleteButton = document.createElement('button');
-
-		nameSpan.textContent = name;
-		urlSpan.textContent = url;
-		editButton.textContent = '编辑';
-		deleteButton.textContent = '删除';
-
-		// 将元素添加到列表项
-		listItem.appendChild(nameSpan);
-		listItem.appendChild(urlSpan);
-		listItem.appendChild(editButton);
-		listItem.appendChild(deleteButton);
-
-		// 为删除按钮添加点击事件
-		deleteButton.addEventListener('click', function () {
-			deleteWebsite(index);
-			displayWebsiteList(); // 更新列表
-		});
-
-		// 为编辑按钮添加点击事件
-		editButton.addEventListener('click', function () {
-			editWebsite(index); // 执行编辑操作
-		});
-
-		websiteListContainer.appendChild(listItem); // 添加到列表容器
-	}
-	// 还需要添加 editWebsite 函数的实现
-
-})
+	// 标记该菜单已加载
+	selectMenu.dataset.loaded = 'true';
+}
 function updateWebsiteCheckedStatus(name, isChecked) {
 	// 查找网站列表中对应的网站并更新勾选状态
 	for (var i = 0; i < websiteList.length; i++) {
@@ -3992,53 +3538,35 @@ function loadSavedPages() {
 		}
 	});
 }
-// 增加方向搜索引擎对应的数组// 更新所有下拉列表的函数
+// 更新所有方向的搜索引擎列表
 function updateAllEngineLists(globalId2enginemap) {
 	const directions = ['left-up', 'up', 'right-up', 'left', 'right', 'left-down', 'down', 'right-down'];
 
+	// 使用 Set 记录已处理的菜单
+	const processedMenus = new Set();
+
 	directions.forEach(direction => {
 		const selectMenu = document.querySelector(`#direction-${direction} .select-menu`);
-		if (selectMenu) {
+		if (selectMenu && !processedMenus.has(selectMenu)) {
 			updateEngineList(selectMenu, globalId2enginemap);
-		}
-	});
-}
-function updateEngineList(selectMenu, globalId2enginemap) {
-	const categories = ['ai', 'regular', 'image', 'custom'];
-
-	categories.forEach(category => {
-		const list = selectMenu.querySelector(`.category.${category} .engine-list`);
-		if (list) {
-			list.innerHTML = ''; // 清空现有列表
-
-			// 从存储中获取已启用的搜索引擎
-			chrome.storage.sync.get([`${category}SearchEngines`], function (data) {
-				const enabledEngines = (data[`${category}SearchEngines`] || [])
-					.filter(engine => engine.enabled !== false);
-
-				// 只添加已启用的搜索引擎到方向选择菜单
-				enabledEngines.forEach(engine => {
-					const li = document.createElement('li');
-					li.textContent = engine.name;
-					li.setAttribute('data-url', engine.url); // 保存URL以供后续使用
-					li.addEventListener('click', () => selectEngine(engine.name, selectMenu));
-					list.appendChild(li);
-				});
-			});
+			processedMenus.add(selectMenu);
 		}
 	});
 }
 // 添加一个函数来监听搜索引擎启用状态的变化
+// 监听搜索引擎变化
 function listenToEngineChanges() {
 	const categories = ['ai', 'regular', 'image', 'custom'];
 
 	categories.forEach(category => {
 		chrome.storage.onChanged.addListener((changes, area) => {
 			if (area === 'sync' && changes[`${category}SearchEngines`]) {
-				// 当搜索引擎列表发生变化时，更新所有方向的选择菜单
+				// 重置所有菜单的加载状态
 				document.querySelectorAll('.select-menu').forEach(menu => {
-					updateEngineList(menu, {});
+					menu.dataset.loaded = 'false';
 				});
+				// 重新加载所有菜单
+				updateAllEngineLists({});
 			}
 		});
 	});
@@ -5027,13 +4555,14 @@ function saveMultiMenu(containerId, list) {
 		console.log(`${containerId} saved`);
 	});
 }
-// 在页面加载时初始化
-document.addEventListener('DOMContentLoaded', function () {
-	// 初始化所有方向的选择菜单
-	document.querySelectorAll('.select-menu').forEach(menu => {
-		updateEngineList(menu, {});
+// 在 DOMContentLoaded 事件中初始化
+document.addEventListener('DOMContentLoaded', () => {
+	// 初始化搜索引擎列表
+	chrome.storage.sync.get('id2enginemap', data => {
+		const globalId2enginemap = data.id2enginemap || {};
+		updateAllEngineLists(globalId2enginemap);
 	});
 
-	// 开始监听搜索引擎变化
+	// 监听搜索引擎变化
 	listenToEngineChanges();
 });
