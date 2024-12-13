@@ -1222,52 +1222,139 @@ chrome.storage.sync.get('regularSearchEngines', function (data) {
 chrome.storage.sync.get('imageSearchEngines', function (data) {
 	console.log('当前存储的功能引擎：', data.imageSearchEngines);
 
-	// 定义完整的功能引擎列表
+	// 定义新的功能操作列表
 	const updatedEngines = [
-		// 主流搜索引擎
-		{ name: "谷歌图片", url: "https://images.google.com/search?q=%s", enabled: true },
-		{ name: "必应图片", url: "https://cn.bing.com/images/search?q=%s", enabled: true },
-		{ name: "百度图片", url: "https://image.baidu.com/search/index?tn=baiduimage&word=%s", enabled: true },
-		{ name: "搜狗图片", url: "https://pic.sogou.com/pics?query=%s", enabled: true },
-		{ name: "360图片", url: "https://image.so.com/i?q=%s", enabled: true },
-
-		// 社交平台
-		{ name: "微博图片", url: "https://s.weibo.com/pic?q=%s", enabled: true },
-		{ name: "知乎图片", url: "https://www.zhihu.com/search?type=content&q=%s", enabled: true },
-		{ name: "小红书", url: "https://www.xiaohongshu.com/search_result?keyword=%s", enabled: true },
-		{ name: "花瓣网", url: "https://huaban.com/search?q=%s", enabled: true },
-		{ name: "堆糖", url: "https://www.duitang.com/search/?kw=%s", enabled: true },
-
-		// 图片素材
-		{ name: "千图网", url: "https://www.58pic.com/piccate/search.html?q=%s", enabled: true },
-		{ name: "包图网", url: "https://ibaotu.com/tupian/search?q=%s", enabled: true },
-		{ name: "摄图网", url: "https://699pic.com/tupian/%s.html", enabled: true },
-		{ name: "昵图网", url: "https://soso.nipic.com/?q=%s", enabled: true },
-		{ name: "全景网", url: "https://www.quanjing.com/search.aspx?q=%s", enabled: true },
-
-		// 壁纸
-		{ name: "彼岸图网", url: "https://pic.netbian.com/e/search/result/?searchid=%s", enabled: true },
-		{ name: "墙纸网", url: "http://www.win4000.com/search.html?q=%s", enabled: true },
-		{ name: "回车桌面", url: "https://www.enterdesk.com/search/%s", enabled: true },
-
-		// 二次元
-		{ name: "动漫图片", url: "https://www.dmtu.net/plus/search.php?keyword=%s", enabled: true },
-		{ name: "半次元", url: "https://bcy.net/search/home?k=%s", enabled: true },
-		{ name: "动漫之家", url: "https://www.dmzj.com/search/%s", enabled: true }
+		{
+			name: "复制",
+			url: "copy", // 使用特殊标识符表示这是一个功能操作
+			action: "copySelectedText",
+			enabled: true
+		},
+		{
+			name: "收藏",
+			url: "save",
+			action: "saveToBookmarks",
+			enabled: true
+		},
+		{
+			name: "刷新",
+			url: "refresh",
+			action: "refreshPage",
+			enabled: true
+		},
+		{
+			name: "侧边栏",
+			url: "sidepanel",
+			action: "toggleSidePanel",
+			enabled: true
+		},
+		{
+			name: "二维码",
+			url: "qrcode",
+			action: "showQRCode",
+			enabled: true
+		}
 	];
 
 	// 强制更新存储
 	chrome.storage.sync.set({
 		imageSearchEngines: updatedEngines,
-		forceUpdate: true  // 添加标记表示已强制更新
+		forceUpdate: true
 	}, function () {
-		console.log('已强制更新功能引擎列表，共', updatedEngines.length, '个引擎');
-		// 如果有回调函数则调用
+		console.log('已更新功能列表，共', updatedEngines.length, '个功能');
 		if (typeof loadImageSearchEngines === 'function') {
 			loadImageSearchEngines();
 		}
 	});
 });
+
+// 添加功能处理逻辑
+function handleFunctionAction(action, selectedText) {
+	switch (action) {
+		case 'copySelectedText':
+			navigator.clipboard.writeText(selectedText).then(() => {
+				showNotification('已复制到剪贴板');
+			});
+			break;
+
+		case 'saveToBookmarks':
+			chrome.storage.sync.get('savedBookmarks', function (data) {
+				const bookmarks = data.savedBookmarks || [];
+				bookmarks.push({
+					text: selectedText,
+					url: window.location.href,
+					date: new Date().toISOString()
+				});
+				chrome.storage.sync.set({ savedBookmarks: bookmarks }, function () {
+					showNotification('已保存到书签');
+				});
+			});
+			break;
+
+		case 'refreshPage':
+			if (confirm('确定要刷新页面吗？')) {
+				location.reload();
+			}
+			break;
+
+		case 'toggleSidePanel':
+			chrome.runtime.sendMessage({
+				action: 'toggleSidePanel'
+			});
+			break;
+
+		case 'showQRCode':
+			chrome.runtime.sendMessage({
+				action: 'showQRCode',
+				text: selectedText
+			});
+			break;
+	}
+}
+
+// 修改加载功能的方式
+function loadImageSearchEngines(containerId) {
+	const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
+	if (!container) return;
+
+	chrome.storage.sync.get('imageSearchEngines', function (data) {
+		const engines = data.imageSearchEngines || [];
+		container.innerHTML = '';
+
+		engines.forEach((engine, index) => {
+			const li = document.createElement('li');
+			li.className = 'ai-engine-item';
+			li.innerHTML = `
+                <div class="engine-row">
+                    <input type="checkbox" id="function-${index}" 
+                           class="engine-checkbox" 
+                           ${engine.enabled ? 'checked' : ''}>
+                    <label for="function-${index}">${engine.name}</label>
+                    <span class="function-description">${engine.url}</span>
+                    <button class="edit-engine" data-index="${index}">编辑</button>
+                    <button class="delete-engine" data-index="${index}">删除</button>
+                </div>
+            `;
+
+			// 添加事件监听器
+			li.querySelector('.engine-checkbox').addEventListener('change', function () {
+				saveEngineState(index, this.checked);
+			});
+
+			li.querySelector('.edit-engine').addEventListener('click', () => {
+				editEngine(index);
+			});
+
+			li.querySelector('.delete-engine').addEventListener('click', () => {
+				deleteEngine(index);
+			});
+
+			container.appendChild(li);
+		});
+	});
+}
+
+
 
 // 添加版本控制
 const CURRENT_VERSION = '1.1';  // 增加版本号
@@ -3943,18 +4030,18 @@ function updateEngineList(selectMenu, globalId2enginemap) {
 }
 // 添加一个函数来监听搜索引擎启用状态的变化
 function listenToEngineChanges() {
-    const categories = ['ai', 'regular', 'image', 'custom'];
-    
-    categories.forEach(category => {
-        chrome.storage.onChanged.addListener((changes, area) => {
-            if (area === 'sync' && changes[`${category}SearchEngines`]) {
-                // 当搜索引擎列表发生变化时，更新所有方向的选择菜单
-                document.querySelectorAll('.select-menu').forEach(menu => {
-                    updateEngineList(menu, {});
-                });
-            }
-        });
-    });
+	const categories = ['ai', 'regular', 'image', 'custom'];
+
+	categories.forEach(category => {
+		chrome.storage.onChanged.addListener((changes, area) => {
+			if (area === 'sync' && changes[`${category}SearchEngines`]) {
+				// 当搜索引擎列表发生变化时，更新所有方向的选择菜单
+				document.querySelectorAll('.select-menu').forEach(menu => {
+					updateEngineList(menu, {});
+				});
+			}
+		});
+	});
 }
 // 新增或修改整个函数
 function updateTabContentUI(category, engineMap, globalId2enginemap) {
@@ -4848,23 +4935,23 @@ function renderEngineList(container, engines, menuId) {
 	});
 }
 function saveEngineState(menuId, index, checked, engine) {
-    const category = getCategoryFromEngine(engine); // 获取引擎所属类别
-    const storageKey = `${category}SearchEngines`;
-    
-    chrome.storage.sync.get(storageKey, function(data) {
-        let engines = data[storageKey] || [];
-        if (engines[index]) {
-            engines[index].enabled = checked;
-            
-            // 保存更改并触发更新
-            chrome.storage.sync.set({ [storageKey]: engines }, function() {
-                // 更新所有方向选择菜单
-                document.querySelectorAll('.select-menu').forEach(menu => {
-                    updateEngineList(menu, {});
-                });
-            });
-        }
-    });
+	const category = getCategoryFromEngine(engine); // 获取引擎所属类别
+	const storageKey = `${category}SearchEngines`;
+
+	chrome.storage.sync.get(storageKey, function (data) {
+		let engines = data[storageKey] || [];
+		if (engines[index]) {
+			engines[index].enabled = checked;
+
+			// 保存更改并触发更新
+			chrome.storage.sync.set({ [storageKey]: engines }, function () {
+				// 更新所有方向选择菜单
+				document.querySelectorAll('.select-menu').forEach(menu => {
+					updateEngineList(menu, {});
+				});
+			});
+		}
+	});
 }
 
 function createMenuItem(menu, index, containerId) {
@@ -4941,12 +5028,12 @@ function saveMultiMenu(containerId, list) {
 	});
 }
 // 在页面加载时初始化
-document.addEventListener('DOMContentLoaded', function() {
-    // 初始化所有方向的选择菜单
-    document.querySelectorAll('.select-menu').forEach(menu => {
-        updateEngineList(menu, {});
-    });
-    
-    // 开始监听搜索引擎变化
-    listenToEngineChanges();
+document.addEventListener('DOMContentLoaded', function () {
+	// 初始化所有方向的选择菜单
+	document.querySelectorAll('.select-menu').forEach(menu => {
+		updateEngineList(menu, {});
+	});
+
+	// 开始监听搜索引擎变化
+	listenToEngineChanges();
 });
