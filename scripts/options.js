@@ -3128,8 +3128,6 @@ const TabManager = {
 
 	renderEngines(engines, category) {
 		const tabContent = document.getElementById('tabContent');
-
-		// 创建搜索引擎列表
 		const ul = document.createElement('ul');
 		ul.className = 'engine-list';
 
@@ -3138,7 +3136,6 @@ const TabManager = {
 			li.className = 'engine-item';
 			li.draggable = true;
 
-			// 修改这里：添加复选框和其他元素
 			li.innerHTML = `
             <div class="engine-row">
                 <input type="checkbox" 
@@ -3157,20 +3154,65 @@ const TabManager = {
             </div>
         `;
 
-			// 添加事件监听器
+			// 添加复选框事件监听器
 			const checkbox = li.querySelector('.engine-checkbox');
 			checkbox.addEventListener('change', () => {
 				this.updateEngineState(category, index, checkbox.checked);
 			});
 
+			// 添加编辑按钮事件监听器
+			const editBtn = li.querySelector('.edit-btn');
+			editBtn.addEventListener('click', () => {
+				this.editEngine(category, index, engine);
+			});
+
+			// 添加删除按钮事件监听器
+			const deleteBtn = li.querySelector('.delete-btn');
+			deleteBtn.addEventListener('click', () => {
+				this.deleteEngine(category, index);
+			});
+
 			ul.appendChild(li);
 		});
 
-		// 更新内容
 		tabContent.innerHTML = '';
 		tabContent.appendChild(ul);
 	},
 
+	// 添加编辑引擎方法
+	editEngine(category, index, engine) {
+		const newName = prompt('请输入新的搜索引擎名称:', engine.name);
+		const newUrl = prompt('请输入新的搜索引擎URL:', engine.url);
+
+		if (newName && newUrl) {
+			chrome.storage.sync.get([category], (result) => {
+				const engines = result[category] || [];
+				engines[index] = {
+					...engines[index],
+					name: newName,
+					url: newUrl
+				};
+
+				chrome.storage.sync.set({ [category]: engines }, () => {
+					this.renderEngines(engines, category);
+				});
+			});
+		}
+	},
+
+	// 添加删除引擎方法
+	deleteEngine(category, index) {
+		if (confirm('确定要删除这个搜索引擎吗？')) {
+			chrome.storage.sync.get([category], (result) => {
+				const engines = result[category] || [];
+				engines.splice(index, 1);
+
+				chrome.storage.sync.set({ [category]: engines }, () => {
+					this.renderEngines(engines, category);
+				});
+			});
+		}
+	},
 	addDragListeners(li, index) {
 		li.addEventListener('dragstart', (e) => {
 			e.dataTransfer.setData('text/plain', index.toString());
