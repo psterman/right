@@ -2672,9 +2672,9 @@ button {
 }
 
 .tab-container {
-  margin-top: 20px;
+  width: 100%;
+  margin: 20px 0;
 }
-
 .tab-buttons {
   display: flex;
   border-bottom: 1px solid #444;
@@ -2687,7 +2687,22 @@ button {
   cursor: pointer;
   color: #fff;
 }
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #ccc;
+}
 
+.tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.tab.active {
+  border: 1px solid #ccc;
+  border-bottom-color: white;
+  margin-bottom: -1px;
+}
 .tab-button.active {
   border-bottom: 2px solid #007bff;
   font-weight: bold;
@@ -3141,8 +3156,10 @@ body.custom-cursor * {
 .engine-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  padding: 10px;
+  border: 1px solid #eee;
+  margin: 5px 0;
+  cursor: move;
 }
 
 .engine-item input[type="checkbox"] {
@@ -3152,4 +3169,22 @@ body.custom-cursor * {
 .engine-item label {
   margin: 0;
   cursor: pointer;
+}
+.engine-item.dragging {
+  opacity: 0.5;
+}
+
+.engine-name {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.engine-url {
+  color: #666;
+  flex-grow: 1;
+}
+
+.engine-controls {
+  display: flex;
+  gap: 5px;
 }

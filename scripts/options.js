@@ -3070,131 +3070,140 @@ const TabManager = {
 	},
 
 	loadInitialTab() {
+		// 默认加载第一个标签
 		const defaultTab = document.querySelector('.tab');
 		if (defaultTab) {
-			defaultTab.classList.add('active');
-			this.loadTabContent(defaultTab.dataset.category);
+			this.switchTab(defaultTab);
 		}
 	},
 
 	switchTab(tab) {
-		const tabs = document.querySelectorAll('.tab');
-		tabs.forEach(t => t.classList.remove('active'));
-		tab.classList.add('active');
-		this.loadTabContent(tab.dataset.category);
-	},
-
-	loadTabContent(category) {
-		if (this.currentCategory === category) return;
-
-		const tabContent = document.getElementById('tabContent');
-		tabContent.innerHTML = '';
-
-		// 如果已经加载过该分类的数据,直接使用缓存
-		if (this.loadedEngines[category]) {
-			this.renderEngines(this.loadedEngines[category], category);
+		if (!tab || !tab.dataset.category) {
+			console.error('无效的标签元素');
 			return;
 		}
 
-		// 否则从storage加载
-		chrome.storage.sync.get([`${category}SearchEngines`], data => {
-			const engines = data[`${category}SearchEngines`] || [];
-			this.loadedEngines[category] = engines;
+		// 更新标签状态
+		document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+		tab.classList.add('active');
+
+		// 加载对应分类的内容
+		const category = tab.dataset.category;
+		this.loadTabContent(category);
+	},
+
+	loadTabContent(category) {
+		const tabContent = document.getElementById('tabContent');
+		if (!tabContent) {
+			console.error('找不到tabContent元素');
+			return;
+		}
+
+		// 从存储中获取搜索引擎数据
+		chrome.storage.sync.get([`${category}SearchEngines`], (result) => {
+			const engines = result[`${category}SearchEngines`] || this.getDefaultEngines(category);
 			this.renderEngines(engines, category);
 		});
+	},
 
-		this.currentCategory = category;
+	// 获取默认搜索引擎列表
+	getDefaultEngines(category) {
+		const defaults = {
+			ai: [
+				{ name: 'ChatGPT', url: 'https://chat.openai.com' },
+				{ name: '文心一言', url: 'https://yiyan.baidu.com' }
+			],
+			regular: [
+				{ name: 'Google', url: 'https://www.google.com/search?q=' },
+				{ name: 'Bing', url: 'https://www.bing.com/search?q=' }
+			],
+			function: [
+				{ name: '翻译', url: 'https://translate.google.com/?text=' },
+				{ name: '下载', url: 'https://download.com?url=' }
+			],
+			custom: []
+		};
+		return defaults[category] || [];
 	},
 
 	renderEngines(engines, category) {
 		const tabContent = document.getElementById('tabContent');
+
+		// 创建搜索引擎列表
 		const ul = document.createElement('ul');
 		ul.className = 'engine-list';
 
 		engines.forEach((engine, index) => {
-			const li = this.createEngineListItem(engine, category, index);
+			const li = document.createElement('li');
+			li.className = 'engine-item';
+			li.draggable = true;
+
+			// 添加搜索引擎信息
+			li.innerHTML = `
+        <span class="engine-name">${engine.name}</span>
+        <span class="engine-url">${engine.url}</span>
+        <div class="engine-controls">
+          <button class="edit-engine">编辑</button>
+          <button class="delete-engine">删除</button>
+        </div>
+      `;
+
+			// 添加拖拽事件
+			this.addDragListeners(li, index);
+
 			ul.appendChild(li);
 		});
 
+		// 更新内容
+		tabContent.innerHTML = '';
 		tabContent.appendChild(ul);
+
+		// 保存当前分类
+		this.currentCategory = category;
 	},
 
-	createEngineListItem(engine, category, index) {
-		const li = document.createElement('li');
-
-		// 复选框
-		const checkbox = document.createElement('input');
-		checkbox.type = 'checkbox';
-		checkbox.checked = engine.enabled !== false;
-		checkbox.addEventListener('change', () => {
-			engine.enabled = checkbox.checked;
-			this.saveEngineSettings(category, this.loadedEngines[category]);
+	addDragListeners(li, index) {
+		li.addEventListener('dragstart', (e) => {
+			e.dataTransfer.setData('text/plain', index.toString());
+			li.classList.add('dragging');
 		});
 
-		// 标签
-		const label = document.createElement('label');
-		label.textContent = engine.name;
+		li.addEventListener('dragend', () => {
+			li.classList.remove('dragging');
+		});
 
-		// 操作按钮
-		const actions = document.createElement('div');
-		actions.className = 'engine-actions';
+		li.addEventListener('dragover', (e) => {
+			e.preventDefault();
+		});
 
-		const editBtn = document.createElement('button');
-		editBtn.textContent = '编辑';
-		editBtn.onclick = () => this.editEngine(category, index);
-
-		const deleteBtn = document.createElement('button');
-		deleteBtn.textContent = '删除';
-		deleteBtn.onclick = () => this.deleteEngine(category, index);
-
-		actions.appendChild(editBtn);
-		actions.appendChild(deleteBtn);
-
-		li.appendChild(checkbox);
-		li.appendChild(label);
-		li.appendChild(actions);
-
-		return li;
-	},
-
-	saveEngineSettings(category, engines) {
-		chrome.storage.sync.set({
-			[`${category}SearchEngines`]: engines
-		}, () => {
-			console.log(`${category} search engines saved`);
-			// 更新缓存
-			this.loadedEngines[category] = engines;
+		li.addEventListener('drop', (e) => {
+			e.preventDefault();
+			const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+			const toIndex = index;
+			this.reorderEngines(fromIndex, toIndex);
 		});
 	},
 
-	editEngine(category, index) {
-		const engines = this.loadedEngines[category];
-		const engine = engines[index];
+	reorderEngines(fromIndex, toIndex) {
+		if (this.currentCategory) {
+			chrome.storage.sync.get([`${this.currentCategory}SearchEngines`], (result) => {
+				const engines = result[`${this.currentCategory}SearchEngines`] || [];
+				const [movedEngine] = engines.splice(fromIndex, 1);
+				engines.splice(toIndex, 0, movedEngine);
 
-		const newName = prompt('输入新名称:', engine.name);
-		const newUrl = prompt('输入新URL:', engine.url);
-
-		if (newName && newUrl) {
-			engines[index] = {
-				...engine,
-				name: newName,
-				url: newUrl
-			};
-
-			this.saveEngineSettings(category, engines);
-			this.renderEngines(engines, category);
-		}
-	},
-
-	deleteEngine(category, index) {
-		const engines = this.loadedEngines[category];
-		if (confirm(`确定删除 "${engines[index].name}"?`)) {
-			engines.splice(index, 1);
-			this.saveEngineSettings(category, engines);
-			this.renderEngines(engines, category);
+				// 保存新顺序
+				chrome.storage.sync.set({ [`${this.currentCategory}SearchEngines`]: engines }, () => {
+					this.renderEngines(engines, this.currentCategory);
+				});
+			});
 		}
 	}
 };
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+	TabManager.init();
+});
 document.addEventListener('DOMContentLoaded', () => {
   // 初始化标签管理器
   TabManager.init();
