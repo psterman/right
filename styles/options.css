@@ -3138,6 +3138,7 @@ body.custom-cursor * {
 .engine-row {
   display: flex;
   align-items: center;
+  width: 100%;
   gap: 10px;
 }
 
@@ -3154,12 +3155,10 @@ body.custom-cursor * {
 }
 
 .engine-item {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
   display: flex;
   align-items: center;
-  padding: 10px;
-  border: 1px solid #eee;
-  margin: 5px 0;
-  cursor: move;
 }
 
 .engine-item input[type="checkbox"] {
@@ -3175,16 +3174,34 @@ body.custom-cursor * {
 }
 
 .engine-name {
-  font-weight: bold;
+  min-width: 100px;
   margin-right: 10px;
 }
-
 .engine-url {
-  color: #666;
   flex-grow: 1;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 .engine-controls {
   display: flex;
   gap: 5px;
+}
+.edit-btn,
+.delete-btn {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.edit-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.delete-btn {
+  background-color: #f44336;
+  color: white;
 }

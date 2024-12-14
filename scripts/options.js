@@ -3138,18 +3138,30 @@ const TabManager = {
 			li.className = 'engine-item';
 			li.draggable = true;
 
-			// 添加搜索引擎信息
+			// 修改这里：添加复选框和其他元素
 			li.innerHTML = `
-        <span class="engine-name">${engine.name}</span>
-        <span class="engine-url">${engine.url}</span>
-        <div class="engine-controls">
-          <button class="edit-engine">编辑</button>
-          <button class="delete-engine">删除</button>
-        </div>
-      `;
+            <div class="engine-row">
+                <input type="checkbox" 
+                       id="${category}-engine-${index}" 
+                       class="engine-checkbox" 
+                       ${engine.enabled !== false ? 'checked' : ''}>
+                <label class="engine-name" for="${category}-engine-${index}">${engine.name}</label>
+                <input type="text" 
+                       class="engine-url" 
+                       value="${engine.url}" 
+                       ${category === 'custom' ? '' : 'readonly'}>
+                <div class="engine-controls">
+                    <button class="edit-btn">编辑</button>
+                    <button class="delete-btn">删除</button>
+                </div>
+            </div>
+        `;
 
-			// 添加拖拽事件
-			this.addDragListeners(li, index);
+			// 添加事件监听器
+			const checkbox = li.querySelector('.engine-checkbox');
+			checkbox.addEventListener('change', () => {
+				this.updateEngineState(category, index, checkbox.checked);
+			});
 
 			ul.appendChild(li);
 		});
@@ -3157,9 +3169,6 @@ const TabManager = {
 		// 更新内容
 		tabContent.innerHTML = '';
 		tabContent.appendChild(ul);
-
-		// 保存当前分类
-		this.currentCategory = category;
 	},
 
 	addDragListeners(li, index) {
