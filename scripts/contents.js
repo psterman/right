@@ -3087,9 +3087,7 @@ function createImageSearchMenu(parentPopup) {
     const parentRect = parentPopup.getBoundingClientRect();
     const searchText = parentPopup.querySelector('input').value.trim();
 
-    // 创建菜单容器
     const imageMenu = document.createElement('div');
-    imageMenu.classList.add('image-menu');
     imageMenu.style.cssText = `
         position: fixed;
         left: ${parentRect.left}px;
@@ -3105,82 +3103,55 @@ function createImageSearchMenu(parentPopup) {
         gap: 8px;
     `;
 
-    // 定义功能按钮
-    const functionButtons = [
-        { name: '复制', icon: '📋' },
-        { name: '收藏', icon: '⭐' },
-        { name: '刷新', icon: '🔄' },
-        { name: '侧边栏', icon: '📑' },
-        { name: '二维码', icon: '📱' }
-    ];
-
-    // 创建功能按钮
-    functionButtons.forEach(button => {
-        const buttonElement = document.createElement('div');
-        buttonElement.style.cssText = `
-            padding: 8px 16px;
-            background: #f5f6f7;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #333;
-            transition: all 0.3s;
-            user-select: none;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            white-space: nowrap;
-        `;
-
-        buttonElement.innerHTML = `
-            <span style="font-size: 16px;">${button.icon}</span>
-            <span>${button.name}</span>
-        `;
-
-        // 添加悬停效果
-        buttonElement.addEventListener('mouseover', () => {
-            buttonElement.style.backgroundColor = '#e9ecef';
-        });
-        buttonElement.addEventListener('mouseout', () => {
-            buttonElement.style.backgroundColor = '#f5f6f7';
-        });
-
-        // 添加点击事件
-        buttonElement.addEventListener('click', () => {
-            switch (button.name) {
-                case '复制':
-                    if (searchText) {
-                        navigator.clipboard.writeText(searchText)
-                            .then(() => {
-                                showNotification('已复制到剪贴板', 2000);
-                                closePopups();
-                            })
-                            .catch(() => showNotification('复制失败', 2000));
-                    } else {
-                        showNotification('请输入要复制的内容', 2000);
+    // 从storage获取功能菜单配置
+    chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
+        const functionMenus = data.multiMenu1Engines || [
+            {
+                name: '复制',
+                type: 'copy',
+                icon: '📋',
+                enabled: true,
+                action: async () => {
+                    try {
+                        await navigator.clipboard.writeText(searchText);
+                        showNotification('已复制到剪贴板', 2000);
+                        closePopups();
+                    } catch (err) {
+                        console.error('复制失败:', err);
+                        showNotification('复制失败', 2000);
                     }
-                    break;
-
-                case '收藏':
-                  if (searchText) {
-        chrome.storage.sync.get('savedRecords', function (data) {
-            const records = data.savedRecords || [];
-            records.push({
-                text: searchText,
-                timestamp: new Date().getTime(),
-                url: window.location.href
-            });
-            chrome.storage.sync.set({ savedRecords: records }, () => {
-                showNotification('已保存到书签页面', 2000);
-                closePopups();
-            });
-        });
-    } else {
-        showNotification('请输入要保存的内容', 2000);
-    }
-    break;
-
-                case '刷新':
+                }
+            },
+            {
+                name: '收藏',
+                type: 'save',
+                icon: '⭐',
+                enabled: true,
+                action: () => {
+                    if (searchText) {
+                        chrome.storage.sync.get('savedRecords', function (data) {
+                            const records = data.savedRecords || [];
+                            records.push({
+                                text: searchText,
+                                timestamp: new Date().getTime(),
+                                url: window.location.href
+                            });
+                            chrome.storage.sync.set({ savedRecords: records }, () => {
+                                showNotification('已保存到书签页面', 2000);
+                                closePopups();
+                            });
+                        });
+                    } else {
+                        showNotification('请输入要保存的内容', 2000);
+                    }
+                }
+            },
+            {
+                name: '刷新',
+                type: 'refresh',
+                icon: '🔄',
+                enabled: true,
+                action: () => {
                     try {
                         window.location.reload();
                         showNotification('页面刷新中...', 2000);
@@ -3189,248 +3160,210 @@ function createImageSearchMenu(parentPopup) {
                         console.error('刷新失败:', error);
                         showNotification('刷新失败', 2000);
                     }
-                    break;
-
-                case '侧边栏':
+                }
+            },
+            {
+                name: '二维码',
+                type: 'qrcode',
+                icon: '📱',
+                enabled: true,
+                action: () => {
+                    if (searchText) {
+                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(searchText)}`;
+                        chrome.runtime.sendMessage({
+                            action: 'setpage',
+                            query: qrUrl,
+                            foreground: false
+                        });
+                        closePopups();
+                    } else {
+                        showNotification('请输入要生成二维码的内容', 2000);
+                    }
+                }
+            },
+            {
+                name: '侧边栏',
+                type: 'sidepanel',
+                icon: '◧',
+                enabled: true,
+                action: () => {
                     chrome.runtime.sendMessage({
                         action: 'setpage',
                         query: window.location.href,
                         foreground: false
-                    }, () => {
-                        closePopups();
+                    });
+                    closePopups();
+                }
+            }
+        ];
+
+        // 只显示启用的功能按钮
+        const enabledMenus = functionMenus.filter(menu => menu.enabled !== false);
+
+        if (enabledMenus.length === 0) {
+            const noDataMsg = document.createElement('div');
+            noDataMsg.textContent = '请先在扩展设置中启用功能按钮';
+            noDataMsg.style.cssText = `
+                width: 100%;
+                text-align: center;
+                padding: 10px;
+                color: #666;
+            `;
+            imageMenu.appendChild(noDataMsg);
+        } else {
+            enabledMenus.forEach(menu => {
+                const buttonElement = document.createElement('div');
+                buttonElement.style.cssText = `
+                    padding: 8px 16px;
+                    background: #f5f6f7;
+                    border-radius: 20px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    color: #333;
+                    transition: all 0.3s;
+                    user-select: none;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    white-space: nowrap;
+                `;
+
+                buttonElement.innerHTML = `
+                    <span style="font-size: 16px;">${menu.icon}</span>
+                    <span>${menu.name}</span>
+                `;
+
+                // 添加悬停效果
+                buttonElement.addEventListener('mouseover', () => {
+                    buttonElement.style.backgroundColor = '#e9ecef';
+                });
+                buttonElement.addEventListener('mouseout', () => {
+                    buttonElement.style.backgroundColor = '#f5f6f7';
+                });
+
+                // 添加点击事件
+                buttonElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    menu.action();
+                });
+
+                imageMenu.appendChild(buttonElement);
+            });
+        }
+
+        // 保存更新后的配置
+        chrome.storage.sync.set({ multiMenu1Engines: functionMenus }, () => {
+            console.log('功能菜单配置已更新');
+        });
+    });
+
+    document.body.appendChild(imageMenu);
+    return imageMenu;
+}
+
+function handleAction(action, text) {
+    // 获取功能菜单配置
+    chrome.storage.sync.get(['imageSearchEngines'], function (data) {
+        const engines = data.imageSearchEngines || [];
+
+        // 查找对应的功能项
+        const functionItem = engines.find(item =>
+            item.name === action || item.url === action
+        );
+
+        if (functionItem) {
+            switch (functionItem.action) {
+                case 'copySelectedText':
+                    navigator.clipboard.writeText(text)
+                        .then(() => showNotification('已复制到剪贴板'))
+                        .catch(err => showNotification('复制失败'));
+                    break;
+
+                case 'saveToBookmarks':
+                    chrome.storage.sync.get('savedBookmarks', function (data) {
+                        const bookmarks = data.savedBookmarks || [];
+                        bookmarks.push({
+                            text: text,
+                            url: window.location.href,
+                            date: new Date().toISOString()
+                        });
+                        chrome.storage.sync.set({ savedBookmarks: bookmarks },
+                            () => showNotification('已保存到书签'));
                     });
                     break;
 
-                case '二维码':
-                    if (searchText) {
-                        console.log('Generating QR code for:', searchText);
-                        let qrCodeHtml;
+                case 'refreshPage':
+                    location.reload();
+                    break;
 
-                        // 检查是否是链接
-                        const isLink = searchText.startsWith('http://') || searchText.startsWith('https://');
+                case 'toggleSidePanel':
+                    chrome.runtime.sendMessage({ action: 'toggleSidePanel' });
+                    break;
 
-                        if (isLink) {
-                            // 为链接生成二维码页面
-                            qrCodeHtml = `
-            <!DOCTYPE html>
-            <html lang="zh-CN">
-            <head>
-                <meta charset="UTF-8">
-                <title>链接二维码</title>
-                <style>
-                    body { 
-                        font-family: Arial, sans-serif;
-                        margin: 20px;
-                        text-align: center;
-                        background: #f5f5f5;
-                    }
-                    .qr-container {
-                        max-width: 400px;
-                        margin: 20px auto;
-                        padding: 20px;
-                        background: white;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    }
-                    .qr-image {
-                        margin: 20px auto;
-                        max-width: 200px;
-                        height: auto;
-                    }
-                    .link-preview {
-                        margin-top: 20px;
-                        padding: 10px;
-                        border: 1px solid #ddd;
-                        border-radius: 4px;
-                        word-break: break-all;
-                        background: #fff;
-                        text-align: left;
-                        max-height: 100px;
-                        overflow-y: auto;
-                        font-size: 14px;
-                    }
-                    h3 {
-                        color: #333;
-                        margin: 15px 0;
-                    }
-                    .copy-button {
-                        margin: 10px;
-                        padding: 5px 15px;
-                        background: #2196F3;
-                        color: white;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                    }
-                    .copy-button:hover {
-                        background: #1976D2;
-                    }
-                    .visit-button {
-                        margin: 10px;
-                        padding: 5px 15px;
-                        background: #4CAF50;
-                        color: white;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        text-decoration: none;
-                        display: inline-block;
-                    }
-                    .visit-button:hover {
-                        background: #45a049;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="qr-container">
-                    <h3>链接二维码</h3>
-                    <img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(searchText)}" alt="QR Code">
-                    <div class="link-preview">
-                        <h3>链接预览:</h3>
-                        <p>${searchText}</p>
-                    </div>
-                    <button class="copy-button" onclick="navigator.clipboard.writeText('${searchText}').then(() => alert('链接已复制'))">
-                        复制链接
-                    </button>
-                    <a href="${searchText}" target="_blank" class="visit-button">访问链接</a>
-                </div>
-            </body>
-            </html>`;
-                        } else {
-                            // 为普通文本生成二维码页面
-                            qrCodeHtml = `
-            <!DOCTYPE html>
-            <html lang="zh-CN">
-            <head>
-                <meta charset="UTF-8">
-                <title>文本二维码</title>
-                <style>
-                    body { 
-                        font-family: Arial, sans-serif;
-                        margin: 20px;
-                        text-align: center;
-                        background: #f5f5f5;
-                    }
-                    .qr-container {
-                        max-width: 300px;
-                        margin: 20px auto;
-                        padding: 20px;
-                        background: white;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    }
-                    .text-preview {
-                        margin-top: 20px;
-                        padding: 10px;
-                        border: 1px solid #ddd;
-                        border-radius: 4px;
-                        word-break: break-all;
-                        background: #fff;
-                        text-align: left;
-                        max-height: 200px;
-                        overflow-y: auto;
-                    }
-                    h3 {
-                        color: #333;
-                        margin-bottom: 10px;
-                    }
-                    .qr-image {
-                        margin: 0 auto;
-                        max-width: 200px;
-                        height: auto;
-                    }
-                    .copy-button {
-                        margin: 10px;
-                        padding: 5px 15px;
-                        background: #2196F3;
-                        color: white;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                    }
-                    .copy-button:hover {
-                        background: #1976D2;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="qr-container">
-                    <img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(searchText)}" alt="QR Code">
-                    <div class="text-preview">
-                        <h3>文本预览:</h3>
-                        <p>${searchText}</p>
-                    </div>
-                    <button class="copy-button" onclick="navigator.clipboard.writeText('${searchText}').then(() => alert('文本已复制'))">
-                        复制文本
-                    </button>
-                </div>
-            </body>
-            </html>`;
-                        }
-
-                        try {
-                            const blob = new Blob([qrCodeHtml], { type: 'text/html' });
-                            const blobUrl = URL.createObjectURL(blob);
-
-                            chrome.runtime.sendMessage({
-                                action: 'setpage',
-                                query: blobUrl,
-                                foreground: false
-                            }, function (response) {
-                                if (chrome.runtime.lastError) {
-                                    console.error('Runtime error:', chrome.runtime.lastError);
-                                    showNotification('二维码生成失败');
-                                    return;
-                                }
-
-                                if (response && response.success) {
-                                    console.log('QR code page opened successfully');
-                                    showNotification(isLink ? '链接二维码已生成' : '文本二维码已生成');
-                                    closePopups();
-                                } else {
-                                    console.error('Failed to open QR code page');
-                                    showNotification('二维码生成失败');
-                                }
-                            });
-                        } catch (error) {
-                            console.error('Error generating QR code:', error);
-                            showNotification('二维码生成失败');
-                        }
-                    } else {
-                        showNotification('请输入要生成二维码的内容', 2000);
-                    }
+                case 'showQRCode':
+                    chrome.runtime.sendMessage({
+                        action: 'showQRCode',
+                        text: text
+                    });
                     break;
             }
-        });
 
-        imageMenu.appendChild(buttonElement);
+            // 关闭弹窗
+            closePopups();
+        }
     });
-
-    // 添加到页面
-    document.body.appendChild(imageMenu);
-
-    // 点击其他区域关闭菜单
-    const closeMenu = (e) => {
-        if (!imageMenu.contains(e.target) && !parentPopup.contains(e.target)) {
-            document.body.removeChild(imageMenu);
-            document.removeEventListener('click', closeMenu);
+}
+// 处理菜单动作
+function handleMenuAction(type, text) {
+    const actions = {
+        copy: async () => {
+            await navigator.clipboard.writeText(text);
+            showNotification('已复制到剪贴板');
+        },
+        save: () => {
+            chrome.storage.sync.get('savedRecords', data => {
+                const records = data.savedRecords || [];
+                records.push({
+                    text,
+                    url: window.location.href,
+                    timestamp: Date.now()
+                });
+                chrome.storage.sync.set({ savedRecords: records });
+                showNotification('已添加到收藏');
+            });
+        },
+        refresh: () => {
+            location.reload();
+        },
+        qrcode: () => {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`;
+            chrome.runtime.sendMessage({
+                action: 'setpage',
+                query: qrUrl,
+                openSidebar: true
+            });
+        },
+        sidepanel: () => {
+            chrome.runtime.sendMessage({ action: 'toggleSidePanel' });
         }
     };
 
-    setTimeout(() => {
-        document.addEventListener('click', closeMenu);
-    }, 100);
-
-    // 关闭所有弹出窗口的函数
-    function closePopups() {
-        if (currentPopup) {
-            document.body.removeChild(currentPopup);
-            currentPopup = null;
-        }
-        document.body.removeChild(imageMenu);
+    if (actions[type]) {
+        actions[type]();
     }
-
-    return imageMenu;
+}
+// 关闭所有弹出窗口的辅助函数
+function closePopups() {
+    if (currentPopup) {
+        document.body.removeChild(currentPopup);
+        currentPopup = null;
+    }
+    const menus = document.querySelectorAll('.image-search-menu, .ai-engine-menu, .regular-search-menu');
+    menus.forEach(menu => {
+        if (menu && menu.parentNode) {
+            menu.parentNode.removeChild(menu);
+        }
+    });
 }
 function createTabElement(tab) {
     const element = document.createElement('div');

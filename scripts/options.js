@@ -838,53 +838,84 @@ function addNewAISearchEngine() {
 }
 
 // ... existing code ...
-
-// 修改现有的 loadAISearchEngines 函数，将内容改为加载功能引擎
 function loadAISearchEngines(containerId) {
-	const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
-	if (!container) {
-		console.error('找不到容器:', containerId);
-		return;
-	}
+    const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
+    if (!container) return;
 
-	chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
-		const engines = data.multiMenu1Engines || multiMenu1Engines;
-		container.innerHTML = '';
+    // 获取功能菜单配置和复选框状态
+    chrome.storage.sync.get([
+        'functionMenus',
+        'copyCheckbox',
+        'saveCheckbox', 
+        'refreshCheckbox',
+        'qrcodeCheckbox',
+        'sidepanelCheckbox'
+    ], function(data) {
+        // 使用保存的配置或默认配置
+        const menus = data.functionMenus || defaultFunctionMenus;
+        
+        // 更新菜单启用状态
+        menus.forEach(menu => {
+            switch(menu.type) {
+                case 'copy':
+                    menu.enabled = data.copyCheckbox !== false;
+                    break;
+                case 'save':
+                    menu.enabled = data.saveCheckbox !== false;
+                    break;
+                case 'refresh':
+                    menu.enabled = data.refreshCheckbox !== false;
+                    break;
+                case 'qrcode':
+                    menu.enabled = data.qrcodeCheckbox !== false;
+                    break;
+                case 'sidepanel':
+                    menu.enabled = data.sidepanelCheckbox !== false;
+                    break;
+            }
+        });
 
-		engines.forEach((engine, index) => {
-			const li = document.createElement('li');
-			li.className = 'ai-engine-item';
-			li.innerHTML = `
+        // 渲染菜单列表
+        container.innerHTML = '';
+        menus.forEach((menu, index) => {
+            const li = document.createElement('li');
+            li.className = 'ai-engine-item';
+            li.innerHTML = `
                 <div class="engine-row">
-                    <input type="checkbox" id="multi-engine-${index}" 
+                    <input type="checkbox" id="function-${index}" 
                            class="engine-checkbox" 
-                           ${engine.enabled ? 'checked' : ''}>
-                    <label for="multi-engine-${index}">${engine.name}</label>
-                    <input type="text" class="engine-url" value="${engine.url}" readonly>
-                    <button class="edit-engine" data-index="${index}">编辑</button>
-                    <button class="delete-engine" data-index="${index}">删除</button>
+                           ${menu.enabled ? 'checked' : ''}>
+                    <label for="function-${index}">${menu.name}</label>
+                    <span class="function-icon">${menu.icon}</span>
                 </div>
             `;
 
-			// 添加编辑按钮事件监听器
-			const editBtn = li.querySelector('.edit-engine');
-			editBtn.addEventListener('click', () => editMultiMenuEngine(index));
+            // 添加复选框事件监听
+            const checkbox = li.querySelector('.engine-checkbox');
+            checkbox.addEventListener('change', function() {
+                saveFunctionMenuState(menu.type, this.checked);
+            });
 
-			// 添加删除按钮事件监听器  
-			const deleteBtn = li.querySelector('.delete-engine');
-			deleteBtn.addEventListener('click', () => deleteMultiMenuEngine(index));
+            container.appendChild(li);
+        });
 
-			// 添加复选框事件监听器
-			const checkbox = li.querySelector('.engine-checkbox');
-			checkbox.addEventListener('change', function () {
-				saveMultiMenuEngineState(index, this.checked);
-			});
-
-			container.appendChild(li);
-		});
-	});
+        // 保存更新后的配置
+        chrome.storage.sync.set({ functionMenus: menus });
+    });
 }
 
+// 保存功能菜单状态
+function saveFunctionMenuState(type, enabled) {
+    const checkboxMap = {
+        copy: 'copyCheckbox',
+        save: 'saveCheckbox',
+        refresh: 'refreshCheckbox',
+        qrcode: 'qrcodeCheckbox',
+        sidepanel: 'sidepanelCheckbox'
+    };
+
+    chrome.storage.sync.set({ [checkboxMap[type]]: enabled });
+}
 function addNewImageSearchEngine() {
 	const name = prompt('输入新的功能名称:');
 	if (!name) return;
@@ -4632,3 +4663,13 @@ document.addEventListener('DOMContentLoaded', () => {
 	// 监听搜索引擎变化
 	listenToEngineChanges();
 });
+document.addEventListener('DOMContentLoaded', () => {
+	chrome.storage.sync.get(['functionMenus'], function (data) {
+		if (!data.functionMenus) {
+			chrome.storage.sync.set({ functionMenus: defaultFunctionMenus }, () => {
+				console.log('功能菜单配置已初始化');
+			});
+		}
+	});
+});
+
