@@ -839,70 +839,66 @@ function addNewAISearchEngine() {
 
 // ... existing code ...
 function loadAISearchEngines(containerId) {
-    const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
-    if (!container) return;
+	const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
+	if (!container) {
+		console.error('找不到容器:', containerId);
+		return;
+	}
 
-    // 获取功能菜单配置和复选框状态
-    chrome.storage.sync.get([
-        'functionMenus',
-        'copyCheckbox',
-        'saveCheckbox', 
-        'refreshCheckbox',
-        'qrcodeCheckbox',
-        'sidepanelCheckbox'
-    ], function(data) {
-        // 使用保存的配置或默认配置
-        const menus = data.functionMenus || defaultFunctionMenus;
-        
-        // 更新菜单启用状态
-        menus.forEach(menu => {
-            switch(menu.type) {
-                case 'copy':
-                    menu.enabled = data.copyCheckbox !== false;
-                    break;
-                case 'save':
-                    menu.enabled = data.saveCheckbox !== false;
-                    break;
-                case 'refresh':
-                    menu.enabled = data.refreshCheckbox !== false;
-                    break;
-                case 'qrcode':
-                    menu.enabled = data.qrcodeCheckbox !== false;
-                    break;
-                case 'sidepanel':
-                    menu.enabled = data.sidepanelCheckbox !== false;
-                    break;
-            }
-        });
+	// 定义功能菜单选项
+	const functionMenus = [
+		{ name: "复制", type: "copy", icon: "📋" },
+		{ name: "收藏", type: "save", icon: "⭐" },
+		{ name: "刷新", type: "refresh", icon: "🔄" },
+		{ name: "二维码", type: "qrcode", icon: "📱" },
+		{ name: "侧边栏", type: "sidepanel", icon: "📑" }
+	];
 
-        // 渲染菜单列表
-        container.innerHTML = '';
-        menus.forEach((menu, index) => {
-            const li = document.createElement('li');
-            li.className = 'ai-engine-item';
-            li.innerHTML = `
+	// 获取所有功能菜单的状态
+	chrome.storage.sync.get([
+		'copyCheckbox',
+		'saveCheckbox',
+		'refreshCheckbox',
+		'qrcodeCheckbox',
+		'sidepanelCheckbox'
+	], function (data) {
+		container.innerHTML = ''; // 清空容器
+
+		// 创建功能菜单列表
+		functionMenus.forEach(menu => {
+			const li = document.createElement('li');
+			li.className = 'ai-engine-item';
+
+			// 根据类型获取对应的存储键值
+			const isEnabled = data[`${menu.type}Checkbox`] !== false;
+
+			li.innerHTML = `
                 <div class="engine-row">
-                    <input type="checkbox" id="function-${index}" 
+                    <input type="checkbox" id="${menu.type}-function" 
                            class="engine-checkbox" 
-                           ${menu.enabled ? 'checked' : ''}>
-                    <label for="function-${index}">${menu.name}</label>
-                    <span class="function-icon">${menu.icon}</span>
+                           ${isEnabled ? 'checked' : ''}>
+                    <label for="${menu.type}-function">
+                        <span class="menu-icon">${menu.icon}</span>
+                        ${menu.name}
+                    </label>
                 </div>
             `;
 
-            // 添加复选框事件监听
-            const checkbox = li.querySelector('.engine-checkbox');
-            checkbox.addEventListener('change', function() {
-                saveFunctionMenuState(menu.type, this.checked);
-            });
+			// 添加复选框事件监听
+			const checkbox = li.querySelector('.engine-checkbox');
+			checkbox.addEventListener('change', function () {
+				chrome.storage.sync.set({
+					[`${menu.type}Checkbox`]: this.checked
+				}, function () {
+					console.log(`${menu.name} 功能状态已更新:`, this.checked);
+				});
+			});
 
-            container.appendChild(li);
-        });
-
-        // 保存更新后的配置
-        chrome.storage.sync.set({ functionMenus: menus });
-    });
+			container.appendChild(li);
+		});
+	});
 }
+
 
 // 保存功能菜单状态
 function saveFunctionMenuState(type, enabled) {
@@ -3157,17 +3153,37 @@ const TabManager = {
 			return;
 		}
 
-		chrome.storage.sync.get([`${category}SearchEngines`], (result) => {
+		// 修改这里：先检查存储中是否有状态数据
+		chrome.storage.sync.get([`${category}SearchEngines`, `${category}EngineStates`], (result) => {
 			let engines = result[`${category}SearchEngines`];
+			const states = result[`${category}EngineStates`] || {};
 
 			if (!engines) {
 				engines = this.getDefaultEngines(category);
 				// 保存默认引擎到存储
-				chrome.storage.sync.set({ [`${category}SearchEngines`]: engines });
+				chrome.storage.sync.set({
+					[`${category}SearchEngines`]: engines,
+					[`${category}EngineStates`]: this.getDefaultStates(engines)
+				});
 			}
+
+			// 合并状态
+			engines = engines.map(engine => ({
+				...engine,
+				enabled: states[engine.name] !== undefined ? states[engine.name] : (engine.enabled || true)
+			}));
 
 			this.renderEngines(engines, category);
 		});
+	},
+
+	// 新增：获取默认状态
+	getDefaultStates(engines) {
+		const states = {};
+		engines.forEach(engine => {
+			states[engine.name] = engine.enabled !== false;
+		});
+		return states;
 	},
 
 	getDefaultEngines(category) {
@@ -3179,10 +3195,6 @@ const TabManager = {
 			regular: [
 				{ name: 'Google', url: 'https://www.google.com/search?q=', enabled: true },
 				{ name: 'Bing', url: 'https://www.bing.com/search?q=', enabled: true }
-			],
-			function: [
-				{ name: '翻译', url: 'https://translate.google.com/?text=', enabled: true },
-				{ name: '下载', url: 'https://download.com?url=', enabled: true }
 			],
 			image: [
 				{ name: 'Google图片', url: 'https://images.google.com/search?q=', enabled: true },
@@ -3208,7 +3220,7 @@ const TabManager = {
                     <input type="checkbox" 
                            id="${category}-engine-${index}" 
                            class="engine-checkbox" 
-                           ${engine.enabled !== false ? 'checked' : ''}>
+                           ${engine.enabled ? 'checked' : ''}>
                     <label class="engine-name" for="${category}-engine-${index}">${engine.name}</label>
                     <input type="text" 
                            class="engine-url" 
@@ -3234,7 +3246,7 @@ const TabManager = {
 		// 复选框事件监听
 		const checkbox = li.querySelector('.engine-checkbox');
 		checkbox.addEventListener('change', () => {
-			this.updateEngineState(category, index, checkbox.checked);
+			this.updateEngineState(category, engine.name, checkbox.checked);
 		});
 
 		// 编辑按钮事件监听
@@ -3250,32 +3262,263 @@ const TabManager = {
 		});
 	},
 
-	updateEngineState(category, index, enabled) {
-		chrome.storage.sync.get([`${category}SearchEngines`], (result) => {
-			const engines = result[`${category}SearchEngines`] || [];
-			if (engines[index]) {
-				engines[index].enabled = enabled;
-				chrome.storage.sync.set({ [`${category}SearchEngines`]: engines }, () => {
-					console.log(`搜索引擎 ${engines[index].name} 状态已更新为: ${enabled}`);
+	// 修改：更新引擎状态的方法
+	updateEngineState(category, engineName, enabled) {
+		chrome.storage.sync.get([`${category}EngineStates`, 'directionEngineSettings'], (result) => {
+			const states = result[`${category}EngineStates`] || {};
+			states[engineName] = enabled;
+
+			// 获取方向设置
+			const directionSettings = result.directionEngineSettings || {};
+
+			// 如果禁用搜索引擎，检查并清除相应的方向设置
+			if (!enabled) {
+				Object.keys(directionSettings).forEach(direction => {
+					if (directionSettings[direction] === `${category}:${engineName}`) {
+						directionSettings[direction] = 'disabled';
+					}
 				});
+			}
+
+			// 保存两个设置
+			chrome.storage.sync.set({
+				[`${category}EngineStates`]: states,
+				directionEngineSettings: directionSettings
+			}, () => {
+				console.log(`搜索引擎 ${engineName} 状态已更新为: ${enabled}`);
+				// 更新方向下拉菜单
+				this.updateDirectionMenus();
+			});
+		});
+	},
+ // 新增：更新方向下拉菜单
+    updateDirectionMenus() {
+        const directions = [
+            'direction-left-up',
+            'direction-up',
+            'direction-right-up',
+            'direction-left',
+            'direction-right',
+            'direction-left-down',
+            'direction-down',
+            'direction-right-down'
+        ];
+
+        chrome.storage.sync.get(['directionEngineSettings'], (result) => {
+            const settings = result.directionEngineSettings || {};
+            
+            directions.forEach(direction => {
+                const select = document.querySelector(`#${direction} .select-button`);
+                if (select) {
+                    const currentSetting = settings[direction];
+                    if (currentSetting && currentSetting !== 'disabled') {
+                        const [category, engineName] = currentSetting.split(':');
+                        select.textContent = engineName || '选择搜索引擎';
+                    } else {
+                        select.textContent = '选择搜索引擎';
+                    }
+                }
+            });
+        });
+    },
+
+    // 新增：初始化方向下拉菜单
+    initDirectionMenus() {
+        document.addEventListener('click', (e) => {
+            // 关闭所有其他打开的菜单
+            const allMenus = document.querySelectorAll('.select-menu');
+            allMenus.forEach(menu => {
+                // 如果点击的不是当前菜单或其子元素，则关闭菜单
+                if (!menu.contains(e.target) && !e.target.closest('.select-button')) {
+                    menu.style.display = 'none';
+                }
+            });
+        });
+
+        // 为每个方向选择器添加事件监听
+        const directions = document.querySelectorAll('.custom-select');
+        directions.forEach(select => {
+            const button = select.querySelector('.select-button');
+            const menu = select.querySelector('.select-menu');
+            
+            // 点击按钮时切换菜单显示
+            button.addEventListener('click', (e) => {
+                e.stopPropagation(); // 阻止事件冒泡
+                
+                // 关闭其他打开的菜单
+                const otherMenus = document.querySelectorAll('.select-menu');
+                otherMenus.forEach(otherMenu => {
+                    if (otherMenu !== menu) {
+                        otherMenu.style.display = 'none';
+                    }
+                });
+
+                // 切换当前菜单
+                if (menu.style.display === 'none' || !menu.style.display) {
+                    this.populateEngineMenu(menu);
+                    menu.style.display = 'block';
+                } else {
+                    menu.style.display = 'none';
+                }
+            });
+        });
+
+        // 初始加载方向设置
+        this.updateDirectionMenus();
+    },
+	populateEngineMenu(menu) {
+		const categories = ['ai', 'regular', 'image', 'custom'];
+
+		chrome.storage.sync.get([
+			...categories.map(cat => `${cat}SearchEngines`),
+			...categories.map(cat => `${cat}EngineStates`),
+			'directionEngineSettings'
+		], (result) => {
+			const directionId = menu.closest('.custom-select').id;
+			const currentSetting = (result.directionEngineSettings || {})[directionId];
+
+			// 清空现有内容
+			menu.querySelectorAll('.engine-list').forEach(list => {
+				list.innerHTML = '';
+			});
+
+			categories.forEach(category => {
+				const engines = result[`${category}SearchEngines`] || [];
+				const states = result[`${category}EngineStates`] || {};
+
+				const categoryList = menu.querySelector(`.${category} .engine-list`);
+				if (categoryList) {
+					engines.forEach(engine => {
+						if (states[engine.name]) {
+							const li = document.createElement('li');
+							const engineValue = `${category}:${engine.name}`;
+							li.dataset.value = engineValue;
+							li.textContent = engine.name;
+
+							// 标记当前选中的选项
+							if (currentSetting === engineValue) {
+								li.classList.add('selected');
+							}
+
+							li.addEventListener('click', (e) => {
+								e.stopPropagation();
+								// 移除所有选中状态
+								menu.querySelectorAll('.engine-list li').forEach(item => {
+									item.classList.remove('selected');
+								});
+								// 添加新的选中状态
+								li.classList.add('selected');
+								this.updateDirectionSetting(directionId, engineValue);
+							});
+
+							categoryList.appendChild(li);
+						}
+					});
+				}
+			});
+
+			// 添加禁用选项
+			const disabledList = menu.querySelector('.disabled .engine-list');
+			if (disabledList) {
+				const li = document.createElement('li');
+				li.dataset.value = 'disabled';
+				li.textContent = '禁用此方向';
+
+				if (currentSetting === 'disabled' || !currentSetting) {
+					li.classList.add('selected');
+				}
+
+				li.addEventListener('click', (e) => {
+					e.stopPropagation();
+					menu.querySelectorAll('.engine-list li').forEach(item => {
+						item.classList.remove('selected');
+					});
+					li.classList.add('selected');
+					this.updateDirectionSetting(directionId, 'disabled');
+				});
+
+				disabledList.appendChild(li);
 			}
 		});
 	},
 
+	updateDirectionSetting(directionId, value) {
+		chrome.storage.sync.get(['directionEngineSettings'], (result) => {
+			const settings = result.directionEngineSettings || {};
+			settings[directionId] = value;
+
+			chrome.storage.sync.set({ directionEngineSettings: settings }, () => {
+				// 更新按钮文本
+				const button = document.querySelector(`#${directionId} .select-button`);
+				if (button) {
+					if (value === 'disabled') {
+						button.textContent = '选择搜索引擎';
+					} else {
+						const engineName = value.split(':')[1];
+						button.textContent = engineName;
+					}
+				}
+
+				// 立即关闭当前菜单
+				const currentMenu = document.querySelector(`#${directionId} .select-menu`);
+				if (currentMenu) {
+					currentMenu.style.display = 'none';
+				}
+
+				// 更新所有菜单中的选中状态
+				this.updateAllMenusSelection(value);
+			});
+		});
+	},
+	
+    // 新增：更新所有菜单的选中状态
+    updateAllMenusSelection(selectedValue) {
+        const allMenus = document.querySelectorAll('.select-menu');
+        allMenus.forEach(menu => {
+            const items = menu.querySelectorAll('.engine-list li');
+            items.forEach(item => {
+                if (item.dataset.value === selectedValue) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        });
+    },
+    init() {
+        if (this.hasLoaded) return;
+        this.bindEvents();
+        this.loadInitialTab();
+        this.initDirectionMenus(); // 添加这行
+        this.hasLoaded = true;
+    },
 	editEngine(category, index, engine) {
 		const newName = prompt('请输入新的搜索引擎名称:', engine.name);
 		const newUrl = prompt('请输入新的搜索引擎URL:', engine.url);
 
 		if (newName && newUrl) {
-			chrome.storage.sync.get([`${category}SearchEngines`], (result) => {
+			chrome.storage.sync.get([`${category}SearchEngines`, `${category}EngineStates`], (result) => {
 				const engines = result[`${category}SearchEngines`] || [];
+				const states = result[`${category}EngineStates`] || {};
+
+				// 更新引擎数据
 				engines[index] = {
 					...engines[index],
 					name: newName,
 					url: newUrl
 				};
 
-				chrome.storage.sync.set({ [`${category}SearchEngines`]: engines }, () => {
+				// 更新状态数据
+				if (engine.name !== newName) {
+					states[newName] = states[engine.name];
+					delete states[engine.name];
+				}
+
+				// 保存更新
+				chrome.storage.sync.set({
+					[`${category}SearchEngines`]: engines,
+					[`${category}EngineStates`]: states
+				}, () => {
 					this.renderEngines(engines, category);
 				});
 			});
@@ -3284,17 +3527,26 @@ const TabManager = {
 
 	deleteEngine(category, index) {
 		if (confirm('确定要删除这个搜索引擎吗？')) {
-			chrome.storage.sync.get([`${category}SearchEngines`], (result) => {
+			chrome.storage.sync.get([`${category}SearchEngines`, `${category}EngineStates`], (result) => {
 				const engines = result[`${category}SearchEngines`] || [];
+				const states = result[`${category}EngineStates`] || {};
+
+				// 删除状态数据
+				delete states[engines[index].name];
+
+				// 删除引擎数据
 				engines.splice(index, 1);
 
-				chrome.storage.sync.set({ [`${category}SearchEngines`]: engines }, () => {
+				// 保存更新
+				chrome.storage.sync.set({
+					[`${category}SearchEngines`]: engines,
+					[`${category}EngineStates`]: states
+				}, () => {
 					this.renderEngines(engines, category);
 				});
 			});
 		}
 	},
-
 	addDragListeners(li, index) {
 		li.addEventListener('dragstart', (e) => {
 			e.dataTransfer.setData('text/plain', index.toString());
@@ -3324,45 +3576,18 @@ const TabManager = {
 				const [movedEngine] = engines.splice(fromIndex, 1);
 				engines.splice(toIndex, 0, movedEngine);
 
+				// 保存新顺序
 				chrome.storage.sync.set({ [`${this.currentCategory}SearchEngines`]: engines }, () => {
 					this.renderEngines(engines, this.currentCategory);
 				});
 			});
 		}
-	},
-
-	// 新增：添加搜索引擎方法
-	addEngine(category, name, url) {
-		chrome.storage.sync.get([`${category}SearchEngines`], (result) => {
-			const engines = result[`${category}SearchEngines`] || [];
-			engines.push({
-				name: name,
-				url: url,
-				enabled: true
-			});
-
-			chrome.storage.sync.set({ [`${category}SearchEngines`]: engines }, () => {
-				this.renderEngines(engines, category);
-			});
-		});
 	}
 };
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
 	TabManager.init();
-
-	// 添加新搜索引擎的按钮事件监听
-	const addEngineBtn = document.getElementById('addEngineBtn');
-	if (addEngineBtn) {
-		addEngineBtn.addEventListener('click', () => {
-			const name = prompt('请输入搜索引擎名称:');
-			const url = prompt('请输入搜索引擎URL:');
-			if (name && url) {
-				TabManager.addEngine(TabManager.currentCategory, name, url);
-			}
-		});
-	}
 });
 document.addEventListener('DOMContentLoaded', () => {
   // 初始化标签管理器
