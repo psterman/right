@@ -1676,29 +1676,58 @@ const searchEngines = {
 	image: [
 		{
 			name: "复制",
-			action: " ",
-			url: "复制选中文本"  // 添加 url 属性
+			action: "copy",
+			url: "复制选中文本",
+			handler: (text) => {
+				navigator.clipboard.writeText(text).then(() => {
+					showNotification('已复制到剪贴板');
+				});
+			}
 		},
 		{
 			name: "收藏",
-			action: "",
-			url: "选中文本保存到书签页面 "
+			action: "save",
+			url: "选中文本保存到书签页面",
+			handler: (text) => {
+				chrome.storage.sync.get('savedBookmarks', (data) => {
+					const bookmarks = data.savedBookmarks || [];
+					bookmarks.push({
+						text: text,
+						url: window.location.href,
+						date: new Date().toISOString()
+					});
+					chrome.storage.sync.set({ savedBookmarks: bookmarks }, () => {
+						showNotification('已保存到书签');
+					});
+				});
+			}
 		},
 		{
 			name: "刷新",
-			action: " ",
-			url: "刷新网页，按“esc”可以取消 "
+			action: "refresh",
+			url: "刷新网页，按esc可以取消",
+			handler: () => {
+				window.location.reload();
+			}
 		},
 		{
 			name: "侧边栏",
-			action: " ",
-			url: " 打开侧边栏"
+			action: "sidepanel",
+			url: "打开侧边栏",
+			handler: () => {
+				chrome.runtime.sendMessage({ action: 'toggleSidePanel' });
+			}
 		},
 		{
 			name: "二维码",
-			action: "",
-			url: "打开侧边栏，扫描二维码复制文字"
-
+			action: "qrcode",
+			url: "打开侧边栏，扫描二维码复制文字",
+			handler: (text) => {
+				chrome.runtime.sendMessage({
+					action: 'generateQRCode',
+					text: text
+				});
+			}
 		}
 	],
 	regular: [

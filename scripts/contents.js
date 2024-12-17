@@ -3083,6 +3083,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 // 添加创建图片搜索菜单的函数
+// 创建图片搜索菜单的函数
 function createImageSearchMenu(parentPopup) {
     const parentRect = parentPopup.getBoundingClientRect();
     const searchText = parentPopup.querySelector('input').value.trim();
@@ -3105,97 +3106,7 @@ function createImageSearchMenu(parentPopup) {
 
     // 从storage获取功能菜单配置
     chrome.storage.sync.get(['multiMenu1Engines'], function (data) {
-        const functionMenus = data.multiMenu1Engines || [
-            {
-                name: '复制',
-                type: 'copy',
-                icon: '📋',
-                enabled: true,
-                action: async () => {
-                    try {
-                        await navigator.clipboard.writeText(searchText);
-                        showNotification('已复制到剪贴板', 2000);
-                        closePopups();
-                    } catch (err) {
-                        console.error('复制失败:', err);
-                        showNotification('复制失败', 2000);
-                    }
-                }
-            },
-            {
-                name: '收藏',
-                type: 'save',
-                icon: '⭐',
-                enabled: true,
-                action: () => {
-                    if (searchText) {
-                        chrome.storage.sync.get('savedRecords', function (data) {
-                            const records = data.savedRecords || [];
-                            records.push({
-                                text: searchText,
-                                timestamp: new Date().getTime(),
-                                url: window.location.href
-                            });
-                            chrome.storage.sync.set({ savedRecords: records }, () => {
-                                showNotification('已保存到书签页面', 2000);
-                                closePopups();
-                            });
-                        });
-                    } else {
-                        showNotification('请输入要保存的内容', 2000);
-                    }
-                }
-            },
-            {
-                name: '刷新',
-                type: 'refresh',
-                icon: '🔄',
-                enabled: true,
-                action: () => {
-                    try {
-                        window.location.reload();
-                        showNotification('页面刷新中...', 2000);
-                        closePopups();
-                    } catch (error) {
-                        console.error('刷新失败:', error);
-                        showNotification('刷新失败', 2000);
-                    }
-                }
-            },
-            {
-                name: '二维码',
-                type: 'qrcode',
-                icon: '📱',
-                enabled: true,
-                action: () => {
-                    if (searchText) {
-                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(searchText)}`;
-                        chrome.runtime.sendMessage({
-                            action: 'setpage',
-                            query: qrUrl,
-                            foreground: false
-                        });
-                        closePopups();
-                    } else {
-                        showNotification('请输入要生成二维码的内容', 2000);
-                    }
-                }
-            },
-            {
-                name: '侧边栏',
-                type: 'sidepanel',
-                icon: '◧',
-                enabled: true,
-                action: () => {
-                    chrome.runtime.sendMessage({
-                        action: 'setpage',
-                        query: window.location.href,
-                        foreground: false
-                    });
-                    closePopups();
-                }
-            }
-        ];
+        const functionMenus = data.multiMenu1Engines || [];
 
         // 只显示启用的功能按钮
         const enabledMenus = functionMenus.filter(menu => menu.enabled !== false);
@@ -3229,7 +3140,7 @@ function createImageSearchMenu(parentPopup) {
                 `;
 
                 buttonElement.innerHTML = `
-                    <span style="font-size: 16px;">${menu.icon}</span>
+                    <span style="font-size: 16px;">${menu.icon || '📝'}</span>
                     <span>${menu.name}</span>
                 `;
 
@@ -3244,23 +3155,116 @@ function createImageSearchMenu(parentPopup) {
                 // 添加点击事件
                 buttonElement.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    menu.action();
+                    handleMenuAction(menu.type, searchText);
                 });
 
                 imageMenu.appendChild(buttonElement);
             });
         }
-
-        // 保存更新后的配置
-        chrome.storage.sync.set({ multiMenu1Engines: functionMenus }, () => {
-            console.log('功能菜单配置已更新');
-        });
     });
 
     document.body.appendChild(imageMenu);
     return imageMenu;
 }
 
+// 处理菜单动作的函数
+function handleMenuAction(type, text) {
+    const actions = {
+        copy: async () => {
+            try {
+                await navigator.clipboard.writeText(text);
+                showNotification('已复制到剪贴板', 2000);
+                closePopups();
+            } catch (err) {
+                console.error('复制失败:', err);
+                showNotification('复制失败', 2000);
+            }
+        },
+        save: () => {
+            if (text) {
+                chrome.storage.sync.get('savedRecords', function (data) {
+                    const records = data.savedRecords || [];
+                    records.push({
+                        text: text,
+                        timestamp: new Date().getTime(),
+                        url: window.location.href
+                    });
+                    chrome.storage.sync.set({ savedRecords: records }, () => {
+                        showNotification('已保存到书签页面', 2000);
+                        closePopups();
+                    });
+                });
+            } else {
+                showNotification('请输入要保存的内容', 2000);
+            }
+        },
+        refresh: () => {
+            try {
+                window.location.reload();
+                showNotification('页面刷新中...', 2000);
+                closePopups();
+            } catch (error) {
+                console.error('刷新失败:', error);
+                showNotification('刷新失败', 2000);
+            }
+        },
+        qrcode: () => {
+            if (text) {
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`;
+                chrome.runtime.sendMessage({
+                    action: 'setpage',
+                    query: qrUrl,
+                    foreground: false
+                });
+                closePopups();
+            } else {
+                showNotification('请输入要生成二维码的内容', 2000);
+            }
+        },
+        sidepanel: () => {
+            chrome.runtime.sendMessage({
+                action: 'setpage',
+                query: window.location.href,
+                foreground: false
+            });
+            closePopups();
+        }
+    };
+
+    if (actions[type]) {
+        actions[type]();
+    }
+}
+// 在 multiMenu1 中加载图片菜单项的函数
+function loadImageMenu(menuId) {
+    const menuList = document.querySelector(`#${menuId} .menu-list`);
+    if (!menuList) return;
+
+    // 清空现有菜单项
+    menuList.innerHTML = '';
+
+    // 从 searchEngines.image 加载菜单项
+    searchEngines.image.forEach((item, index) => {
+        const menuItem = document.createElement('div');
+        menuItem.className = 'menu-item';
+        menuItem.textContent = item.name;
+        menuItem.title = item.url; // 显示功能说明
+
+        menuItem.addEventListener('click', () => {
+            if (item.handler) {
+                const selectedText = window.getSelection().toString().trim();
+                item.handler(selectedText);
+            }
+        });
+
+        menuList.appendChild(menuItem);
+    });
+}
+
+// 在 DOMContentLoaded 事件中调用加载函数
+document.addEventListener('DOMContentLoaded', () => {
+    loadImageMenu('multiMenu1');
+});
 function handleAction(action, text) {
     // 获取功能菜单配置
     chrome.storage.sync.get(['imageSearchEngines'], function (data) {
@@ -3313,45 +3317,7 @@ function handleAction(action, text) {
         }
     });
 }
-// 处理菜单动作
-function handleMenuAction(type, text) {
-    const actions = {
-        copy: async () => {
-            await navigator.clipboard.writeText(text);
-            showNotification('已复制到剪贴板');
-        },
-        save: () => {
-            chrome.storage.sync.get('savedRecords', data => {
-                const records = data.savedRecords || [];
-                records.push({
-                    text,
-                    url: window.location.href,
-                    timestamp: Date.now()
-                });
-                chrome.storage.sync.set({ savedRecords: records });
-                showNotification('已添加到收藏');
-            });
-        },
-        refresh: () => {
-            location.reload();
-        },
-        qrcode: () => {
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`;
-            chrome.runtime.sendMessage({
-                action: 'setpage',
-                query: qrUrl,
-                openSidebar: true
-            });
-        },
-        sidepanel: () => {
-            chrome.runtime.sendMessage({ action: 'toggleSidePanel' });
-        }
-    };
 
-    if (actions[type]) {
-        actions[type]();
-    }
-}
 // 关闭所有弹出窗口的辅助函数
 function closePopups() {
     if (currentPopup) {
