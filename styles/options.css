@@ -2631,6 +2631,7 @@ button {
   display: flex;
   gap: 8px;
 }
+
 .engine-list {
   list-style-type: none !important;
   padding: 0 !important;
@@ -3053,11 +3054,13 @@ body.custom-cursor * {
 .engine-item,
 .ai-engine-item {
   display: flex;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid var(--totl-section-border);
-  gap: 10px;
-  background: var(--totl-primary-background);
+    align-items: center;
+    padding: 12px;
+    margin: 4px 0;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    transition: background 0.2s ease;
 }
 
 /* 统一的URL输入框样式 */

@@ -839,42 +839,24 @@ function addNewAISearchEngine() {
 
 // ... existing code ...
 function loadAISearchEngines(containerId) {
-	const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
-	if (!container) {
-		console.error('找不到容器:', containerId);
-		return;
-	}
+const container = document.querySelector(`#${containerId} .ai-search-engine-list`);
+if (!container) return;
 
-	// 定义功能菜单选项
-	const functionMenus = [
-		{ name: "复制", type: "copy", icon: "📋" },
-		{ name: "收藏", type: "save", icon: "⭐" },
-		{ name: "刷新", type: "refresh", icon: "🔄" },
-		{ name: "二维码", type: "qrcode", icon: "📱" },
-		{ name: "侧边栏", type: "sidepanel", icon: "📑" }
-	];
+const functionMenus = [
+	{ name: "复制", type: "copy", icon: "📋" },
+	{ name: "收藏", type: "save", icon: "⭐" },
+	{ name: "刷新", type: "refresh", icon: "🔄" },
+	{ name: "二维码", type: "qrcode", icon: "📱" },
+	{ name: "侧边栏", type: "sidepanel", icon: "📑" }
+];
 
-	// 获取所有功能菜单的状态
-	chrome.storage.sync.get([
-		'copyCheckbox',
-		'saveCheckbox',
-		'refreshCheckbox',
-		'qrcodeCheckbox',
-		'sidepanelCheckbox'
-	], function (data) {
-		container.innerHTML = ''; // 清空容器
-
-		// 创建功能菜单列表
-		functionMenus.forEach(menu => {
-			const li = document.createElement('li');
-			li.className = 'ai-engine-item';
-
-			// 根据类型获取对应的存储键值
-			const isEnabled = data[`${menu.type}Checkbox`] !== false;
-
-			li.innerHTML = `
-                <div class="engine-row">
-                    <input type="checkbox" id="${menu.type}-function" 
+chrome.storage.sync.get(functionMenus.map(menu => `${menu.type}Checkbox`), data => {
+	container.innerHTML = functionMenus.map(menu => {
+		const isEnabled = data[`${menu.type}Checkbox`] !== false;
+		return `
+                <div class="ai-engine-item">
+                    <input type="checkbox" 
+                           id="${menu.type}-function" 
                            class="engine-checkbox" 
                            ${isEnabled ? 'checked' : ''}>
                     <label for="${menu.type}-function">
@@ -883,20 +865,18 @@ function loadAISearchEngines(containerId) {
                     </label>
                 </div>
             `;
+	}).join('');
 
-			// 添加复选框事件监听
-			const checkbox = li.querySelector('.engine-checkbox');
-			checkbox.addEventListener('change', function () {
-				chrome.storage.sync.set({
-					[`${menu.type}Checkbox`]: this.checked
-				}, function () {
-					console.log(`${menu.name} 功能状态已更新:`, this.checked);
-				});
+	// 添加事件监听
+	container.querySelectorAll('.engine-checkbox').forEach((checkbox, index) => {
+		checkbox.addEventListener('change', function () {
+			const menu = functionMenus[index];
+			chrome.storage.sync.set({
+				[`${menu.type}Checkbox`]: this.checked
 			});
-
-			container.appendChild(li);
 		});
 	});
+});
 }
 
 
