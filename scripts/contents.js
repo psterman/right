@@ -3152,10 +3152,63 @@ function createImageSearchMenu(parentPopup) {
                     buttonElement.style.backgroundColor = '#f5f6f7';
                 });
 
-                // 添加点击事件
+                // 修改点击事件处理
                 buttonElement.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    handleMenuAction(menu.type, searchText);
+                    // 根据菜单类型执行相应的操作
+                    switch (menu.name) {
+                        case '复制':
+                            navigator.clipboard.writeText(searchText)
+                                .then(() => {
+                                    showNotification('已复制到剪贴板', 2000);
+                                    closePopups();
+                                })
+                                .catch(() => showNotification('复制失败', 2000));
+                            break;
+                        case '收藏':
+                            if (searchText) {
+                                chrome.storage.sync.get('savedRecords', function (data) {
+                                    const records = data.savedRecords || [];
+                                    records.push({
+                                        text: searchText,
+                                        timestamp: new Date().getTime(),
+                                        url: window.location.href
+                                    });
+                                    chrome.storage.sync.set({ savedRecords: records }, () => {
+                                        showNotification('已保存到书签页面', 2000);
+                                        closePopups();
+                                    });
+                                });
+                            } else {
+                                showNotification('请输入要保存的内容', 2000);
+                            }
+                            break;
+                        case '刷新':
+                            window.location.reload();
+                            closePopups();
+                            break;
+                        case '二维码':
+                            if (searchText) {
+                                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(searchText)}`;
+                                chrome.runtime.sendMessage({
+                                    action: 'setpage',
+                                    query: qrUrl,
+                                    foreground: false
+                                });
+                                closePopups();
+                            } else {
+                                showNotification('请输入要生成二维码的内容', 2000);
+                            }
+                            break;
+                        case '侧边栏':
+                            chrome.runtime.sendMessage({
+                                action: 'setpage',
+                                query: window.location.href,
+                                foreground: false
+                            });
+                            closePopups();
+                            break;
+                    }
                 });
 
                 imageMenu.appendChild(buttonElement);
