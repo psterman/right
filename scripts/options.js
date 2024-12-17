@@ -3130,7 +3130,6 @@ const TabManager = {
 	},
 
 	loadInitialTab() {
-		// 默认加载第一个标签
 		const defaultTab = document.querySelector('.tab');
 		if (defaultTab) {
 			this.switchTab(defaultTab);
@@ -3143,12 +3142,11 @@ const TabManager = {
 			return;
 		}
 
-		// 更新标签状态
 		document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
 		tab.classList.add('active');
 
-		// 加载对应分类的内容
 		const category = tab.dataset.category;
+		this.currentCategory = category;
 		this.loadTabContent(category);
 	},
 
@@ -3159,27 +3157,36 @@ const TabManager = {
 			return;
 		}
 
-		// 从存储中获取搜索引擎数据
 		chrome.storage.sync.get([`${category}SearchEngines`], (result) => {
-			const engines = result[`${category}SearchEngines`] || this.getDefaultEngines(category);
+			let engines = result[`${category}SearchEngines`];
+
+			if (!engines) {
+				engines = this.getDefaultEngines(category);
+				// 保存默认引擎到存储
+				chrome.storage.sync.set({ [`${category}SearchEngines`]: engines });
+			}
+
 			this.renderEngines(engines, category);
 		});
 	},
 
-	// 获取默认搜索引擎列表
 	getDefaultEngines(category) {
 		const defaults = {
 			ai: [
-				{ name: 'ChatGPT', url: 'https://chat.openai.com' },
-				{ name: '文心一言', url: 'https://yiyan.baidu.com' }
+				{ name: 'ChatGPT', url: 'https://chat.openai.com', enabled: true },
+				{ name: '文心一言', url: 'https://yiyan.baidu.com', enabled: true }
 			],
 			regular: [
-				{ name: 'Google', url: 'https://www.google.com/search?q=' },
-				{ name: 'Bing', url: 'https://www.bing.com/search?q=' }
+				{ name: 'Google', url: 'https://www.google.com/search?q=', enabled: true },
+				{ name: 'Bing', url: 'https://www.bing.com/search?q=', enabled: true }
 			],
 			function: [
-				{ name: '翻译', url: 'https://translate.google.com/?text=' },
-				{ name: '下载', url: 'https://download.com?url=' }
+				{ name: '翻译', url: 'https://translate.google.com/?text=', enabled: true },
+				{ name: '下载', url: 'https://download.com?url=', enabled: true }
+			],
+			image: [
+				{ name: 'Google图片', url: 'https://images.google.com/search?q=', enabled: true },
+				{ name: 'Bing图片', url: 'https://www.bing.com/images/search?q=', enabled: true }
 			],
 			custom: []
 		};
@@ -3197,41 +3204,25 @@ const TabManager = {
 			li.draggable = true;
 
 			li.innerHTML = `
-            <div class="engine-row">
-                <input type="checkbox" 
-                       id="${category}-engine-${index}" 
-                       class="engine-checkbox" 
-                       ${engine.enabled !== false ? 'checked' : ''}>
-                <label class="engine-name" for="${category}-engine-${index}">${engine.name}</label>
-                <input type="text" 
-                       class="engine-url" 
-                       value="${engine.url}" 
-                       ${category === 'custom' ? '' : 'readonly'}>
-                <div class="engine-controls">
-                    <button class="edit-btn">编辑</button>
-                    <button class="delete-btn">删除</button>
+                <div class="engine-row">
+                    <input type="checkbox" 
+                           id="${category}-engine-${index}" 
+                           class="engine-checkbox" 
+                           ${engine.enabled !== false ? 'checked' : ''}>
+                    <label class="engine-name" for="${category}-engine-${index}">${engine.name}</label>
+                    <input type="text" 
+                           class="engine-url" 
+                           value="${engine.url}" 
+                           ${category === 'custom' ? '' : 'readonly'}>
+                    <div class="engine-controls">
+                        <button class="edit-btn">编辑</button>
+                        <button class="delete-btn">删除</button>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
 
-			// 添加复选框事件监听器
-			const checkbox = li.querySelector('.engine-checkbox');
-			checkbox.addEventListener('change', () => {
-				this.updateEngineState(category, index, checkbox.checked);
-			});
-
-			// 添加编辑按钮事件监听器
-			const editBtn = li.querySelector('.edit-btn');
-			editBtn.addEventListener('click', () => {
-				this.editEngine(category, index, engine);
-			});
-
-			// 添加删除按钮事件监听器
-			const deleteBtn = li.querySelector('.delete-btn');
-			deleteBtn.addEventListener('click', () => {
-				this.deleteEngine(category, index);
-			});
-
+			this.addEngineListeners(li, engine, index, category);
+			this.addDragListeners(li, index);
 			ul.appendChild(li);
 		});
 
@@ -3239,40 +3230,71 @@ const TabManager = {
 		tabContent.appendChild(ul);
 	},
 
-	// 添加编辑引擎方法
+	addEngineListeners(li, engine, index, category) {
+		// 复选框事件监听
+		const checkbox = li.querySelector('.engine-checkbox');
+		checkbox.addEventListener('change', () => {
+			this.updateEngineState(category, index, checkbox.checked);
+		});
+
+		// 编辑按钮事件监听
+		const editBtn = li.querySelector('.edit-btn');
+		editBtn.addEventListener('click', () => {
+			this.editEngine(category, index, engine);
+		});
+
+		// 删除按钮事件监听
+		const deleteBtn = li.querySelector('.delete-btn');
+		deleteBtn.addEventListener('click', () => {
+			this.deleteEngine(category, index);
+		});
+	},
+
+	updateEngineState(category, index, enabled) {
+		chrome.storage.sync.get([`${category}SearchEngines`], (result) => {
+			const engines = result[`${category}SearchEngines`] || [];
+			if (engines[index]) {
+				engines[index].enabled = enabled;
+				chrome.storage.sync.set({ [`${category}SearchEngines`]: engines }, () => {
+					console.log(`搜索引擎 ${engines[index].name} 状态已更新为: ${enabled}`);
+				});
+			}
+		});
+	},
+
 	editEngine(category, index, engine) {
 		const newName = prompt('请输入新的搜索引擎名称:', engine.name);
 		const newUrl = prompt('请输入新的搜索引擎URL:', engine.url);
 
 		if (newName && newUrl) {
-			chrome.storage.sync.get([category], (result) => {
-				const engines = result[category] || [];
+			chrome.storage.sync.get([`${category}SearchEngines`], (result) => {
+				const engines = result[`${category}SearchEngines`] || [];
 				engines[index] = {
 					...engines[index],
 					name: newName,
 					url: newUrl
 				};
 
-				chrome.storage.sync.set({ [category]: engines }, () => {
+				chrome.storage.sync.set({ [`${category}SearchEngines`]: engines }, () => {
 					this.renderEngines(engines, category);
 				});
 			});
 		}
 	},
 
-	// 添加删除引擎方法
 	deleteEngine(category, index) {
 		if (confirm('确定要删除这个搜索引擎吗？')) {
-			chrome.storage.sync.get([category], (result) => {
-				const engines = result[category] || [];
+			chrome.storage.sync.get([`${category}SearchEngines`], (result) => {
+				const engines = result[`${category}SearchEngines`] || [];
 				engines.splice(index, 1);
 
-				chrome.storage.sync.set({ [category]: engines }, () => {
+				chrome.storage.sync.set({ [`${category}SearchEngines`]: engines }, () => {
 					this.renderEngines(engines, category);
 				});
 			});
 		}
 	},
+
 	addDragListeners(li, index) {
 		li.addEventListener('dragstart', (e) => {
 			e.dataTransfer.setData('text/plain', index.toString());
@@ -3302,18 +3324,45 @@ const TabManager = {
 				const [movedEngine] = engines.splice(fromIndex, 1);
 				engines.splice(toIndex, 0, movedEngine);
 
-				// 保存新顺序
 				chrome.storage.sync.set({ [`${this.currentCategory}SearchEngines`]: engines }, () => {
 					this.renderEngines(engines, this.currentCategory);
 				});
 			});
 		}
+	},
+
+	// 新增：添加搜索引擎方法
+	addEngine(category, name, url) {
+		chrome.storage.sync.get([`${category}SearchEngines`], (result) => {
+			const engines = result[`${category}SearchEngines`] || [];
+			engines.push({
+				name: name,
+				url: url,
+				enabled: true
+			});
+
+			chrome.storage.sync.set({ [`${category}SearchEngines`]: engines }, () => {
+				this.renderEngines(engines, category);
+			});
+		});
 	}
 };
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
 	TabManager.init();
+
+	// 添加新搜索引擎的按钮事件监听
+	const addEngineBtn = document.getElementById('addEngineBtn');
+	if (addEngineBtn) {
+		addEngineBtn.addEventListener('click', () => {
+			const name = prompt('请输入搜索引擎名称:');
+			const url = prompt('请输入搜索引擎URL:');
+			if (name && url) {
+				TabManager.addEngine(TabManager.currentCategory, name, url);
+			}
+		});
+	}
 });
 document.addEventListener('DOMContentLoaded', () => {
   // 初始化标签管理器
